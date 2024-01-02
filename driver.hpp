@@ -24,35 +24,43 @@
 #include <map>
 #include <string>
 
-namespace yy {
-class WomuYuroCompiler;
+namespace WomuYuro::yy {
+class Lexer;
 }
 
+namespace WomuYuro {
 // Conducting the whole scanning and parsing of Calc++.
-class driver {
-  yy::WomuYuroLexer *lexer;
+class Driver {
+  friend WomuYuro::yy::Parser;
+  friend WomuYuro::yy::Lexer;
+  yy::Lexer *lexer_;
+  int result_;
 
-public:
-  driver();
-  ~driver();
+  std::map<std::string, int> variables_;
 
-  std::map<std::string, int> variables;
-
-  int result;
-
-  // Run the parser on file F.  Return 0 on success.
-  int parse(const std::string &f);
   // The name of the file being parsed.
-  std::string file;
-  // Whether to generate parser debug traces.
-  bool trace_parsing;
+  std::string file_;
 
   // Handling the scanner.
   void scan_begin();
   void scan_end();
+
+  // The token's location used by the scanner.
+  yy::location location_;
+
+public:
+  Driver();
+  ~Driver();
+
+  int result() { return result_; };
+
+  // Run the parser on file F.  Return 0 on success.
+  int parse(const std::string &f);
+  // Whether to generate parser debug traces.
+  bool trace_parsing;
+
   // Whether to generate scanner debug traces.
   bool trace_scanning;
-  // The token's location used by the scanner.
-  yy::location location;
 };
+} // namespace WomuYuro
 #endif // ! DRIVER_HH

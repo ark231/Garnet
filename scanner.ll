@@ -21,11 +21,13 @@
 %option flex
 %option bison-complete
 %option bison-locations
-%option params="driver& drv"
+%option params="WomuYuro::Driver& drv"
 
-%option lexer=WomuYuroLexer
+%option lexer=Lexer
 
-%option namespace=yy
+%option namespace=WomuYuro.yy
+%option bison-cc-namespace=WomuYuro.yy
+%option bison-cc-parser=Parser
 
 %top { 
 /* -*- C++ -*- */
@@ -113,8 +115,8 @@
 
 %{
   // A number symbol corresponding to the value in S.
-  yy::parser::symbol_type
-  make_NUMBER (const std::string &s, const yy::parser::location_type& loc);
+    WomuYuro::yy::Parser::symbol_type
+  make_NUMBER (const std::string &s, const WomuYuro::yy::Parser::location_type& loc);
 %}
 
 id    [a-zA-Z][a-zA-Z_0-9]*
@@ -128,56 +130,57 @@ blank [ \t\r]
 %}
 %%
 %{
-  // A handy shortcut to the location held by the driver.
-  yy::location& loc = drv.location;
+  // A handy shortcut to the location held by the Driver.
+  WomuYuro::yy::location& loc = drv.location_;
   // Code run each time yylex is called.
   loc.step ();
 %}
 {blank}+   loc.step ();
 \n+        loc.lines (yyleng); loc.step ();
 
-"-"        return yy::parser::make_MINUS  (loc);
-"+"        return yy::parser::make_PLUS   (loc);
-"*"        return yy::parser::make_STAR   (loc);
-"/"        return yy::parser::make_SLASH  (loc);
-"("        return yy::parser::make_LPAREN (loc);
-")"        return yy::parser::make_RPAREN (loc);
-":="       return yy::parser::make_ASSIGN (loc);
+"-"        return WomuYuro::yy::Parser::make_MINUS  (loc);
+"+"        return WomuYuro::yy::Parser::make_PLUS   (loc);
+"*"        return WomuYuro::yy::Parser::make_STAR   (loc);
+"/"        return WomuYuro::yy::Parser::make_SLASH  (loc);
+"("        return WomuYuro::yy::Parser::make_LPAREN (loc);
+")"        return WomuYuro::yy::Parser::make_RPAREN (loc);
+":="       return WomuYuro::yy::Parser::make_ASSIGN (loc);
 
 {int}      return make_NUMBER (yytext, loc);
-{id}       return yy::parser::make_IDENTIFIER (yytext, loc);
+{id}       return WomuYuro::yy::Parser::make_IDENTIFIER (yytext, loc);
 .          {
-             throw yy::parser::syntax_error
+             throw WomuYuro::yy::Parser::syntax_error
                (loc, "invalid character: " + std::string(yytext));
 }
-<<EOF>>    return yy::parser::make_YYEOF (loc);
+<<EOF>>    return WomuYuro::yy::Parser::make_YYEOF (loc);
 %%
 
-yy::parser::symbol_type
-make_NUMBER (const std::string &s, const yy::parser::location_type& loc)
+WomuYuro::yy::Parser::symbol_type
+make_NUMBER (const std::string &s, const WomuYuro::yy::Parser::location_type& loc)
 {
   errno = 0;
   long n = strtol (s.c_str(), NULL, 10);
   if (! (INT_MIN <= n && n <= INT_MAX && errno != ERANGE))
-    throw yy::parser::syntax_error (loc, "integer is out of range: " + s);
-  return yy::parser::make_NUMBER ((int) n, loc);
+    throw WomuYuro::yy::Parser::syntax_error (loc, "integer is out of range: " + s);
+  return WomuYuro::yy::Parser::make_NUMBER ((int) n, loc);
 }
 
 void
-driver::scan_begin ()
+WomuYuro::Driver::scan_begin ()
+
 {
-  lexer->set_debug(trace_scanning);
-  if (file.empty () || file == "-")
-    lexer->in() = stdin;
-  else if (!(lexer->in()= fopen (file.c_str (), "r")))
+  lexer_->set_debug(trace_scanning);
+  if (file_.empty () || file_ == "-")
+    lexer_->in() = stdin;
+  else if (!(lexer_->in()= fopen (file_.c_str (), "r")))
     {
-      std::cerr << "cannot open " << file << ": " << strerror (errno) << '\n';
+      std::cerr << "cannot open " << file_ << ": " << strerror (errno) << '\n';
       exit (EXIT_FAILURE);
     }
 }
 
 void
-driver::scan_end ()
+WomuYuro::Driver::scan_end ()
 {
-    fclose(lexer->in());
+    fclose(lexer_->in());
 }

@@ -23,22 +23,23 @@
 #include "parser.hpp"
 #include "scanner.hpp"
 
-driver::driver()
-    : lexer(new yy::WomuYuroLexer()), trace_parsing(false),
-      trace_scanning(false) {
-  variables["one"] = 1;
-  variables["two"] = 2;
+namespace WomuYuro {
+Driver::Driver()
+    : lexer_(new yy::Lexer()), trace_parsing(false), trace_scanning(false) {
+  variables_["one"] = 1;
+  variables_["two"] = 2;
 }
 
-driver::~driver() { delete lexer; }
+Driver::~Driver() { delete lexer_; }
 
-int driver::parse(const std::string &f) {
-  file = f;
-  location.initialize(&file);
+int Driver::parse(const std::string &f) {
+  file_ = f;
+  location_.initialize(&file_);
   scan_begin();
-  yy::parser parse(*this, *lexer);
+  yy::Parser parse(*this);
   parse.set_debug_level(trace_parsing);
   int res = parse();
   scan_end();
   return res;
 }
+} // namespace WomuYuro
