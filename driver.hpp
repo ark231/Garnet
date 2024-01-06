@@ -20,9 +20,10 @@
 
 #ifndef DRIVER_HH
 #define DRIVER_HH
-#include "parser.hpp"
 #include <map>
 #include <string>
+
+#include "parser.hpp"
 
 namespace WomuYuro::yy {
 class Lexer;
@@ -31,36 +32,36 @@ class Lexer;
 namespace WomuYuro {
 // Conducting the whole scanning and parsing of Calc++.
 class Driver {
-  friend WomuYuro::yy::Parser;
-  friend WomuYuro::yy::Lexer;
-  yy::Lexer *lexer_;
-  int result_;
+    friend WomuYuro::yy::Parser;
+    friend WomuYuro::yy::Lexer;
+    yy::Lexer *lexer_;
+    int result_;
 
-  std::map<std::string, int> variables_;
+    std::map<std::string, double> variables_;
 
-  // The name of the file being parsed.
-  std::string file_;
+    // The name of the file being parsed.
+    std::string file_;
 
-  // Handling the scanner.
-  void scan_begin();
-  void scan_end();
+    // Handling the scanner.
+    void scan_begin();
+    void scan_end();
 
-  // The token's location used by the scanner.
-  yy::location location_;
+    // The token's location used by the scanner.
+    yy::location location_;
 
-public:
-  Driver();
-  ~Driver();
+   public:
+    Driver();
+    ~Driver();
 
-  int result() { return result_; };
+    int result() { return result_; };
 
-  // Run the parser on file F.  Return 0 on success.
-  int parse(const std::string &f);
-  // Whether to generate parser debug traces.
-  bool trace_parsing;
+    // Run the parser on file F.  Return 0 on success.
+    int parse(const std::string &f);
+    // Whether to generate parser debug traces.
+    bool trace_parsing;
 
-  // Whether to generate scanner debug traces.
-  bool trace_scanning;
+    // Whether to generate scanner debug traces.
+    bool trace_scanning;
 };
-} // namespace WomuYuro
-#endif // ! DRIVER_HH
+}  // namespace WomuYuro
+#endif  // ! DRIVER_HH

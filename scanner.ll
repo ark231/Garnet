@@ -29,6 +29,8 @@
 %option bison-cc-namespace=WomuYuro.yy
 %option bison-cc-parser=Parser
 
+%option unicode
+
 %top { 
 /* -*- C++ -*- */
 # include <cerrno>
@@ -36,8 +38,10 @@
 # include <cstdlib>
 # include <cstring> // strerror
 # include <string>
+# include <fmt/format.h>
 # include "driver.hpp"
 # include "parser.hpp"
+# include "mudig_converter.hpp"
 %}
 
 %{
@@ -116,12 +120,19 @@
 %{
   // A number symbol corresponding to the value in S.
     WomuYuro::yy::Parser::symbol_type
-  make_NUMBER (const std::string &s, const WomuYuro::yy::Parser::location_type& loc);
+  make_INTEGER (const std::string &s, const WomuYuro::yy::Parser::location_type& loc);
+    WomuYuro::yy::Parser::symbol_type
+  make_FLOAT (const std::string &s, const WomuYuro::yy::Parser::location_type& loc);
 %}
 
-id    [a-zA-Z][a-zA-Z_0-9]*
-int   [0-9]+
-blank [ \t\r]
+id        [a-zA-Z][a-zA-Z_0-9]*
+int_pos   [KGSZTDNHMRPB]+
+int_neg   ([KGSZTDNHMRPB]\u{305})+
+int       {int_pos}|{int_neg}
+frac_pos  ([KGSZTDNHMRPB]\u{323})+
+frac_neg  ([KGSZTDNHMRPB]\u{305}\u{323})+
+float     {int_pos}{frac_pos}|{int_neg}{frac_neg}
+blank     [ \t\r]
 
 %{
   # undef YY_USER_ACTION 
@@ -146,23 +157,38 @@ blank [ \t\r]
 ")"        return WomuYuro::yy::Parser::make_RPAREN (loc);
 ":="       return WomuYuro::yy::Parser::make_ASSIGN (loc);
 
-{int}      return make_NUMBER (yytext, loc);
+{float}    return make_FLOAT (yytext, loc);
+{int}      return make_INTEGER (yytext, loc);
 {id}       return WomuYuro::yy::Parser::make_IDENTIFIER (yytext, loc);
 .          {
-             throw WomuYuro::yy::Parser::syntax_error
+               throw WomuYuro::yy::Parser::syntax_error
                (loc, "invalid character: " + std::string(yytext));
-}
+           }
 <<EOF>>    return WomuYuro::yy::Parser::make_YYEOF (loc);
 %%
 
 WomuYuro::yy::Parser::symbol_type
-make_NUMBER (const std::string &s, const WomuYuro::yy::Parser::location_type& loc)
+make_INTEGER (const std::string &s, const WomuYuro::yy::Parser::location_type& loc)
 {
-  errno = 0;
-  long n = strtol (s.c_str(), NULL, 10);
-  if (! (INT_MIN <= n && n <= INT_MAX && errno != ERANGE))
-    throw WomuYuro::yy::Parser::syntax_error (loc, "integer is out of range: " + s);
-  return WomuYuro::yy::Parser::make_NUMBER ((int) n, loc);
+    int64_t n;
+    try{
+        n=WomuYuro::mudig_to_int(s);
+    }catch(WomuYuro::NumberFormatError& e){
+        throw WomuYuro::yy::Parser::syntax_error (loc, fmt::format("failed to parse integer: {}", e.what()));
+    }
+  return WomuYuro::yy::Parser::make_INTEGER (static_cast<int64_t>(n), loc);
+}
+
+WomuYuro::yy::Parser::symbol_type
+make_FLOAT (const std::string &s, const WomuYuro::yy::Parser::location_type& loc)
+{
+    double n;
+    try{
+        n=WomuYuro::mudig_to_float(s);
+    }catch(WomuYuro::NumberFormatError& e){
+        throw WomuYuro::yy::Parser::syntax_error (loc, fmt::format("failed to parse fraction: {}", e.what()));
+    }
+    return WomuYuro::yy::Parser::make_FLOAT (static_cast<double>(n), loc);
 }
 
 void

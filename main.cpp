@@ -18,20 +18,21 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#include "driver.hpp"
 #include <iostream>
 
+#include "driver.hpp"
+
 int main(int argc, char *argv[]) {
-  int res = 0;
-  WomuYuro::Driver drv;
-  for (int i = 1; i < argc; ++i)
-    if (argv[i] == std::string("-p"))
-      drv.trace_parsing = true;
-    else if (argv[i] == std::string("-s"))
-      drv.trace_scanning = true;
-    else if (!drv.parse(argv[i]))
-      std::cout << drv.result() << '\n';
-    else
-      res = 1;
-  return res;
+    int res = 0;
+    WomuYuro::Driver drv;
+    for (int i = 1; i < argc; ++i)
+        if (argv[i] == std::string("-p"))
+            drv.trace_parsing = true;
+        else if (argv[i] == std::string("-s"))
+            drv.trace_scanning = true;
+        else if (!drv.parse(argv[i]))
+            std::cout << drv.result() << '\n';
+        else
+            res = 1;
+    return res;
 }

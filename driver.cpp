@@ -20,26 +20,26 @@
    along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #include "driver.hpp"
+
 #include "parser.hpp"
 #include "scanner.hpp"
 
 namespace WomuYuro {
-Driver::Driver()
-    : lexer_(new yy::Lexer()), trace_parsing(false), trace_scanning(false) {
-  variables_["one"] = 1;
-  variables_["two"] = 2;
+Driver::Driver() : lexer_(new yy::Lexer()), trace_parsing(false), trace_scanning(false) {
+    variables_["one"] = 1;
+    variables_["two"] = 2;
 }
 
 Driver::~Driver() { delete lexer_; }
 
 int Driver::parse(const std::string &f) {
-  file_ = f;
-  location_.initialize(&file_);
-  scan_begin();
-  yy::Parser parse(*this);
-  parse.set_debug_level(trace_parsing);
-  int res = parse();
-  scan_end();
-  return res;
+    file_ = f;
+    location_.initialize(&file_);
+    scan_begin();
+    yy::Parser parse(*this);
+    parse.set_debug_level(trace_parsing);
+    int res = parse();
+    scan_end();
+    return res;
 }
-} // namespace WomuYuro
+}  // namespace WomuYuro
