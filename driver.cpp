@@ -26,8 +26,8 @@
 
 namespace WomuYuro {
 Driver::Driver() : lexer_(new yy::Lexer()), trace_parsing(false), trace_scanning(false) {
-    variables_["one"] = 1;
-    variables_["two"] = 2;
+    variables_["get"] = 1;
+    variables_["set"] = 2;
 }
 
 Driver::~Driver() { delete lexer_; }

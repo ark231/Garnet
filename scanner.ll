@@ -125,12 +125,15 @@
   make_FLOAT (const std::string &s, const WomuYuro::yy::Parser::location_type& loc);
 %}
 
-id        [a-zA-Z][a-zA-Z_0-9]*
-int_pos   [KGSZTDNHMRPB]+
-int_neg   ([KGSZTDNHMRPB]\u{305})+
+non_digit [kgsztdnhmrpbfvcjiauoeyw\u{0103}]|a\u{0306}
+id_punc   [_]
+digit     [KGSZTDNHMRPB]
+id        {non_digit}({non_digit}|{digit}|{id_punc})*
+int_pos   {digit}+
+int_neg   ({digit}\u{305})+
 int       {int_pos}|{int_neg}
-frac_pos  ([KGSZTDNHMRPB]\u{323})+
-frac_neg  ([KGSZTDNHMRPB]\u{305}\u{323})+
+frac_pos  ({digit}\u{323})+
+frac_neg  ({digit}\u{305}\u{323})+
 float     {int_pos}{frac_pos}|{int_neg}{frac_neg}
 blank     [ \t\r]
 
@@ -151,11 +154,11 @@ blank     [ \t\r]
 
 "-"        return WomuYuro::yy::Parser::make_MINUS  (loc);
 "+"        return WomuYuro::yy::Parser::make_PLUS   (loc);
-"*"        return WomuYuro::yy::Parser::make_STAR   (loc);
+\u{00d7}   return WomuYuro::yy::Parser::make_TIMES  (loc);
 "/"        return WomuYuro::yy::Parser::make_SLASH  (loc);
 "("        return WomuYuro::yy::Parser::make_LPAREN (loc);
 ")"        return WomuYuro::yy::Parser::make_RPAREN (loc);
-":="       return WomuYuro::yy::Parser::make_ASSIGN (loc);
+\u{2190}   return WomuYuro::yy::Parser::make_ASSIGN (loc);
 
 {float}    return make_FLOAT (yytext, loc);
 {int}      return make_INTEGER (yytext, loc);

@@ -64,18 +64,18 @@
 
 %define api.token.prefix {TOK_}
 %token
-    ASSIGN    ":="
+    ASSIGN    "←"
     MINUS     "-"
-    PLUS        "+"
-    STAR        "*"
+    PLUS      "+"
+    TIMES     "×"
     SLASH     "/"
     LPAREN    "("
     RPAREN    ")"
 ;
 
-%token <std::string> IDENTIFIER "identifier"
-%token <int64_t> INTEGER "integer"
-%token <double> FLOAT "floating point"
+%token <std::string>  IDENTIFIER  "identifier"
+%token <int64_t>      INTEGER     "integer"
+%token <double>       FLOAT       "floating point"
 
 %nterm <double> exp
 
@@ -90,19 +90,19 @@ assignments:
 | assignments assignment {};
 
 assignment:
-    "identifier" ":=" exp { drv.variables_[$1] = $3; };
+    "identifier" "←" exp { drv.variables_[$1] = $3; };
 
 %left "+" "-";
-%left "*" "/";
+%left "×" "/";
 exp:
-  "floating point"         { $$ = $1; }
-| "integer"           { $$ = $1; }
-| "identifier"    { $$ = drv.variables_[$1]; }
-| exp "+" exp     { $$ = $1 + $3; }
-| exp "-" exp     { $$ = $1 - $3; }
-| exp "*" exp     { $$ = $1 * $3; }
-| exp "/" exp     { $$ = $1 / $3; }
-| "(" exp ")"     { $$ = $2; }
+  "floating point"  { $$ = $1; }
+| "integer"         { $$ = $1; }
+| "identifier"      { $$ = drv.variables_[$1]; }
+| exp "+" exp       { $$ = $1 + $3; }
+| exp "-" exp       { $$ = $1 - $3; }
+| exp "×" exp       { $$ = $1 * $3; }
+| exp "/" exp       { $$ = $1 / $3; }
+| "(" exp ")"       { $$ = $2; }
 
 %%
 
