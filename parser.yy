@@ -31,7 +31,14 @@
 %define api.namespace {WomuYuro::yy}
 %define api.parser.class {Parser}
 
+%code {
+}
+
 %code requires {
+    # include <fmt/format.h>
+    # include <fmt/ostream.h>
+    # include <magic_enum/magic_enum_format.hpp>
+    # include "enums.hpp"
     # include <string>
     namespace WomuYuro{
         class Driver;
@@ -59,50 +66,77 @@
 # include "driver.hpp"
 # include "scanner.hpp"
 # undef yylex
-#define yylex drv.lexer_->yylex
+# define yylex drv.lexer_->yylex
 }
 
 %define api.token.prefix {TOK_}
 %token
-    ASSIGN    "←"
-    MINUS     "-"
-    PLUS      "+"
-    TIMES     "×"
-    SLASH     "/"
-    LPAREN    "("
-    RPAREN    ")"
+    ASSIGN                   "←"
+    MINUS                    "-"
+    PLUS                     "+"
+    TIMES                    "×"
+    SLASH                    "/"
+    LPAREN                   "("
+    RPAREN                   ")"
+    DQUOTE                   "dquote"
+    LDAQUOTE                 "«"
+    RDAQUOTE                 "»"
+    NOUN_MARKER              "se"
+    CONST                    "dizazukere"
+    SUBJECT_POSTPOSITION     "ni"
+    NOMINAL_ADJECTIVE_MARKER "ske"
+    PERIOD                   "."
 ;
 
-%token <std::string>  IDENTIFIER  "identifier"
-%token <int64_t>      INTEGER     "integer"
-%token <double>       FLOAT       "floating point"
+%token <std::string>         IDENTIFIER  "identifier"
+%token <int64_t>             INTEGER     "integer"
+%token <double>              FLOAT       "floating point"
+%token <WomuYuro::ValRef>    VALREF      "valref"
 
 %nterm <double> exp
+%nterm <WomuYuro::ConstMut> const
+%nterm <double*> variable_reference
 
-%printer { yyo << $$; } <*>;
+%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference
+%printer { fmt::print(yyo,"{}",$$); } <*>
 
 %%
-%start unit;
-unit: assignments exp    { drv.result_ = $2; };
+%start lines;
 
-assignments:
+lines:
   %empty                 {}
-| assignments assignment {};
+| lines line             {};
+
+line:
+  assignment "."           {}
+| variable_declaration "." {}
+| exp "."                  { drv.result_ = $1; };
+
+const:
+  %empty                 { $$ = WomuYuro::ConstMut::MUT; }
+| "dizazukere"           { $$ = WomuYuro::ConstMut::CONST; };
+
 
 assignment:
-    "identifier" "←" exp { drv.variables_[$1] = $3; };
+  variable_reference "←" exp   { *$1 = $3; };
+
+variable_declaration:
+  "«" "identifier" "»" "ni" const "identifier" "valref" "ske" { drv.variables_[$2] = 0.0; };
+
+variable_reference:
+  "identifier" "valref" "se" { $$ = &drv.variables_[$1]; };
 
 %left "+" "-";
 %left "×" "/";
 exp:
-  "floating point"  { $$ = $1; }
-| "integer"         { $$ = $1; }
-| "identifier"      { $$ = drv.variables_[$1]; }
-| exp "+" exp       { $$ = $1 + $3; }
-| exp "-" exp       { $$ = $1 - $3; }
-| exp "×" exp       { $$ = $1 * $3; }
-| exp "/" exp       { $$ = $1 / $3; }
-| "(" exp ")"       { $$ = $2; }
+  "floating point"   { $$ = $1; }
+| "integer"          { $$ = $1; }
+| variable_reference { $$ = *$1; }
+| exp "+" exp        { $$ = $1 + $3; }
+| exp "-" exp        { $$ = $1 - $3; }
+| exp "×" exp        { $$ = $1 * $3; }
+| exp "/" exp        { $$ = $1 / $3; }
+| "(" exp ")"        { $$ = $2; };
 
 %%
 

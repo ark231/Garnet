@@ -8,6 +8,9 @@ project(
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+include(cmake/CPM.cmake)
+cpmaddpackage(NAME magic_enum GITHUB_REPOSITORY Neargye/magic_enum GIT_TAG v0.9.5)
+
 find_package(FLEX REQUIRED)
 find_package(BISON REQUIRED)
 find_library(reflex_lib reflex REQUIRED)
@@ -47,10 +50,9 @@ add_executable(WomuYuroCompiler main.cpp driver.cpp ${BISON_Parser_OUTPUTS} ${FL
 
 target_include_directories(WomuYuroCompiler PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/bison ${CMAKE_CURRENT_BINARY_DIR}/reflex)
 target_include_directories(WomuYuroCompiler PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(WomuYuroCompiler PUBLIC ${magic_enum_SOURCE_DIR}/include)
 add_dependencies(WomuYuroCompiler Scanner)
 target_link_libraries(WomuYuroCompiler ${reflex_lib} ICU::uc fmt::fmt)
-
-# include(cmake/CPM.cmake)
 
 # cpmaddpackage()
 
@@ -58,3 +60,6 @@ target_link_libraries(WomuYuroCompiler ${reflex_lib} ICU::uc fmt::fmt)
 
 target_compile_options(WomuYuroCompiler PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wall -Weverything>
                                                 $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra > $<$<CXX_COMPILER_ID:MSVC>:/W4>)
+# # for debugging message(STATUS "*** dump start cmake variables ***") get_cmake_property(_variableNames VARIABLES)
+# foreach(_variableName ${_variableNames}) message(STATUS "${_variableName}=${${_variableName}}") endforeach()
+# message(STATUS "*** dump end ***")

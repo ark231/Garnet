@@ -42,6 +42,7 @@
 # include "driver.hpp"
 # include "parser.hpp"
 # include "mudig_converter.hpp"
+# include "enums.hpp"
 %}
 
 %{
@@ -123,6 +124,8 @@
   make_INTEGER (const std::string &s, const WomuYuro::yy::Parser::location_type& loc);
     WomuYuro::yy::Parser::symbol_type
   make_FLOAT (const std::string &s, const WomuYuro::yy::Parser::location_type& loc);
+    WomuYuro::yy::Parser::symbol_type
+  make_VALREF (const std::string &s, const WomuYuro::yy::Parser::location_type& loc);
 %}
 
 non_digit [kgsztdnhmrpbfvcjiauoeyw\u{0103}]|a\u{0306}
@@ -136,6 +139,7 @@ frac_pos  ({digit}\u{323})+
 frac_neg  ({digit}\u{305}\u{323})+
 float     {int_pos}{frac_pos}|{int_neg}{frac_neg}
 blank     [ \t\r]
+refval    [$&]
 
 %{
   # undef YY_USER_ACTION 
@@ -152,22 +156,31 @@ blank     [ \t\r]
 {blank}+   loc.step ();
 \n+        loc.lines (yyleng); loc.step ();
 
-"-"        return WomuYuro::yy::Parser::make_MINUS  (loc);
-"+"        return WomuYuro::yy::Parser::make_PLUS   (loc);
-\u{00d7}   return WomuYuro::yy::Parser::make_TIMES  (loc);
-"/"        return WomuYuro::yy::Parser::make_SLASH  (loc);
-"("        return WomuYuro::yy::Parser::make_LPAREN (loc);
-")"        return WomuYuro::yy::Parser::make_RPAREN (loc);
-\u{2190}   return WomuYuro::yy::Parser::make_ASSIGN (loc);
+"se"         return WomuYuro::yy::Parser::make_NOUN_MARKER              (loc);
+"ske"        return WomuYuro::yy::Parser::make_NOMINAL_ADJECTIVE_MARKER (loc);
+"dizazukere" return WomuYuro::yy::Parser::make_CONST                    (loc);
+"-"          return WomuYuro::yy::Parser::make_MINUS                    (loc);
+"+"          return WomuYuro::yy::Parser::make_PLUS                     (loc);
+\u{00d7}     return WomuYuro::yy::Parser::make_TIMES                    (loc);
+"/"          return WomuYuro::yy::Parser::make_SLASH                    (loc);
+"("          return WomuYuro::yy::Parser::make_LPAREN                   (loc);
+")"          return WomuYuro::yy::Parser::make_RPAREN                   (loc);
+\u{2190}     return WomuYuro::yy::Parser::make_ASSIGN                   (loc);
+"\""         return WomuYuro::yy::Parser::make_DQUOTE                   (loc);
+\u{00ab}     return WomuYuro::yy::Parser::make_LDAQUOTE                 (loc);
+\u{00bb}     return WomuYuro::yy::Parser::make_RDAQUOTE                 (loc);
+"ni"         return WomuYuro::yy::Parser::make_SUBJECT_POSTPOSITION     (loc);
+"."          return WomuYuro::yy::Parser::make_PERIOD                   (loc);
 
-{float}    return make_FLOAT (yytext, loc);
-{int}      return make_INTEGER (yytext, loc);
-{id}       return WomuYuro::yy::Parser::make_IDENTIFIER (yytext, loc);
-.          {
-               throw WomuYuro::yy::Parser::syntax_error
-               (loc, "invalid character: " + std::string(yytext));
-           }
-<<EOF>>    return WomuYuro::yy::Parser::make_YYEOF (loc);
+{float}      return make_FLOAT (yytext, loc);
+{int}        return make_INTEGER (yytext, loc);
+{id}         return WomuYuro::yy::Parser::make_IDENTIFIER (yytext, loc);
+{refval}     return make_VALREF (yytext, loc);
+.            {
+                 throw WomuYuro::yy::Parser::syntax_error
+                 (loc, "invalid character: " + std::string(yytext));
+             }
+<<EOF>>      return WomuYuro::yy::Parser::make_YYEOF (loc);
 %%
 
 WomuYuro::yy::Parser::symbol_type
@@ -192,6 +205,18 @@ make_FLOAT (const std::string &s, const WomuYuro::yy::Parser::location_type& loc
         throw WomuYuro::yy::Parser::syntax_error (loc, fmt::format("failed to parse fraction: {}", e.what()));
     }
     return WomuYuro::yy::Parser::make_FLOAT (static_cast<double>(n), loc);
+}
+
+WomuYuro::yy::Parser::symbol_type
+make_VALREF (const std::string &s, const WomuYuro::yy::Parser::location_type& loc)
+{
+    if(s=="$"){
+        return WomuYuro::yy::Parser::make_VALREF(static_cast<WomuYuro::ValRef>(WomuYuro::ValRef::VALUE),loc);
+    }else if(s=="&"){
+        return WomuYuro::yy::Parser::make_VALREF(static_cast<WomuYuro::ValRef>(WomuYuro::ValRef::REFERENCE),loc);
+    }else{
+        throw WomuYuro::yy::Parser::syntax_error (loc, fmt::format("invalid valref qualifier: {}", s));
+    }
 }
 
 void
