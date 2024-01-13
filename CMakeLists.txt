@@ -45,14 +45,34 @@ set_property(
 
 add_flex_bison_dependency(Scanner Parser)
 
+add_subdirectory(libs)
+
 # Build target
-add_executable(WomuYuroCompiler main.cpp driver.cpp ${BISON_Parser_OUTPUTS} ${FLEX_Scanner_OUTPUTS} mudig_converter.cpp)
+add_executable(
+    WomuYuroCompiler
+    # cmake-format: off
+    # exe src start
+    main.cpp
+    driver.cpp
+    ${BISON_Parser_OUTPUTS}
+    ${FLEX_Scanner_OUTPUTS}
+    # exe src end
+    # cmake-format: on
+    #
+)
 
 target_include_directories(WomuYuroCompiler PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/bison ${CMAKE_CURRENT_BINARY_DIR}/reflex)
 target_include_directories(WomuYuroCompiler PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(WomuYuroCompiler PUBLIC ${magic_enum_SOURCE_DIR}/include)
 add_dependencies(WomuYuroCompiler Scanner)
-target_link_libraries(WomuYuroCompiler ${reflex_lib} ICU::uc fmt::fmt)
+target_link_libraries(
+    WomuYuroCompiler
+    ${reflex_lib}
+    ICU::uc
+    fmt::fmt
+    ast
+    defs
+    utils)
 
 # cpmaddpackage()
 
