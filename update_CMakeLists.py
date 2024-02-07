@@ -4,11 +4,12 @@ from pathlib import Path
 import sys
 from tempfile import TemporaryFile
 from enum import Enum, auto
+import re
 
-LIB_SRC_START_MARKER = "# lib src start"
-LIB_SRC_END_MARKER = "# lib src end"
-EXE_SRC_START_MARKER = "# exe src start"
-EXE_SRC_END_MARKER = "# exe src end"
+LIB_SRC_START_MARKER = r"# lib src (start|begin)"
+LIB_SRC_END_MARKER = r"# lib src end"
+EXE_SRC_START_MARKER = r"# exe src (start|begin)"
+EXE_SRC_END_MARKER = r"# exe src end"
 
 
 class CMakeTargetType(Enum):
@@ -41,14 +42,20 @@ def main():
                     tmpfile.write(line)
                     continue
                 if is_in_add_func:
-                    if (target_type == CMakeTargetType.LIB and LIB_SRC_START_MARKER in line.lstrip()) or (
-                        target_type == CMakeTargetType.EXE and EXE_SRC_START_MARKER in line.lstrip()
+                    if (
+                        target_type == CMakeTargetType.LIB
+                        and re.search(LIB_SRC_START_MARKER, line.lstrip()) is not None
+                    ) or (
+                        target_type == CMakeTargetType.EXE
+                        and re.search(EXE_SRC_START_MARKER, line.lstrip()) is not None
                     ):
                         is_in_src = True
                         tmpfile.write(line)
                         continue
-                    if (target_type == CMakeTargetType.LIB and LIB_SRC_END_MARKER in line.lstrip()) or (
-                        target_type == CMakeTargetType.EXE and EXE_SRC_END_MARKER in line.lstrip()
+                    if (
+                        target_type == CMakeTargetType.LIB and re.search(LIB_SRC_END_MARKER, line.lstrip()) is not None
+                    ) or (
+                        target_type == CMakeTargetType.EXE and re.search(EXE_SRC_END_MARKER, line.lstrip()) is not None
                     ):
                         for source in existing_sources:
                             tmpfile.write(f"{source}\n")
@@ -62,7 +69,7 @@ def main():
                             continue
                         source = Path(line.split("#")[0].strip())
                         if source not in existing_sources:
-                            ans = input(f"file '{source}' wasn't found. preserve it? [Y/n]")
+                            ans = input(f"file '{source}' wasn't found. preserve it? [Y/n]>> ")
                             ans = ans.strip().lower()
                             if ans == "n" or ans == "no":
                                 print(f"reference to '{source}' is removed from CMakeLists.txt")

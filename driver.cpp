@@ -21,14 +21,14 @@
 
 #include "driver.hpp"
 
+#include <memory>
+
 #include "parser.hpp"
 #include "scanner.hpp"
 
 namespace WomuYuro {
-Driver::Driver() : lexer_(new yy::Lexer()), trace_parsing(false), trace_scanning(false) {
-    variables_["get"] = 1;
-    variables_["set"] = 2;
-}
+Driver::Driver()
+    : lexer_(new yy::Lexer()), result_(new ast::CompilationUnit()), trace_parsing(false), trace_scanning(false) {}
 
 Driver::~Driver() { delete lexer_; }
 

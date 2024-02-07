@@ -19,6 +19,10 @@ find_package(
     COMPONENTS uc
     REQUIRED)
 find_package(fmt REQUIRED)
+find_package(
+    Boost
+    COMPONENTS program_options
+    REQUIRED)
 
 make_directory(${CMAKE_CURRENT_BINARY_DIR}/bison)
 make_directory(${CMAKE_CURRENT_BINARY_DIR}/reflex)
@@ -70,6 +74,7 @@ target_link_libraries(
     ${reflex_lib}
     ICU::uc
     fmt::fmt
+    Boost::program_options
     ast
     defs
     utils)

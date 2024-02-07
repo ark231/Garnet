@@ -1,0 +1,17 @@
+#ifndef WOMUYURO_LIBS_AST_SOURCE_TYPE
+#define WOMUYURO_LIBS_AST_SOURCE_TYPE
+#include <string>
+namespace WomuYuro::ast {
+class SourceIdentifierBase {
+   public:
+    SourceIdentifierBase(std::string name) : name_(name) {}
+    const std::string source_name() const { return name_; }
+    const std::string to_string() const { return name_; }
+    size_t length() const { return name_.length(); }
+
+   protected:
+    std::string name_;
+};
+
+}  // namespace WomuYuro::ast
+#endif

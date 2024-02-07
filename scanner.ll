@@ -171,6 +171,8 @@ refval    [$&]
 \u{00bb}     return WomuYuro::yy::Parser::make_RDAQUOTE                 (loc);
 "ni"         return WomuYuro::yy::Parser::make_SUBJECT_POSTPOSITION     (loc);
 "."          return WomuYuro::yy::Parser::make_PERIOD                   (loc);
+"["          return WomuYuro::yy::Parser::make_LBRACKET                 (loc);
+"]"          return WomuYuro::yy::Parser::make_RBRACKET                 (loc);
 
 {float}      return make_FLOAT (yytext, loc);
 {int}        return make_INTEGER (yytext, loc);

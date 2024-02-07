@@ -1,13 +1,15 @@
-«zetnem» ni dizazukere sura$ske.
-zetnem$se ← ZṆ.
-«met» ni sura$ske.
-met$se ← get$se + set$se × zetnem$se.
-«ketnem» ni dizazukere sura$ske.
-ketnem$se ← KṆ.
-«zet» ni sura$ske.
-zet$se ← zetnem$se - ketnem$se.
-«curaiK_fă» ni sura$ske.
-curaiK_fă$se ← GS.
-(met$se × zet$se) / set$se.
-curaiK_fă$se ← GR × zetnem$se.
-(met$se × zet$se) / set$se + G.
+()[
+    «zetnem» ni dizazukere sura$ske.
+    zetnem$se ← ZṆ.
+    «met» ni sura$ske.
+    met$se ← get$se + set$se × zetnem$se.
+    «ketnem» ni dizazukere sura$ske.
+    ketnem$se ← KṆ.
+    «zet» ni sura$ske.
+    zet$se ← zetnem$se - ketnem$se.
+    «curaiK_fă» ni sura$ske.
+    curaiK_fă$se ← GS.
+    (met$se × zet$se) / set$se.
+    curaiK_fă$se ← GR × zetnem$se.
+    (met$se × zet$se) / set$se + G.
+]

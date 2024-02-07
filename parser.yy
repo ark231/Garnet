@@ -39,6 +39,10 @@
     # include <fmt/ostream.h>
     # include <magic_enum/magic_enum_format.hpp>
     # include "enums.hpp"
+    # include "compilation_unit.hpp"
+    # include "concrete_decls.hpp"
+    # include "concrete_expressions.hpp"
+    # include "concrete_statements.hpp"
     # include <string>
     namespace WomuYuro{
         class Driver;
@@ -75,6 +79,7 @@
     MINUS                    "-"
     PLUS                     "+"
     TIMES                    "×"
+    PERCENT                  "%"
     SLASH                    "/"
     LPAREN                   "("
     RPAREN                   ")"
@@ -86,6 +91,8 @@
     SUBJECT_POSTPOSITION     "ni"
     NOMINAL_ADJECTIVE_MARKER "ske"
     PERIOD                   "."
+    LBRACKET                 "["
+    RBRACKET                 "]"
 ;
 
 %token <std::string>         IDENTIFIER  "identifier"
@@ -93,50 +100,95 @@
 %token <double>              FLOAT       "floating point"
 %token <WomuYuro::ValRef>    VALREF      "valref"
 
-%nterm <double> exp
 %nterm <WomuYuro::ConstMut> const
-%nterm <double*> variable_reference
+%nterm <std::shared_ptr<WomuYuro::ast::VariableReference>> variable_reference
+%nterm <std::shared_ptr<WomuYuro::ast::CompilationUnit>> unit
+%nterm <std::shared_ptr<WomuYuro::ast::Sentence>> sentence
+%nterm <std::shared_ptr<WomuYuro::ast::DeclBase>> decl
+%nterm <std::shared_ptr<WomuYuro::ast::Expression>> exp
+%nterm <std::shared_ptr<WomuYuro::ast::Statement>> stmt
+%nterm <std::shared_ptr<WomuYuro::ast::FunctionDecl>> function_decl
+%nterm <std::shared_ptr<WomuYuro::ast::VariableDecl>> variable_decl
+%nterm <std::shared_ptr<WomuYuro::ast::FunctionDecl>> function_body
+%nterm <std::shared_ptr<WomuYuro::ast::BinaryOperator>> binary_operator
+%nterm <std::shared_ptr<WomuYuro::ast::FloatingPointLiteral>> floating_point_literal
+%nterm <std::shared_ptr<WomuYuro::ast::SignedIntegerLiteral>> signed_integer_literal
+%nterm <std::shared_ptr<WomuYuro::ast::VariableDeclStatement>> variable_decl_statement
 
-%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference
+%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt function_decl variable_decl binary_operator floating_point_literal signed_integer_literal function_body variable_decl_statement 
 %printer { fmt::print(yyo,"{}",$$); } <*>
 
 %%
-%start lines;
+%start unit;
 
-lines:
-  %empty                 {}
-| lines line             {};
+unit:
+  decl                     { drv.result_->add_decl($1); }
+| unit decl                { drv.result_->add_decl($2); };
 
-line:
-  assignment "."           {}
-| variable_declaration "." {}
-| exp "."                  { drv.result_ = $1; };
+decl:
+  function_decl            { $$ = std::dynamic_pointer_cast<WomuYuro::ast::DeclBase>($1); }
+| variable_decl            { $$ = std::dynamic_pointer_cast<WomuYuro::ast::DeclBase>($1); }
+
+function_decl:
+  "(" ")" "[" function_body "]"            { $$ = $4; }
+
+function_body:
+  sentence                 { 
+      $$ = std::make_shared<WomuYuro::ast::FunctionDecl>();
+      $$->add_sentence($1);
+    }
+| function_body sentence   { 
+      $1->add_sentence($2);
+      $$ = $1;
+    }
+
+sentence:
+  stmt "."                 { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Sentence>($1); }
+| exp "."                  { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Sentence>($1); };
 
 const:
   %empty                 { $$ = WomuYuro::ConstMut::MUT; }
 | "dizazukere"           { $$ = WomuYuro::ConstMut::CONST; };
 
 
-assignment:
-  variable_reference "←" exp   { *$1 = $3; };
-
-variable_declaration:
-  "«" "identifier" "»" "ni" const "identifier" "valref" "ske" { drv.variables_[$2] = 0.0; };
+variable_decl:
+  "«" "identifier" "»" "ni" const "identifier" "valref" "ske" {
+      $$ = std::make_shared<WomuYuro::ast::VariableDecl>(WomuYuro::ast::SourceVariableIdentifier($2),WomuYuro::ast::SourceTypeIdentifier($6));
+    };
 
 variable_reference:
-  "identifier" "valref" "se" { $$ = &drv.variables_[$1]; };
+  "identifier" "valref" "se" { $$ = std::make_shared<WomuYuro::ast::VariableReference>(WomuYuro::ast::SourceVariableIdentifier($1),$2); };
 
+%left "←";
 %left "+" "-";
-%left "×" "/";
+%left "×" "/" "%";
+
+binary_operator:
+  exp "+" exp        { $$ = std::make_shared<WomuYuro::ast::BinaryOperator>(WomuYuro::ast::BinaryOperator::OperatorType::ADD,$1,$3); }
+| exp "-" exp        { $$ = std::make_shared<WomuYuro::ast::BinaryOperator>(WomuYuro::ast::BinaryOperator::OperatorType::SUB,$1,$3); }
+| exp "×" exp        { $$ = std::make_shared<WomuYuro::ast::BinaryOperator>(WomuYuro::ast::BinaryOperator::OperatorType::MUL,$1,$3); }
+| exp "/" exp        { $$ = std::make_shared<WomuYuro::ast::BinaryOperator>(WomuYuro::ast::BinaryOperator::OperatorType::DIV,$1,$3); }
+| exp "%" exp        { $$ = std::make_shared<WomuYuro::ast::BinaryOperator>(WomuYuro::ast::BinaryOperator::OperatorType::MOD,$1,$3); }
+| exp "←" exp        { $$ = std::make_shared<WomuYuro::ast::BinaryOperator>(WomuYuro::ast::BinaryOperator::OperatorType::ASSIGN,$1,$3); }
+
+floating_point_literal:
+  "floating point"   { $$ = std::make_shared<WomuYuro::ast::FloatingPointLiteral>($1); }
+
+signed_integer_literal:
+  "integer"          { $$ = std::make_shared<WomuYuro::ast::SignedIntegerLiteral>($1); }
+
 exp:
-  "floating point"   { $$ = $1; }
-| "integer"          { $$ = $1; }
-| variable_reference { $$ = *$1; }
-| exp "+" exp        { $$ = $1 + $3; }
-| exp "-" exp        { $$ = $1 - $3; }
-| exp "×" exp        { $$ = $1 * $3; }
-| exp "/" exp        { $$ = $1 / $3; }
-| "(" exp ")"        { $$ = $2; };
+  floating_point_literal { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Expression>($1); }
+| signed_integer_literal { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Expression>($1); }
+| variable_reference     { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Expression>($1); }
+| binary_operator        { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Expression>($1); }
+| "(" exp ")"            { $$ = $2; };
+
+variable_decl_statement:
+  variable_decl          { $$ = std::make_shared<WomuYuro::ast::VariableDeclStatement>($1); }
+
+stmt:
+  variable_decl_statement { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Statement>($1); }
 
 %%
 

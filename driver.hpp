@@ -21,8 +21,10 @@
 #ifndef DRIVER_HH
 #define DRIVER_HH
 #include <map>
+#include <memory>
 #include <string>
 
+#include "compilation_unit.hpp"
 #include "parser.hpp"
 
 namespace WomuYuro::yy {
@@ -35,9 +37,7 @@ class Driver {
     friend WomuYuro::yy::Parser;
     friend WomuYuro::yy::Lexer;
     yy::Lexer *lexer_;
-    int result_;
-
-    std::map<std::string, double> variables_;
+    std::shared_ptr<ast::CompilationUnit> result_;
 
     // The name of the file being parsed.
     std::string file_;
@@ -53,7 +53,7 @@ class Driver {
     Driver();
     ~Driver();
 
-    int result() { return result_; };
+    std::shared_ptr<ast::CompilationUnit> result() { return result_; };
 
     // Run the parser on file F.  Return 0 on success.
     int parse(const std::string &f);

@@ -18,21 +18,44 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
+#include <fmt/core.h>
+
+#include <boost/program_options.hpp>
+#include <boost/program_options/parsers.hpp>
+#include <boost/program_options/variables_map.hpp>
 #include <iostream>
 
 #include "driver.hpp"
+#include "libs/utils/format.hpp"
 
-int main(int argc, char *argv[]) {
+namespace bpo = boost::program_options;
+
+int main(int argc, char* argv[]) {
+    bpo::positional_options_description pos;
+    pos.add("input-file", -1);
+    bpo::options_description opt;
+    opt.add_options()("help,h", "show this help")("trace-parsing,p", "enable debug output for parsing")(
+        "trace-scanning,s", "enable debug output for scanning")(
+        "input-file", bpo::value<std::vector<std::string>>()->required(), "input file (positional)");
+    bpo::variables_map varmap;
+    bpo::store(bpo::command_line_parser(argc, argv).options(opt).positional(pos).run(), varmap);
+
+    if (varmap.count("help")) {
+        std::cout << opt;
+        std::exit(0);
+    }
+    bpo::notify(varmap);
     int res = 0;
     WomuYuro::Driver drv;
-    for (int i = 1; i < argc; ++i)
-        if (argv[i] == std::string("-p"))
-            drv.trace_parsing = true;
-        else if (argv[i] == std::string("-s"))
-            drv.trace_scanning = true;
-        else if (!drv.parse(argv[i]))
-            std::cout << drv.result() << '\n';
-        else
-            res = 1;
+    if (varmap.count("trace-parsing")) {
+        drv.trace_parsing = true;
+    }
+    if (varmap.count("trace-scanning")) {
+        drv.trace_scanning = true;
+    }
+    for (const auto& infilename : varmap["input-file"].as<std::vector<std::string>>()) {
+        drv.parse(infilename);
+        fmt::println("{}", *(drv.result()));
+    }
     return res;
 }
