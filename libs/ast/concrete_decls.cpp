@@ -10,6 +10,7 @@
 #include <iterator>
 
 #include "../utils/format.hpp"
+#include "../utils/format_utils.hpp"
 #include "sentence.hpp"
 namespace WomuYuro::ast {
 // boost::uuidはto_string()を持ってる
@@ -20,11 +21,11 @@ FunctionDecl::FunctionDecl()
 FunctionDecl::FunctionDecl(SourceFunctionIdentifier name, std::vector<SourceTypeIdentifier> args,
                            SourceTypeIdentifier result)
     : name_(name), args_(args), result_(result) {}
-std::string FunctionDecl::to_string() const {
+std::string FunctionDecl::to_string(IndentLevel level) const {
     std::string result;
-    fmt::format_to(std::back_inserter(result), "FunctionDecl '{}' {} -> {}\n", name_, args_, result_);
+    format_to_with_indent(level, std::back_inserter(result), "FunctionDecl '{}' {} -> {}\n", name_, args_, result_);
     for (const auto sentence : sentences_) {
-        fmt::format_to(std::back_inserter(result), "    {}\n", sentence->to_string());
+        fmt::format_to(std::back_inserter(result), "{}\n", sentence->to_string(level + 1));
     }
     return result;
 }
@@ -38,14 +39,16 @@ void FunctionDecl::add_sentence(std::shared_ptr<Sentence> sentence) { sentences_
 const std::vector<std::shared_ptr<Sentence>>& FunctionDecl::sentences() { return sentences_; }
 
 VariableDecl::VariableDecl(SourceVariableIdentifier name, SourceTypeIdentifier type) : name_(name), type_(type) {}
-std::string VariableDecl::to_string() const { return fmt::format("VariableDecl {}: {}", name_, type_); }
+std::string VariableDecl::to_string(IndentLevel level) const {
+    return format_with_indent(level, "VariableDecl {}: {}", name_, type_);
+}
 std::vector<std::shared_ptr<Base>> VariableDecl::children() const { return {}; }
 std::string VariableDecl::mangled_name() {
     return fmt::format("_V{}{}_T{}{}", name_.length(), name_, type_.length(), type_);
 }
 
 TypeDecl::TypeDecl(SourceTypeIdentifier name) : name_(name) {}
-std::string TypeDecl::to_string() const { return fmt::format("TypeDecl {}", name_); }
+std::string TypeDecl::to_string(IndentLevel level) const { return format_with_indent(level, "TypeDecl {}", name_); }
 std::vector<std::shared_ptr<Base>> TypeDecl::children() const { return {}; }
 std::string TypeDecl::mangled_name() { return fmt::format("_T{}{}", name_.length(), name_); }
 

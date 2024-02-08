@@ -10,6 +10,7 @@ add_library(
     # cmake-format: off
     # lib src begin
     mudig_converter.cpp
+    format_support.cpp
     # lib src end
     # cmake-format: on
     #

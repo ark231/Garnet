@@ -29,6 +29,7 @@
 #include "libs/utils/format.hpp"
 
 namespace bpo = boost::program_options;
+using namespace WomuYuro::operators;
 
 int main(int argc, char* argv[]) {
     bpo::positional_options_description pos;
@@ -55,7 +56,7 @@ int main(int argc, char* argv[]) {
     }
     for (const auto& infilename : varmap["input-file"].as<std::vector<std::string>>()) {
         drv.parse(infilename);
-        fmt::println("{}", *(drv.result()));
+        fmt::println("{}", drv.result()->to_string(0_ind));
     }
     return res;
 }

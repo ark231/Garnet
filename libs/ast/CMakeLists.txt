@@ -16,7 +16,7 @@ add_library(
     concrete_source_identifiers.cpp
     concrete_decls.cpp
     concrete_expressions.cpp
-concrete_statements.cpp
+    concrete_statements.cpp
     # lib src end
     # cmake-format: on
     #

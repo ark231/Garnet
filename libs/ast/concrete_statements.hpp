@@ -1,3 +1,5 @@
+#ifndef WOMUYURO_COMPILER_LIBS_AST_CONCRETE_STATEMENTS
+#define WOMUYURO_COMPILER_LIBS_AST_CONCRETE_STATEMENTS
 #include <memory>
 #include <vector>
 
@@ -8,7 +10,7 @@ namespace WomuYuro::ast {
 class VariableDeclStatement : public Statement {
    public:
     VariableDeclStatement(std::shared_ptr<VariableDecl> decl) : decl_(decl) {}
-    virtual std::string to_string() const override;
+    virtual std::string to_string(IndentLevel level) const override;
     virtual StatementType type() const override { return StatementType::VARDECL; };
     virtual std::vector<std::shared_ptr<Base>> children() const override;
 
@@ -16,3 +18,4 @@ class VariableDeclStatement : public Statement {
     std::shared_ptr<VariableDecl> decl_;
 };
 }  // namespace WomuYuro::ast
+#endif

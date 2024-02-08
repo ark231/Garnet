@@ -7,12 +7,14 @@
 #include <memory>
 #include <sstream>
 
+#include "../utils/format_utils.hpp"
+
 namespace WomuYuro::ast {
 
-std::string CompilationUnit::to_string() const {
+std::string CompilationUnit::to_string(IndentLevel level) const {
     std::stringstream result;
     for (const auto decl : decls_) {
-        result << fmt::format("{}\n", decl->to_string());
+        result << fmt::format("{}\n", decl->to_string(level));  // 二重にindentがかかるから、with_indentは使わない
     }
     return result.str();
 }

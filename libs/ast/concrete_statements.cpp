@@ -2,8 +2,10 @@
 
 #include <fmt/core.h>
 
-#include "../utils/format.hpp"
+#include "../utils/format_utils.hpp"
 namespace WomuYuro::ast {
-std::string VariableDeclStatement::to_string() const { return fmt::format("VariableDeclStatement<{}>", *decl_); };
+std::string VariableDeclStatement::to_string(IndentLevel level) const {
+    return format_with_indent(level, "VariableDeclStatement\n{}", decl_->to_string(level + 1));
+};
 std::vector<std::shared_ptr<Base>> VariableDeclStatement::children() const { return {decl_}; }
 }  // namespace WomuYuro::ast

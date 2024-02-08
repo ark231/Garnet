@@ -11,7 +11,7 @@ class FunctionDecl : public DeclBase {
    public:
     FunctionDecl();
     FunctionDecl(SourceFunctionIdentifier name, std::vector<SourceTypeIdentifier> args, SourceTypeIdentifier result);
-    virtual std::string to_string() const override;
+    virtual std::string to_string(IndentLevel level) const override;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     void add_sentence(std::shared_ptr<Sentence> sentence);
     const std::vector<std::shared_ptr<Sentence>>& sentences();
@@ -26,7 +26,7 @@ class FunctionDecl : public DeclBase {
 class VariableDecl : public DeclBase {
    public:
     VariableDecl(SourceVariableIdentifier name, SourceTypeIdentifier type);
-    virtual std::string to_string() const override;
+    virtual std::string to_string(IndentLevel level) const override;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     std::string mangled_name();
 
@@ -37,7 +37,7 @@ class VariableDecl : public DeclBase {
 class TypeDecl : public DeclBase {
    public:
     TypeDecl(SourceTypeIdentifier name);
-    virtual std::string to_string() const override;
+    virtual std::string to_string(IndentLevel level) const override;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     std::string mangled_name();
 
