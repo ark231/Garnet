@@ -6,9 +6,8 @@
 
 #include "../utils/format_support.hpp"
 namespace WomuYuro::ast {
-class Base {
+class Base : public IIndentedFormattable {
    public:
-    virtual std::string to_string(IndentLevel level) const = 0;
     virtual std::vector<std::shared_ptr<Base>> children() const = 0;
 };
 }  // namespace WomuYuro::ast

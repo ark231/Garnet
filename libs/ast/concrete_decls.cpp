@@ -2,6 +2,7 @@
 
 #include <fmt/core.h>
 #include <fmt/ranges.h>
+#include <fmt/std.h>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/uuid/random_generator.hpp>
@@ -11,32 +12,23 @@
 
 #include "../utils/format.hpp"
 #include "../utils/format_utils.hpp"
-#include "sentence.hpp"
+#include "enums.hpp"
 namespace WomuYuro::ast {
 // boost::uuidはto_string()を持ってる
 FunctionDecl::FunctionDecl()
     : name_(fmt::format("_LF{}", boost::lexical_cast<std::string>(boost::uuids::random_generator()()))),
       args_({}),
-      result_("__Auto") {}
-FunctionDecl::FunctionDecl(SourceFunctionIdentifier name, std::vector<SourceTypeIdentifier> args,
-                           SourceTypeIdentifier result)
+      result_({{"__Auto"}, {{"__Auto"}}, ValRef::VALUE, false}) {}
+FunctionDecl::FunctionDecl(SourceFunctionIdentifier name, std::vector<VariableInfo> args,
+                           std::optional<VariableInfo> result)
     : name_(name), args_(args), result_(result) {}
 std::string FunctionDecl::to_string(IndentLevel level) const {
     std::string result;
-    format_to_with_indent(level, std::back_inserter(result), "FunctionDecl '{}' {} -> {}\n", name_, args_, result_);
-    for (const auto sentence : sentences_) {
-        fmt::format_to(std::back_inserter(result), "{}\n", sentence->to_string(level + 1));
-    }
+    format_to_with_indent(level, std::back_inserter(result), "FunctionDecl '{}' {} -> {}\n", name_, args_,
+                          result_.has_value() ? result_->to_string() : "void");
     return result;
 }
-std::vector<std::shared_ptr<Base>> FunctionDecl::children() const {
-    std::vector<std::shared_ptr<Base>> result;
-    std::ranges::transform(sentences_, std::back_inserter(result),
-                           [](auto& child) { return std::dynamic_pointer_cast<Base>(child); });
-    return result;
-}
-void FunctionDecl::add_sentence(std::shared_ptr<Sentence> sentence) { sentences_.push_back(sentence); }
-const std::vector<std::shared_ptr<Sentence>>& FunctionDecl::sentences() { return sentences_; }
+std::vector<std::shared_ptr<Base>> FunctionDecl::children() const { return {}; }
 
 VariableDecl::VariableDecl(SourceVariableIdentifier name, SourceTypeIdentifier type) : name_(name), type_(type) {}
 std::string VariableDecl::to_string(IndentLevel level) const {

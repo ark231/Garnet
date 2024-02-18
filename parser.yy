@@ -37,13 +37,19 @@
 %code requires {
     # include <fmt/format.h>
     # include <fmt/ostream.h>
+    # include <fmt/ranges.h>
+    # include <fmt/std.h>
     # include <magic_enum/magic_enum_format.hpp>
     # include "enums.hpp"
     # include "compilation_unit.hpp"
     # include "concrete_decls.hpp"
     # include "concrete_expressions.hpp"
     # include "concrete_statements.hpp"
+    # include "concrete_defs.hpp"
+    # include "concrete_infos.hpp"
     # include <string>
+    # include "format.hpp"
+    # include <algorithm>
     namespace WomuYuro{
         class Driver;
     }
@@ -93,6 +99,8 @@
     PERIOD                   "."
     LBRACKET                 "["
     RBRACKET                 "]"
+    RARROW                   "→"
+    COMMA                    ","
 ;
 
 %token <std::string>         IDENTIFIER  "identifier"
@@ -109,36 +117,98 @@
 %nterm <std::shared_ptr<WomuYuro::ast::Statement>> stmt
 %nterm <std::shared_ptr<WomuYuro::ast::FunctionDecl>> function_decl
 %nterm <std::shared_ptr<WomuYuro::ast::VariableDecl>> variable_decl
-%nterm <std::shared_ptr<WomuYuro::ast::FunctionDecl>> function_body
+%nterm <std::vector<std::shared_ptr<WomuYuro::ast::Sentence>>> function_body
 %nterm <std::shared_ptr<WomuYuro::ast::BinaryOperator>> binary_operator
 %nterm <std::shared_ptr<WomuYuro::ast::FloatingPointLiteral>> floating_point_literal
 %nterm <std::shared_ptr<WomuYuro::ast::SignedIntegerLiteral>> signed_integer_literal
 %nterm <std::shared_ptr<WomuYuro::ast::VariableDeclStatement>> variable_decl_statement
+%nterm <WomuYuro::ast::VariableInfo> var_type_info 
+%nterm <std::vector<WomuYuro::ast::VariableInfo>> var_type_info_list
+%nterm <std::optional<WomuYuro::ast::VariableInfo>> omittable_var_type_info
+%nterm <WomuYuro::ast::VariableInfo> var_info 
+%nterm <std::vector<WomuYuro::ast::VariableInfo>> var_info_list
+%nterm <std::shared_ptr<WomuYuro::ast::Base>> decl_or_def
+%nterm <std::shared_ptr<WomuYuro::ast::FunctionDef>> function_def
 
-%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt function_decl variable_decl binary_operator floating_point_literal signed_integer_literal function_body variable_decl_statement 
+
+%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt function_decl variable_decl binary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def
+%printer { 
+    std::vector<const void*> ptrs;
+    std::ranges::transform($$,std::back_inserter(ptrs),[](auto p){return fmt::ptr(p);});
+    fmt::print(yyo,"{}",ptrs); 
+} function_body 
 %printer { fmt::print(yyo,"{}",$$); } <*>
 
 %%
 %start unit;
 
 unit:
-  decl                     { drv.result_->add_decl($1); }
-| unit decl                { drv.result_->add_decl($2); };
+  decl_or_def                     { drv.result_->add_child($1); }
+| unit decl_or_def                { drv.result_->add_child($2); };
+
+decl_or_def:
+  decl "."                 { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Base>($1); }
+| function_def "."         { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Base>($1);}
 
 decl:
   function_decl            { $$ = std::dynamic_pointer_cast<WomuYuro::ast::DeclBase>($1); }
-| variable_decl            { $$ = std::dynamic_pointer_cast<WomuYuro::ast::DeclBase>($1); }
+| variable_decl            { $$ = std::dynamic_pointer_cast<WomuYuro::ast::DeclBase>($1); };
+
+var_type_info:
+  const "identifier" "valref" "se"  { 
+        $$ = WomuYuro::ast::VariableInfo({"__Unspecified__"},{WomuYuro::ast::SourceTypeIdentifier{$2}},$3,$1 == WomuYuro::ConstMut::CONST); 
+      };
+
+var_type_info_list:
+  %empty                                { $$ = {}; }
+| var_type_info                         { $$ = {$1}; }
+| var_type_info_list "," var_type_info  { 
+        $$ = $1;
+        $$.push_back($3); 
+      };
+omittable_var_type_info:
+  %empty                                 { $$ = std::nullopt; }
+| var_type_info                          { $$ = $1; }
+
+var_info:
+  const "«" "identifier" "»" "identifier" "valref" "se"  { 
+        $$ = WomuYuro::ast::VariableInfo({$3},{WomuYuro::ast::SourceTypeIdentifier{$5}},$6,$1 == WomuYuro::ConstMut::CONST); 
+      };
+
+var_info_list:
+  %empty                      { $$ = {}; }
+| var_info                    { $$ = {$1}; }
+| var_info_list "," var_info  { 
+        $$ = $1;
+        $$.push_back($3); 
+      };
 
 function_decl:
-  "(" ")" "[" function_body "]"            { $$ = $4; }
+  "«" "identifier" "»" "ni" "dizazukere" "[" "(" var_type_info_list ")" "→" "(" omittable_var_type_info ")" "]" "valref" "ske" {
+      if($15 != WomuYuro::ValRef::REFERENCE){
+          error(@15,"error: A function variable must be a reference to the function.");
+          YYERROR;
+      }
+      $$ = std::make_shared<WomuYuro::ast::FunctionDecl>(WomuYuro::ast::SourceFunctionIdentifier{$2},$8,$12);
+    };
+
+function_def:
+  "identifier" "valref" "se" "←" "(" var_info_list ")" "[" function_body "]"            { 
+  /*
+      if($2 != WomuYuro::ValRef::REFERENCE){
+          error(@2,"error: A function variable must be a reference to the function.");
+          YYERROR;
+      }
+      */
+      $$ = std::make_shared<WomuYuro::ast::FunctionDef>(WomuYuro::ast::FunctionInfo{WomuYuro::ast::SourceFunctionIdentifier{$1},$6,{}},std::move($9)); 
+    }
 
 function_body:
   sentence                 { 
-      $$ = std::make_shared<WomuYuro::ast::FunctionDecl>();
-      $$->add_sentence($1);
+      $$ = {$1};
     }
 | function_body sentence   { 
-      $1->add_sentence($2);
+      $1.push_back($2);
       $$ = $1;
     }
 

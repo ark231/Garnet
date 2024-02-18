@@ -128,7 +128,7 @@
   make_VALREF (const std::string &s, const WomuYuro::yy::Parser::location_type& loc);
 %}
 
-non_digit [kgsztdnhmrpbfvcjiauoeyw\u{0103}]|a\u{0306}
+non_digit [kgsztdnhmrpbfvcjiauoeyw\u{0103}\u{012b}\u{0101}\u{016b}\u{014d}\u{0113}]|a\u{0306}|[iauoe]\u{0304}
 id_punc   [_]
 digit     [KGSZTDNHMRPB]
 id        {non_digit}({non_digit}|{digit}|{id_punc})*
@@ -173,6 +173,8 @@ refval    [$&]
 "."          return WomuYuro::yy::Parser::make_PERIOD                   (loc);
 "["          return WomuYuro::yy::Parser::make_LBRACKET                 (loc);
 "]"          return WomuYuro::yy::Parser::make_RBRACKET                 (loc);
+","          return WomuYuro::yy::Parser::make_COMMA                    (loc);
+\u{2192}     return WomuYuro::yy::Parser::make_RARROW                   (loc);
 
 {float}      return make_FLOAT (yytext, loc);
 {int}        return make_INTEGER (yytext, loc);

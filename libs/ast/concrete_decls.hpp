@@ -1,8 +1,10 @@
 #ifndef WOMUYURO_LIBS_AST_CONCRETE_DECLS
 #define WOMUYURO_LIBS_AST_CONCRETE_DECLS
 #include <memory>
+#include <optional>
 #include <vector>
 
+#include "concrete_infos.hpp"
 #include "concrete_source_identifiers.hpp"
 #include "decl_base.hpp"
 namespace WomuYuro::ast {
@@ -10,18 +12,15 @@ class Sentence;
 class FunctionDecl : public DeclBase {
    public:
     FunctionDecl();
-    FunctionDecl(SourceFunctionIdentifier name, std::vector<SourceTypeIdentifier> args, SourceTypeIdentifier result);
+    FunctionDecl(SourceFunctionIdentifier name, std::vector<VariableInfo> args, std::optional<VariableInfo> result);
     virtual std::string to_string(IndentLevel level) const override;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
-    void add_sentence(std::shared_ptr<Sentence> sentence);
-    const std::vector<std::shared_ptr<Sentence>>& sentences();
     std::string mangled_name();
 
    protected:
-    std::vector<std::shared_ptr<Sentence>> sentences_;
     SourceFunctionIdentifier name_;
-    std::vector<SourceTypeIdentifier> args_;
-    SourceTypeIdentifier result_;
+    std::vector<VariableInfo> args_;
+    std::optional<VariableInfo> result_;
 };
 class VariableDecl : public DeclBase {
    public:

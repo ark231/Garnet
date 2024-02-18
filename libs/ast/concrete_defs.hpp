@@ -1,0 +1,28 @@
+#ifndef WOMUYURO_COMPILER_LIBS_AST_CONCRETE_DEFS
+#define WOMUYURO_COMPILER_LIBS_AST_CONCRETE_DEFS
+#include <memory>
+#include <vector>
+
+#include "concrete_infos.hpp"
+#include "def_base.hpp"
+#include "format_support.hpp"
+#include "sentence.hpp"
+namespace WomuYuro::ast {
+class FunctionDef : public DefBase {
+   public:
+    FunctionDef(FunctionInfo info) : info_(info) {}
+    FunctionDef(FunctionInfo info, std::vector<std::shared_ptr<Sentence>>&& sentences)
+        : info_(info), sentences_(sentences) {}
+    virtual std::string to_string(IndentLevel level) const override;
+    virtual std::vector<std::shared_ptr<Base>> children() const override;
+    const FunctionInfo& info() const { return info_; };
+    void add_sentence(std::shared_ptr<Sentence> sentence) { sentences_.push_back(sentence); };
+    void add_sentences(std::vector<std::shared_ptr<Sentence>>&& sentences);
+    const std::vector<std::shared_ptr<Sentence>>& sentences() { return sentences_; };
+
+   private:
+    FunctionInfo info_;
+    std::vector<std::shared_ptr<Sentence>> sentences_;
+};
+}  // namespace WomuYuro::ast
+#endif
