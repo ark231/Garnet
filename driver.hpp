@@ -36,7 +36,7 @@ namespace WomuYuro {
 class Driver {
     friend WomuYuro::yy::Parser;
     friend WomuYuro::yy::Lexer;
-    yy::Lexer *lexer_;
+    yy::Lexer* lexer_;
     std::shared_ptr<ast::CompilationUnit> result_;
 
     // The name of the file being parsed.
@@ -56,12 +56,13 @@ class Driver {
     std::shared_ptr<ast::CompilationUnit> result() { return result_; };
 
     // Run the parser on file F.  Return 0 on success.
-    int parse(const std::string &f);
+    int parse(const std::string& f);
     // Whether to generate parser debug traces.
     bool trace_parsing;
 
     // Whether to generate scanner debug traces.
     bool trace_scanning;
+    void print_error(const yy::location& loc, const std::string& msg);
 };
 }  // namespace WomuYuro
 #endif  // ! DRIVER_HH

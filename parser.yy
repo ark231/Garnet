@@ -50,6 +50,7 @@
     # include <string>
     # include "format.hpp"
     # include <algorithm>
+    # include "error_nodes.hpp"
     namespace WomuYuro{
         class Driver;
     }
@@ -153,6 +154,10 @@ unit:
 decl_or_def:
   decl "."                 { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Base>($1); }
 | function_def "."         { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Base>($1);}
+| error "."                { 
+      yyclearin; 
+      $$ = std::dynamic_pointer_cast<WomuYuro::ast::Base>(std::make_shared<WomuYuro::ast::ErrorNode>());
+    }
 
 decl:
   function_decl            { $$ = std::dynamic_pointer_cast<WomuYuro::ast::DeclBase>($1); }
@@ -218,7 +223,11 @@ function_body:
 
 sentence:
   stmt "."                 { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Sentence>($1); }
-| exp "."                  { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Sentence>($1); };
+| exp "."                  { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Sentence>($1); }
+| error "."                { 
+      yyclearin; 
+      $$ = std::dynamic_pointer_cast<WomuYuro::ast::Sentence>(std::make_shared<WomuYuro::ast::ErrorSentence>());
+    }
 
 const:
   %empty                 { $$ = WomuYuro::ConstMut::MUT; }
@@ -269,7 +278,11 @@ exp:
 | variable_reference     { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Expression>($1); }
 | binary_operator        { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Expression>($1); }
 | function_call          { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Expression>($1); }
-| "(" exp ")"            { $$ = $2; };
+| "(" exp ")"            { $$ = $2; }
+| "(" error ")"          { 
+      yyclearin;
+      $$ = std::dynamic_pointer_cast<WomuYuro::ast::Expression>(std::make_shared<WomuYuro::ast::ErrorExpression>());
+    }
 
 variable_decl_statement:
   variable_decl          { $$ = std::make_shared<WomuYuro::ast::VariableDeclStatement>($1); }
@@ -286,5 +299,5 @@ stmt:
 void
 WomuYuro::yy::Parser::error (const location_type& l, const std::string& m)
 {
-    std::cerr << l << ": " << m << '\n';
+    drv.print_error(l,m);
 }
