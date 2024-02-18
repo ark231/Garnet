@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "concrete_decls.hpp"
+#include "expression.hpp"
 #include "statement.hpp"
 
 namespace WomuYuro::ast {
@@ -16,6 +17,16 @@ class VariableDeclStatement : public Statement {
 
    protected:
     std::shared_ptr<VariableDecl> decl_;
+};
+class ReturnStatement : public Statement {
+   public:
+    ReturnStatement(std::shared_ptr<Expression> retval) : retval_(retval) {}
+    virtual std::string to_string(IndentLevel level) const override;
+    virtual StatementType type() const override { return StatementType::RETURN; };
+    virtual std::vector<std::shared_ptr<Base>> children() const override;
+
+   protected:
+    std::shared_ptr<Expression> retval_;
 };
 }  // namespace WomuYuro::ast
 #endif

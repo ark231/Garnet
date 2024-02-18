@@ -101,6 +101,7 @@
     RBRACKET                 "]"
     RARROW                   "→"
     COMMA                    ","
+    INVERTED_VERB_MARKER     "taf"
 ;
 
 %token <std::string>         IDENTIFIER  "identifier"
@@ -114,6 +115,7 @@
 %nterm <std::shared_ptr<WomuYuro::ast::Sentence>> sentence
 %nterm <std::shared_ptr<WomuYuro::ast::DeclBase>> decl
 %nterm <std::shared_ptr<WomuYuro::ast::Expression>> exp
+%nterm <std::vector<std::shared_ptr<WomuYuro::ast::Expression>>> exp_list
 %nterm <std::shared_ptr<WomuYuro::ast::Statement>> stmt
 %nterm <std::shared_ptr<WomuYuro::ast::FunctionDecl>> function_decl
 %nterm <std::shared_ptr<WomuYuro::ast::VariableDecl>> variable_decl
@@ -129,14 +131,16 @@
 %nterm <std::vector<WomuYuro::ast::VariableInfo>> var_info_list
 %nterm <std::shared_ptr<WomuYuro::ast::Base>> decl_or_def
 %nterm <std::shared_ptr<WomuYuro::ast::FunctionDef>> function_def
+%nterm <std::shared_ptr<WomuYuro::ast::FunctionCall>> function_call
+%nterm <std::shared_ptr<WomuYuro::ast::ReturnStatement>> return_statement
 
 
-%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt function_decl variable_decl binary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def
+%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt function_decl variable_decl binary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def function_call return_statement
 %printer { 
     std::vector<const void*> ptrs;
     std::ranges::transform($$,std::back_inserter(ptrs),[](auto p){return fmt::ptr(p);});
     fmt::print(yyo,"{}",ptrs); 
-} function_body 
+} function_body exp_list
 %printer { fmt::print(yyo,"{}",$$); } <*>
 
 %%
@@ -163,7 +167,7 @@ var_type_info_list:
   %empty                                { $$ = {}; }
 | var_type_info                         { $$ = {$1}; }
 | var_type_info_list "," var_type_info  { 
-        $$ = $1;
+        $$ = std::move($1);
         $$.push_back($3); 
       };
 omittable_var_type_info:
@@ -179,7 +183,7 @@ var_info_list:
   %empty                      { $$ = {}; }
 | var_info                    { $$ = {$1}; }
 | var_info_list "," var_info  { 
-        $$ = $1;
+        $$ = std::move($1);
         $$.push_back($3); 
       };
 
@@ -208,8 +212,8 @@ function_body:
       $$ = {$1};
     }
 | function_body sentence   { 
-      $1.push_back($2);
-      $$ = $1;
+      $$ = std::move($1);
+      $$.push_back($2);
     }
 
 sentence:
@@ -239,26 +243,43 @@ binary_operator:
 | exp "×" exp        { $$ = std::make_shared<WomuYuro::ast::BinaryOperator>(WomuYuro::ast::BinaryOperator::OperatorType::MUL,$1,$3); }
 | exp "/" exp        { $$ = std::make_shared<WomuYuro::ast::BinaryOperator>(WomuYuro::ast::BinaryOperator::OperatorType::DIV,$1,$3); }
 | exp "%" exp        { $$ = std::make_shared<WomuYuro::ast::BinaryOperator>(WomuYuro::ast::BinaryOperator::OperatorType::MOD,$1,$3); }
-| exp "←" exp        { $$ = std::make_shared<WomuYuro::ast::BinaryOperator>(WomuYuro::ast::BinaryOperator::OperatorType::ASSIGN,$1,$3); }
+| exp "←" exp        { $$ = std::make_shared<WomuYuro::ast::BinaryOperator>(WomuYuro::ast::BinaryOperator::OperatorType::ASSIGN,$1,$3); };
 
 floating_point_literal:
-  "floating point"   { $$ = std::make_shared<WomuYuro::ast::FloatingPointLiteral>($1); }
+  "floating point"   { $$ = std::make_shared<WomuYuro::ast::FloatingPointLiteral>($1); };
 
 signed_integer_literal:
-  "integer"          { $$ = std::make_shared<WomuYuro::ast::SignedIntegerLiteral>($1); }
+  "integer"          { $$ = std::make_shared<WomuYuro::ast::SignedIntegerLiteral>($1); };
+
+exp_list:
+  %empty             { $$ = {}; }
+| exp_list exp       { 
+      $$ = std::move($1); 
+      $$.push_back($2);
+    }
+
+function_call:
+  "taf" "(" exp_list ")" "«" "identifier" "»" { 
+      $$ = std::make_shared<WomuYuro::ast::FunctionCall>(WomuYuro::ast::SourceFunctionIdentifier{$6},std::move($3)); 
+    }
 
 exp:
   floating_point_literal { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Expression>($1); }
 | signed_integer_literal { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Expression>($1); }
 | variable_reference     { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Expression>($1); }
 | binary_operator        { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Expression>($1); }
+| function_call          { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Expression>($1); }
 | "(" exp ")"            { $$ = $2; };
 
 variable_decl_statement:
   variable_decl          { $$ = std::make_shared<WomuYuro::ast::VariableDeclStatement>($1); }
 
+return_statement:
+  "→" exp                { $$ = std::make_shared<WomuYuro::ast::ReturnStatement>($2); }
+
 stmt:
   variable_decl_statement { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Statement>($1); }
+| return_statement        { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Statement>($1); }
 
 %%
 

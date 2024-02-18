@@ -9,6 +9,7 @@ namespace WomuYuro::ast {
 class Base : public IIndentedFormattable {
    public:
     virtual std::vector<std::shared_ptr<Base>> children() const = 0;
+    virtual ~Base() = default;
 };
 }  // namespace WomuYuro::ast
 #endif

@@ -2,7 +2,9 @@
 #define WOMUYURO_LIBS_AST_CONCRETE_EXPRESSIONS
 
 #include <memory>
+#include <vector>
 
+#include "concrete_infos.hpp"
 #include "concrete_source_identifiers.hpp"
 #include "enums.hpp"
 #include "expression.hpp"
@@ -69,6 +71,19 @@ class FloatingPointLiteral : public Expression {
 
    private:
     double value_;
+};
+class FunctionCall : public Expression {
+   public:
+    FunctionCall(SourceFunctionIdentifier name, std::vector<std::shared_ptr<Expression>> &&args)
+        : name_(name), args_(args) {}
+    std::vector<std::shared_ptr<Expression>> args() const { return args_; }
+    SourceFunctionIdentifier name() const { return name_; }
+    virtual std::string to_string(IndentLevel level) const override;
+    virtual std::vector<std::shared_ptr<Base>> children() const override;
+
+   private:
+    SourceFunctionIdentifier name_;
+    std::vector<std::shared_ptr<Expression>> args_;
 };
 }  // namespace WomuYuro::ast
 #endif

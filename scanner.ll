@@ -175,6 +175,7 @@ refval    [$&]
 "]"          return WomuYuro::yy::Parser::make_RBRACKET                 (loc);
 ","          return WomuYuro::yy::Parser::make_COMMA                    (loc);
 \u{2192}     return WomuYuro::yy::Parser::make_RARROW                   (loc);
+"taf"        return WomuYuro::yy::Parser::make_INVERTED_VERB_MARKER     (loc);
 
 {float}      return make_FLOAT (yytext, loc);
 {int}        return make_INTEGER (yytext, loc);

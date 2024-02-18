@@ -24,8 +24,8 @@ FunctionDecl::FunctionDecl(SourceFunctionIdentifier name, std::vector<VariableIn
     : name_(name), args_(args), result_(result) {}
 std::string FunctionDecl::to_string(IndentLevel level) const {
     std::string result;
-    format_to_with_indent(level, std::back_inserter(result), "FunctionDecl '{}' {} -> {}\n", name_, args_,
-                          result_.has_value() ? result_->to_string() : "void");
+    format_to_with_indent(level, std::back_inserter(result), "FunctionDecl '{}' ({}) -> ({})\n", name_,
+                          fmt::join(args_, ","), result_.has_value() ? result_->to_string() : "void");
     return result;
 }
 std::vector<std::shared_ptr<Base>> FunctionDecl::children() const { return {}; }

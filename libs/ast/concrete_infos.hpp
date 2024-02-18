@@ -39,6 +39,7 @@ class FunctionInfo : public InfoBase {
     SourceFunctionIdentifier name() const { return name_; }
     std::vector<VariableInfo> args() const { return args_; }
     std::optional<VariableInfo> result() const { return result_; }
+    std::string result_to_string() const { return result_.has_value() ? result_->to_string() : "void"; };
 
    private:
     SourceFunctionIdentifier name_;
