@@ -18,3 +18,16 @@ mein$se ←(«aagsī»sura$se, dizazukere «aagvī»suene&se)[
     → K.
 ].
 «hoge» ni dizazukere [(sura$se) → ()]&ske.
+hoge$se ←(«āg»sura$se)[
+    dwake āg = K dwas [
+        →.
+    ]
+    dwake āg % GZ = K dwas[
+        taf(‹fizzbuzz›)«surai».
+    ]jadgi dwake āg % Z = K dwas[
+        taf(‹fizz›)«surai».
+    ]jadgi dwake āg % D = K dwas[
+        taf(‹buzz›)«surai».
+    ]
+    taf(‹\n›)«surai».
+]

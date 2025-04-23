@@ -27,12 +27,12 @@ find_package(
 make_directory(${CMAKE_CURRENT_BINARY_DIR}/bison)
 make_directory(${CMAKE_CURRENT_BINARY_DIR}/reflex)
 
-add_custom_target(Scanner)
 add_custom_command(
-    TARGET Scanner
-    OUTPUTS ${CMAKE_CURRENT_BINARY_DIR}/reflex/scanner.cpp DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/scanner.ll
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/reflex/scanner.cpp
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/scanner.ll
     COMMAND reflex-lexer ARGS -o ${CMAKE_CURRENT_BINARY_DIR}/reflex/scanner.cpp
             --header-file=${CMAKE_CURRENT_BINARY_DIR}/reflex/scanner.hpp ${CMAKE_CURRENT_SOURCE_DIR}/scanner.ll)
+add_custom_target(Scanner SOURCES ${CMAKE_CURRENT_BINARY_DIR}/reflex/scanner.cpp)
 set(FLEX_Scanner_OUTPUTS ${CMAKE_CURRENT_BINARY_DIR}/reflex/scanner.cpp)
 set_property(
     TARGET Scanner

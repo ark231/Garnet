@@ -54,6 +54,7 @@
     namespace WomuYuro{
         class Driver;
     }
+    namespace WY=WomuYuro;
 }
 
 
@@ -69,9 +70,9 @@
     }
 }
 
-%parse-param { WomuYuro::Driver& drv }    // Construct parser object with lexer
+%parse-param { WY::Driver& drv }    // Construct parser object with lexer
 
-%lex-param { WomuYuro::Driver& drv }    // Construct lexr object with lexer
+%lex-param { WY::Driver& drv }    // Construct lexr object with lexer
 
 %code {
 # include "driver.hpp"
@@ -108,32 +109,32 @@
 %token <std::string>         IDENTIFIER  "identifier"
 %token <int64_t>             INTEGER     "integer"
 %token <double>              FLOAT       "floating point"
-%token <WomuYuro::ValRef>    VALREF      "valref"
+%token <WY::ValRef>    VALREF      "valref"
 
-%nterm <WomuYuro::ConstMut> const
-%nterm <std::shared_ptr<WomuYuro::ast::VariableReference>> variable_reference
-%nterm <std::shared_ptr<WomuYuro::ast::CompilationUnit>> unit
-%nterm <std::shared_ptr<WomuYuro::ast::Sentence>> sentence
-%nterm <std::shared_ptr<WomuYuro::ast::DeclBase>> decl
-%nterm <std::shared_ptr<WomuYuro::ast::Expression>> exp
-%nterm <std::vector<std::shared_ptr<WomuYuro::ast::Expression>>> exp_list
-%nterm <std::shared_ptr<WomuYuro::ast::Statement>> stmt
-%nterm <std::shared_ptr<WomuYuro::ast::FunctionDecl>> function_decl
-%nterm <std::shared_ptr<WomuYuro::ast::VariableDecl>> variable_decl
-%nterm <std::vector<std::shared_ptr<WomuYuro::ast::Sentence>>> function_body
-%nterm <std::shared_ptr<WomuYuro::ast::BinaryOperator>> binary_operator
-%nterm <std::shared_ptr<WomuYuro::ast::FloatingPointLiteral>> floating_point_literal
-%nterm <std::shared_ptr<WomuYuro::ast::SignedIntegerLiteral>> signed_integer_literal
-%nterm <std::shared_ptr<WomuYuro::ast::VariableDeclStatement>> variable_decl_statement
-%nterm <WomuYuro::ast::VariableInfo> var_type_info 
-%nterm <std::vector<WomuYuro::ast::VariableInfo>> var_type_info_list
-%nterm <std::optional<WomuYuro::ast::VariableInfo>> omittable_var_type_info
-%nterm <WomuYuro::ast::VariableInfo> var_info 
-%nterm <std::vector<WomuYuro::ast::VariableInfo>> var_info_list
-%nterm <std::shared_ptr<WomuYuro::ast::Base>> decl_or_def
-%nterm <std::shared_ptr<WomuYuro::ast::FunctionDef>> function_def
-%nterm <std::shared_ptr<WomuYuro::ast::FunctionCall>> function_call
-%nterm <std::shared_ptr<WomuYuro::ast::ReturnStatement>> return_statement
+%nterm <WY::ConstMut> const
+%nterm <std::shared_ptr<WY::ast::VariableReference>> variable_reference
+%nterm <std::shared_ptr<WY::ast::CompilationUnit>> unit
+%nterm <std::shared_ptr<WY::ast::Sentence>> sentence
+%nterm <std::shared_ptr<WY::ast::DeclBase>> decl
+%nterm <std::shared_ptr<WY::ast::Expression>> exp
+%nterm <std::vector<std::shared_ptr<WY::ast::Expression>>> exp_list
+%nterm <std::shared_ptr<WY::ast::Statement>> stmt
+%nterm <std::shared_ptr<WY::ast::FunctionDecl>> function_decl
+%nterm <std::shared_ptr<WY::ast::VariableDecl>> variable_decl
+%nterm <std::vector<std::shared_ptr<WY::ast::Sentence>>> function_body
+%nterm <std::shared_ptr<WY::ast::BinaryOperator>> binary_operator
+%nterm <std::shared_ptr<WY::ast::FloatingPointLiteral>> floating_point_literal
+%nterm <std::shared_ptr<WY::ast::SignedIntegerLiteral>> signed_integer_literal
+%nterm <std::shared_ptr<WY::ast::VariableDeclStatement>> variable_decl_statement
+%nterm <WY::ast::VariableInfo> var_type_info 
+%nterm <std::vector<WY::ast::VariableInfo>> var_type_info_list
+%nterm <std::optional<WY::ast::VariableInfo>> omittable_var_type_info
+%nterm <WY::ast::VariableInfo> var_info 
+%nterm <std::vector<WY::ast::VariableInfo>> var_info_list
+%nterm <std::shared_ptr<WY::ast::Base>> decl_or_def
+%nterm <std::shared_ptr<WY::ast::FunctionDef>> function_def
+%nterm <std::shared_ptr<WY::ast::FunctionCall>> function_call
+%nterm <std::shared_ptr<WY::ast::ReturnStatement>> return_statement
 
 
 %printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt function_decl variable_decl binary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def function_call return_statement
@@ -152,20 +153,20 @@ unit:
 | unit decl_or_def                { drv.result_->add_child($2); };
 
 decl_or_def:
-  decl "."                 { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Base>($1); }
-| function_def "."         { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Base>($1);}
+  decl "."                 { $$ = std::dynamic_pointer_cast<WY::ast::Base>($1); }
+| function_def "."         { $$ = std::dynamic_pointer_cast<WY::ast::Base>($1);}
 | error "."                { 
       yyclearin; 
-      $$ = std::dynamic_pointer_cast<WomuYuro::ast::Base>(std::make_shared<WomuYuro::ast::ErrorNode>());
+      $$ = std::dynamic_pointer_cast<WY::ast::Base>(std::make_shared<WY::ast::ErrorNode>());
     }
 
 decl:
-  function_decl            { $$ = std::dynamic_pointer_cast<WomuYuro::ast::DeclBase>($1); }
-| variable_decl            { $$ = std::dynamic_pointer_cast<WomuYuro::ast::DeclBase>($1); };
+  function_decl            { $$ = std::dynamic_pointer_cast<WY::ast::DeclBase>($1); }
+| variable_decl            { $$ = std::dynamic_pointer_cast<WY::ast::DeclBase>($1); };
 
 var_type_info:
   const "identifier" "valref" "se"  { 
-        $$ = WomuYuro::ast::VariableInfo({"__Unspecified__"},{WomuYuro::ast::SourceTypeIdentifier{$2}},$3,$1 == WomuYuro::ConstMut::CONST); 
+        $$ = WY::ast::VariableInfo({"__Unspecified__"},{WY::ast::SourceTypeIdentifier{$2}},$3,$1 == WY::ConstMut::CONST); 
       };
 
 var_type_info_list:
@@ -181,7 +182,7 @@ omittable_var_type_info:
 
 var_info:
   const "«" "identifier" "»" "identifier" "valref" "se"  { 
-        $$ = WomuYuro::ast::VariableInfo({$3},{WomuYuro::ast::SourceTypeIdentifier{$5}},$6,$1 == WomuYuro::ConstMut::CONST); 
+        $$ = WY::ast::VariableInfo({$3},{WY::ast::SourceTypeIdentifier{$5}},$6,$1 == WY::ConstMut::CONST); 
       };
 
 var_info_list:
@@ -194,22 +195,22 @@ var_info_list:
 
 function_decl:
   "«" "identifier" "»" "ni" "dizazukere" "[" "(" var_type_info_list ")" "→" "(" omittable_var_type_info ")" "]" "valref" "ske" {
-      if($15 != WomuYuro::ValRef::REFERENCE){
+      if($15 != WY::ValRef::REFERENCE){
           error(@15,"error: A function variable must be a reference to the function.");
           YYERROR;
       }
-      $$ = std::make_shared<WomuYuro::ast::FunctionDecl>(WomuYuro::ast::SourceFunctionIdentifier{$2},$8,$12);
+      $$ = std::make_shared<WY::ast::FunctionDecl>(WY::ast::SourceFunctionIdentifier{$2},$8,$12);
     };
 
 function_def:
   "identifier" "valref" "se" "←" "(" var_info_list ")" "[" function_body "]"            { 
   /*
-      if($2 != WomuYuro::ValRef::REFERENCE){
+      if($2 != WY::ValRef::REFERENCE){
           error(@2,"error: A function variable must be a reference to the function.");
           YYERROR;
       }
       */
-      $$ = std::make_shared<WomuYuro::ast::FunctionDef>(WomuYuro::ast::FunctionInfo{WomuYuro::ast::SourceFunctionIdentifier{$1},$6,{}},std::move($9)); 
+      $$ = std::make_shared<WY::ast::FunctionDef>(WY::ast::FunctionInfo{WY::ast::SourceFunctionIdentifier{$1},$6,{}},std::move($9)); 
     }
 
 function_body:
@@ -222,43 +223,43 @@ function_body:
     }
 
 sentence:
-  stmt "."                 { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Sentence>($1); }
-| exp "."                  { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Sentence>($1); }
+  stmt "."                 { $$ = std::dynamic_pointer_cast<WY::ast::Sentence>($1); }
+| exp "."                  { $$ = std::dynamic_pointer_cast<WY::ast::Sentence>($1); }
 | error "."                { 
       yyclearin; 
-      $$ = std::dynamic_pointer_cast<WomuYuro::ast::Sentence>(std::make_shared<WomuYuro::ast::ErrorSentence>());
+      $$ = std::dynamic_pointer_cast<WY::ast::Sentence>(std::make_shared<WY::ast::ErrorSentence>());
     }
 
 const:
-  %empty                 { $$ = WomuYuro::ConstMut::MUT; }
-| "dizazukere"           { $$ = WomuYuro::ConstMut::CONST; };
+  %empty                 { $$ = WY::ConstMut::MUT; }
+| "dizazukere"           { $$ = WY::ConstMut::CONST; };
 
 
 variable_decl:
   "«" "identifier" "»" "ni" const "identifier" "valref" "ske" {
-      $$ = std::make_shared<WomuYuro::ast::VariableDecl>(WomuYuro::ast::SourceVariableIdentifier($2),WomuYuro::ast::SourceTypeIdentifier($6));
+      $$ = std::make_shared<WY::ast::VariableDecl>(WY::ast::SourceVariableIdentifier($2),WY::ast::SourceTypeIdentifier($6));
     };
 
 variable_reference:
-  "identifier" "valref" "se" { $$ = std::make_shared<WomuYuro::ast::VariableReference>(WomuYuro::ast::SourceVariableIdentifier($1),$2); };
+  "identifier" "valref" "se" { $$ = std::make_shared<WY::ast::VariableReference>(WY::ast::SourceVariableIdentifier($1),$2); };
 
 %left "←";
 %left "+" "-";
 %left "×" "/" "%";
 
 binary_operator:
-  exp "+" exp        { $$ = std::make_shared<WomuYuro::ast::BinaryOperator>(WomuYuro::ast::BinaryOperator::OperatorType::ADD,$1,$3); }
-| exp "-" exp        { $$ = std::make_shared<WomuYuro::ast::BinaryOperator>(WomuYuro::ast::BinaryOperator::OperatorType::SUB,$1,$3); }
-| exp "×" exp        { $$ = std::make_shared<WomuYuro::ast::BinaryOperator>(WomuYuro::ast::BinaryOperator::OperatorType::MUL,$1,$3); }
-| exp "/" exp        { $$ = std::make_shared<WomuYuro::ast::BinaryOperator>(WomuYuro::ast::BinaryOperator::OperatorType::DIV,$1,$3); }
-| exp "%" exp        { $$ = std::make_shared<WomuYuro::ast::BinaryOperator>(WomuYuro::ast::BinaryOperator::OperatorType::MOD,$1,$3); }
-| exp "←" exp        { $$ = std::make_shared<WomuYuro::ast::BinaryOperator>(WomuYuro::ast::BinaryOperator::OperatorType::ASSIGN,$1,$3); };
+  exp "+" exp        { $$ = std::make_shared<WY::ast::BinaryOperator>(WY::ast::BinaryOperator::OperatorType::ADD,$1,$3); }
+| exp "-" exp        { $$ = std::make_shared<WY::ast::BinaryOperator>(WY::ast::BinaryOperator::OperatorType::SUB,$1,$3); }
+| exp "×" exp        { $$ = std::make_shared<WY::ast::BinaryOperator>(WY::ast::BinaryOperator::OperatorType::MUL,$1,$3); }
+| exp "/" exp        { $$ = std::make_shared<WY::ast::BinaryOperator>(WY::ast::BinaryOperator::OperatorType::DIV,$1,$3); }
+| exp "%" exp        { $$ = std::make_shared<WY::ast::BinaryOperator>(WY::ast::BinaryOperator::OperatorType::MOD,$1,$3); }
+| exp "←" exp        { $$ = std::make_shared<WY::ast::BinaryOperator>(WY::ast::BinaryOperator::OperatorType::ASSIGN,$1,$3); };
 
 floating_point_literal:
-  "floating point"   { $$ = std::make_shared<WomuYuro::ast::FloatingPointLiteral>($1); };
+  "floating point"   { $$ = std::make_shared<WY::ast::FloatingPointLiteral>($1); };
 
 signed_integer_literal:
-  "integer"          { $$ = std::make_shared<WomuYuro::ast::SignedIntegerLiteral>($1); };
+  "integer"          { $$ = std::make_shared<WY::ast::SignedIntegerLiteral>($1); };
 
 exp_list:
   %empty             { $$ = {}; }
@@ -269,35 +270,35 @@ exp_list:
 
 function_call:
   "taf" "(" exp_list ")" "«" "identifier" "»" { 
-      $$ = std::make_shared<WomuYuro::ast::FunctionCall>(WomuYuro::ast::SourceFunctionIdentifier{$6},std::move($3)); 
+      $$ = std::make_shared<WY::ast::FunctionCall>(WY::ast::SourceFunctionIdentifier{$6},std::move($3)); 
     }
 
 exp:
-  floating_point_literal { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Expression>($1); }
-| signed_integer_literal { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Expression>($1); }
-| variable_reference     { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Expression>($1); }
-| binary_operator        { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Expression>($1); }
-| function_call          { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Expression>($1); }
+  floating_point_literal { $$ = std::dynamic_pointer_cast<WY::ast::Expression>($1); }
+| signed_integer_literal { $$ = std::dynamic_pointer_cast<WY::ast::Expression>($1); }
+| variable_reference     { $$ = std::dynamic_pointer_cast<WY::ast::Expression>($1); }
+| binary_operator        { $$ = std::dynamic_pointer_cast<WY::ast::Expression>($1); }
+| function_call          { $$ = std::dynamic_pointer_cast<WY::ast::Expression>($1); }
 | "(" exp ")"            { $$ = $2; }
 | "(" error ")"          { 
       yyclearin;
-      $$ = std::dynamic_pointer_cast<WomuYuro::ast::Expression>(std::make_shared<WomuYuro::ast::ErrorExpression>());
+      $$ = std::dynamic_pointer_cast<WY::ast::Expression>(std::make_shared<WY::ast::ErrorExpression>());
     }
 
 variable_decl_statement:
-  variable_decl          { $$ = std::make_shared<WomuYuro::ast::VariableDeclStatement>($1); }
+  variable_decl          { $$ = std::make_shared<WY::ast::VariableDeclStatement>($1); }
 
 return_statement:
-  "→" exp                { $$ = std::make_shared<WomuYuro::ast::ReturnStatement>($2); }
+  "→" exp                { $$ = std::make_shared<WY::ast::ReturnStatement>($2); }
 
 stmt:
-  variable_decl_statement { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Statement>($1); }
-| return_statement        { $$ = std::dynamic_pointer_cast<WomuYuro::ast::Statement>($1); }
+  variable_decl_statement { $$ = std::dynamic_pointer_cast<WY::ast::Statement>($1); }
+| return_statement        { $$ = std::dynamic_pointer_cast<WY::ast::Statement>($1); }
 
 %%
 
 void
-WomuYuro::yy::Parser::error (const location_type& l, const std::string& m)
+WY::yy::Parser::error (const location_type& l, const std::string& m)
 {
     drv.print_error(l,m);
 }
