@@ -1,33 +1,11 @@
-«mein» ni dizazukere [(sura$se, dizazukere suene&se) → (sura$se)]&ske.
-mein$se ←(«aagsī»sura$se, dizazukere «aagvī»suene&se)[
-    «zetnem» ni dizazukere sura$ske.
-    zetnem$se ← ZṆ.
-    «met» ni sura$ske.
-    met$se ← get$se + set$se × zetnem$se.
-    «ketnem» ni dizazukere sura$ske.
-    ketnem$se ← KṆ.
-    «zet» ni sura$ske.
-    zet$se ← zetnem$se - ketnem$se.
-    «curaiK_fă» ni sura$ske.
-    curaiK_fă$se ← GS.
-    (met$se × zet$se) / set$se.
-    curaiK_fă$se ← GR × zetnem$se.
-    (met$se × zet$se) / set$se + G.
-    taf(zetnem$se)«hoge».
-    taf(zetnem$se × GS + ZTN)«hoge».
-    → K.
-].
-«hoge» ni dizazukere [(sura$se) → ()]&ske.
-hoge$se ←(«āg»sura$se)[
-    dwake āg = K dwas [
-        →.
-    ]
-    dwake āg % GZ = K dwas[
-        taf(‹fizzbuzz›)«surai».
-    ]jadgi dwake āg % Z = K dwas[
-        taf(‹fizz›)«surai».
-    ]jadgi dwake āg % D = K dwas[
-        taf(‹buzz›)«surai».
-    ]
-    taf(‹\n›)«surai».
-]
+func main(var argc: i64, var argv: vec[vec[u8]])->i32{
+    let hoge: i32 = 42;
+    var fuga: i32 = 5;
+    var piyo: i32 = hoge + fuga * 2;
+    print(piyo);
+    return 0;
+}
+
+func hello_world(){
+    println("Hello, world!");
+}

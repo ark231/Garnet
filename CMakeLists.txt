@@ -83,7 +83,7 @@ target_link_libraries(
 
 # target_link_libraries()
 
-target_compile_options(WomuYuroCompiler PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wall -Weverything>
+target_compile_options(WomuYuroCompiler PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra>
                                                 $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra > $<$<CXX_COMPILER_ID:MSVC>:/W4>)
 # # for debugging message(STATUS "*** dump start cmake variables ***") get_cmake_property(_variableNames VARIABLES)
 # foreach(_variableName ${_variableNames}) message(STATUS "${_variableName}=${${_variableName}}") endforeach()
