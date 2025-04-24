@@ -36,7 +36,16 @@ VariableDecl::VariableDecl(SourceVariableIdentifier name, SourceTypeIdentifier t
                            std::optional<std::shared_ptr<Expression>> init)
     : name_(name), type_(type), init_(init) {}
 std::string VariableDecl::to_string(IndentLevel level) const {
-    return format_with_indent(level, "VariableDecl {}: {}", name_, type_);
+    std::string result;
+    auto iter = std::back_inserter(result);
+    format_to_with_indent(level, iter, "VariableDecl {}: {}\n", name_, type_);
+    format_to_with_indent(level + 1, iter, "init:\n");
+    if (init_) {
+        std::format_to(iter, "{}", init_.value()->to_string(level + 2));
+    } else {
+        format_to_with_indent(level + 2, iter, "null");
+    }
+    return result;
 }
 std::vector<std::shared_ptr<Base>> VariableDecl::children() const { return {}; }
 std::string VariableDecl::mangled_name() {

@@ -228,9 +228,6 @@ function_body:
   %empty                   {
       $$ = {};
     }
-| sentence                 { 
-      $$ = {$1};
-    }
 | function_body sentence   { 
       $$ = std::move($1);
       $$.push_back($2);
