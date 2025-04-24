@@ -200,25 +200,13 @@ refval    [$&]
 WomuYuro::yy::Parser::symbol_type
 make_INTEGER (const std::string &s, const WomuYuro::yy::Parser::location_type& loc)
 {
-    int64_t n;
-    try{
-        n=WomuYuro::mudig_to_int(s);
-    }catch(WomuYuro::NumberFormatError& e){
-        throw WomuYuro::yy::Parser::syntax_error (loc, fmt::format("failed to parse integer: {}", e.what()));
-    }
-  return WomuYuro::yy::Parser::make_INTEGER (static_cast<int64_t>(n), loc);
+  return WomuYuro::yy::Parser::make_INTEGER (static_cast<int64_t>(std::stoll(s)), loc);
 }
 
 WomuYuro::yy::Parser::symbol_type
 make_FLOAT (const std::string &s, const WomuYuro::yy::Parser::location_type& loc)
 {
-    double n;
-    try{
-        n=WomuYuro::mudig_to_float(s);
-    }catch(WomuYuro::NumberFormatError& e){
-        throw WomuYuro::yy::Parser::syntax_error (loc, fmt::format("failed to parse fraction: {}", e.what()));
-    }
-    return WomuYuro::yy::Parser::make_FLOAT (static_cast<double>(n), loc);
+    return WomuYuro::yy::Parser::make_FLOAT (static_cast<double>(std::stod(s)), loc);
 }
 
 WomuYuro::yy::Parser::symbol_type
