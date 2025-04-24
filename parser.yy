@@ -141,9 +141,6 @@
 // %nterm <WY::ValRefType> type_info
 %nterm <WY::ast::VariableInfo> var_decl 
 %nterm <std::vector<WY::ast::VariableInfo>> var_decl_list
-%nterm <std::optional<WY::ast::VariableInfo>> omittable_var_decl
-%nterm <WY::ast::VariableInfo> var_info 
-%nterm <std::vector<WY::ast::VariableInfo>> var_info_list
 %nterm <std::shared_ptr<WY::ast::Base>> decl_or_def
 %nterm <std::shared_ptr<WY::ast::FunctionDef>> function_def
 %nterm <std::shared_ptr<WY::ast::FunctionCall>> function_call
@@ -194,22 +191,6 @@ var_decl_list:
         $$ = std::move($1);
         $$.push_back($3); 
       };
-omittable_var_decl:
-  %empty                                 { $$ = std::nullopt; }
-| var_decl                          { $$ = $1; }
-
-// var_info:
-//   const "«" "identifier" "»" "identifier" "valref" "se"  { 
-//         $$ = WY::ast::VariableInfo({$3},{WY::ast::SourceTypeIdentifier{$5}},$6,$1 == WY::ConstMut::CONST); 
-//       };
-//
-// var_info_list:
-//   %empty                      { $$ = {}; }
-// | var_info                    { $$ = {$1}; }
-// | var_info_list "," var_info  { 
-//         $$ = std::move($1);
-//         $$.push_back($3); 
-//       };
 
 function_decl:
   "func" "identifier" "(" var_decl_list ")" "->" type_info{
