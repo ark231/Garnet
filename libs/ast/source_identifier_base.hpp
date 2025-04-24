@@ -4,6 +4,7 @@
 namespace WomuYuro::ast {
 class SourceIdentifierBase {
    public:
+    SourceIdentifierBase() : SourceIdentifierBase("__unspecified__") {}
     SourceIdentifierBase(std::string name) : name_(name) {}
     const std::string source_name() const { return name_; }
     const std::string to_string() const { return name_; }

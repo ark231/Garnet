@@ -16,6 +16,7 @@ class FunctionDecl : public DeclBase {
     virtual std::string to_string(IndentLevel level) const override;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     std::string mangled_name();
+    FunctionInfo info() const;
 
    protected:
     SourceFunctionIdentifier name_;

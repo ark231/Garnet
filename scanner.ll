@@ -128,16 +128,16 @@
   make_VALREF (const std::string &s, const WomuYuro::yy::Parser::location_type& loc);
 %}
 
-non_digit [kgsztdnhmrpbfvcjiauoeyw\u{0103}\u{012b}\u{0101}\u{016b}\u{014d}\u{0113}]|a\u{0306}|[iauoe]\u{0304}
+non_digit [a-zA-Z]
 id_punc   [_]
-digit     [KGSZTDNHMRPB]
+digit     [0-9]
 id        {non_digit}({non_digit}|{digit}|{id_punc})*
 int_pos   {digit}+
-int_neg   ({digit}\u{305})+
+int_neg   -{int_pos}
 int       {int_pos}|{int_neg}
-frac_pos  ({digit}\u{323})+
-frac_neg  ({digit}\u{305}\u{323})+
-float     {int_pos}{frac_pos}|{int_neg}{frac_neg}
+float_pos  {digit}+\.{digit}+
+float_neg  -{float_pos}
+float     {float_pos}|{float_neg}
 blank     [ \t\r]
 refval    [$&]
 
@@ -161,11 +161,11 @@ refval    [$&]
 "dizazukere" return WomuYuro::yy::Parser::make_CONST                    (loc);
 "-"          return WomuYuro::yy::Parser::make_MINUS                    (loc);
 "+"          return WomuYuro::yy::Parser::make_PLUS                     (loc);
-\u{00d7}     return WomuYuro::yy::Parser::make_TIMES                    (loc);
+"*"          return WomuYuro::yy::Parser::make_ASTERISK                 (loc);
 "/"          return WomuYuro::yy::Parser::make_SLASH                    (loc);
 "("          return WomuYuro::yy::Parser::make_LPAREN                   (loc);
 ")"          return WomuYuro::yy::Parser::make_RPAREN                   (loc);
-\u{2190}     return WomuYuro::yy::Parser::make_ASSIGN                   (loc);
+"="          return WomuYuro::yy::Parser::make_ASSIGN                   (loc);
 "\""         return WomuYuro::yy::Parser::make_DQUOTE                   (loc);
 \u{00ab}     return WomuYuro::yy::Parser::make_LDAQUOTE                 (loc);
 \u{00bb}     return WomuYuro::yy::Parser::make_RDAQUOTE                 (loc);
@@ -174,8 +174,15 @@ refval    [$&]
 "["          return WomuYuro::yy::Parser::make_LBRACKET                 (loc);
 "]"          return WomuYuro::yy::Parser::make_RBRACKET                 (loc);
 ","          return WomuYuro::yy::Parser::make_COMMA                    (loc);
-\u{2192}     return WomuYuro::yy::Parser::make_RARROW                   (loc);
+"->"         return WomuYuro::yy::Parser::make_RARROW                   (loc);
 "taf"        return WomuYuro::yy::Parser::make_INVERTED_VERB_MARKER     (loc);
+"var"        return WomuYuro::yy::Parser::make_VAR                      (loc);
+"let"        return WomuYuro::yy::Parser::make_LET                      (loc);
+"func"       return WomuYuro::yy::Parser::make_FUNC                     (loc);
+":"          return WomuYuro::yy::Parser::make_COLON                    (loc);
+";"          return WomuYuro::yy::Parser::make_SEMICOLON                (loc);
+"ref"        return WomuYuro::yy::Parser::make_REF                      (loc);
+"#"          return WomuYuro::yy::Parser::make_SHARP                    (loc);
 
 {float}      return make_FLOAT (yytext, loc);
 {int}        return make_INTEGER (yytext, loc);

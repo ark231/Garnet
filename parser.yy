@@ -83,10 +83,10 @@
 
 %define api.token.prefix {TOK_}
 %token
-    ASSIGN                   "←"
+    ASSIGN                   "="
     MINUS                    "-"
     PLUS                     "+"
-    TIMES                    "×"
+    ASTERISK                 "*"
     PERCENT                  "%"
     SLASH                    "/"
     LPAREN                   "("
@@ -101,15 +101,24 @@
     PERIOD                   "."
     LBRACKET                 "["
     RBRACKET                 "]"
-    RARROW                   "→"
+    RARROW                   "->"
     COMMA                    ","
     INVERTED_VERB_MARKER     "taf"
+    LBRACE                   "{"
+    RBRACE                   "}"
+    SEMICOLON                ";"
+    COLON                    ":"
+    VAR                      "var"
+    LET                      "let"
+    FUNC                     "func"
+    REF                      "ref"
+    SHARP                    "#"
 ;
 
 %token <std::string>         IDENTIFIER  "identifier"
 %token <int64_t>             INTEGER     "integer"
 %token <double>              FLOAT       "floating point"
-%token <WY::ValRef>    VALREF      "valref"
+%token <WY::ValRef>          VALREF      "valref"
 
 %nterm <WY::ConstMut> const
 %nterm <std::shared_ptr<WY::ast::VariableReference>> variable_reference
@@ -126,15 +135,19 @@
 %nterm <std::shared_ptr<WY::ast::FloatingPointLiteral>> floating_point_literal
 %nterm <std::shared_ptr<WY::ast::SignedIntegerLiteral>> signed_integer_literal
 %nterm <std::shared_ptr<WY::ast::VariableDeclStatement>> variable_decl_statement
-%nterm <WY::ast::VariableInfo> var_type_info 
-%nterm <std::vector<WY::ast::VariableInfo>> var_type_info_list
-%nterm <std::optional<WY::ast::VariableInfo>> omittable_var_type_info
+%nterm <std::tuple<WY::ValRef,WY::ast::SourceTypeIdentifier>> type_info
+// %nterm <struct{WY::ValRef valref;WY::ast::SourceTypeIdentifier type;};> type_info
+// %nterm <WY::ValRefType> type_info
+%nterm <WY::ast::VariableInfo> var_decl 
+%nterm <std::vector<WY::ast::VariableInfo>> var_decl_list
+%nterm <std::optional<WY::ast::VariableInfo>> omittable_var_decl
 %nterm <WY::ast::VariableInfo> var_info 
 %nterm <std::vector<WY::ast::VariableInfo>> var_info_list
 %nterm <std::shared_ptr<WY::ast::Base>> decl_or_def
 %nterm <std::shared_ptr<WY::ast::FunctionDef>> function_def
 %nterm <std::shared_ptr<WY::ast::FunctionCall>> function_call
 %nterm <std::shared_ptr<WY::ast::ReturnStatement>> return_statement
+%nterm <WY::ValRef> omittable_ref
 
 
 %printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt function_decl variable_decl binary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def function_call return_statement
@@ -153,9 +166,9 @@ unit:
 | unit decl_or_def                { drv.result_->add_child($2); };
 
 decl_or_def:
-  decl "."                 { $$ = std::dynamic_pointer_cast<WY::ast::Base>($1); }
-| function_def "."         { $$ = std::dynamic_pointer_cast<WY::ast::Base>($1);}
-| error "."                { 
+  decl ";"                 { $$ = std::dynamic_pointer_cast<WY::ast::Base>($1); }
+| function_def ";"         { $$ = std::dynamic_pointer_cast<WY::ast::Base>($1);}
+| error ";"                { 
       yyclearin; 
       $$ = std::dynamic_pointer_cast<WY::ast::Base>(std::make_shared<WY::ast::ErrorNode>());
     }
@@ -164,53 +177,50 @@ decl:
   function_decl            { $$ = std::dynamic_pointer_cast<WY::ast::DeclBase>($1); }
 | variable_decl            { $$ = std::dynamic_pointer_cast<WY::ast::DeclBase>($1); };
 
-var_type_info:
-  const "identifier" "valref" "se"  { 
-        $$ = WY::ast::VariableInfo({"__Unspecified__"},{WY::ast::SourceTypeIdentifier{$2}},$3,$1 == WY::ConstMut::CONST); 
+type_info:
+    omittable_ref "identifier"  { $$ = {$1, WY::ast::SourceTypeIdentifier{$2}}; }
+
+var_decl:
+  const "identifier" ":" type_info{ 
+        auto [valref,type] = $4;
+        $$ = WY::ast::VariableInfo({$2},{type},valref,$1 == WY::ConstMut::CONST); 
       };
 
-var_type_info_list:
+var_decl_list:
   %empty                                { $$ = {}; }
-| var_type_info                         { $$ = {$1}; }
-| var_type_info_list "," var_type_info  { 
+| var_decl                         { $$ = {$1}; }
+| var_decl_list "," var_decl  { 
         $$ = std::move($1);
         $$.push_back($3); 
       };
-omittable_var_type_info:
+omittable_var_decl:
   %empty                                 { $$ = std::nullopt; }
-| var_type_info                          { $$ = $1; }
+| var_decl                          { $$ = $1; }
 
-var_info:
-  const "«" "identifier" "»" "identifier" "valref" "se"  { 
-        $$ = WY::ast::VariableInfo({$3},{WY::ast::SourceTypeIdentifier{$5}},$6,$1 == WY::ConstMut::CONST); 
-      };
-
-var_info_list:
-  %empty                      { $$ = {}; }
-| var_info                    { $$ = {$1}; }
-| var_info_list "," var_info  { 
-        $$ = std::move($1);
-        $$.push_back($3); 
-      };
+// var_info:
+//   const "«" "identifier" "»" "identifier" "valref" "se"  { 
+//         $$ = WY::ast::VariableInfo({$3},{WY::ast::SourceTypeIdentifier{$5}},$6,$1 == WY::ConstMut::CONST); 
+//       };
+//
+// var_info_list:
+//   %empty                      { $$ = {}; }
+// | var_info                    { $$ = {$1}; }
+// | var_info_list "," var_info  { 
+//         $$ = std::move($1);
+//         $$.push_back($3); 
+//       };
 
 function_decl:
-  "«" "identifier" "»" "ni" "dizazukere" "[" "(" var_type_info_list ")" "→" "(" omittable_var_type_info ")" "]" "valref" "ske" {
-      if($15 != WY::ValRef::REFERENCE){
-          error(@15,"error: A function variable must be a reference to the function.");
-          YYERROR;
-      }
-      $$ = std::make_shared<WY::ast::FunctionDecl>(WY::ast::SourceFunctionIdentifier{$2},$8,$12);
+  "func" "identifier" "(" var_decl_list ")" "->" type_info{
+        auto [valref,type] = $7;
+      $$ = std::make_shared<WY::ast::FunctionDecl>(
+            WY::ast::SourceFunctionIdentifier{$2},std::vector{WY::ast::VariableInfo{{"__unspecified__"},type, valref}},WY::ast::VariableInfo{{"__unspecified__"},type,valref}
+           );
     };
 
 function_def:
-  "identifier" "valref" "se" "←" "(" var_info_list ")" "[" function_body "]"            { 
-  /*
-      if($2 != WY::ValRef::REFERENCE){
-          error(@2,"error: A function variable must be a reference to the function.");
-          YYERROR;
-      }
-      */
-      $$ = std::make_shared<WY::ast::FunctionDef>(WY::ast::FunctionInfo{WY::ast::SourceFunctionIdentifier{$1},$6,{}},std::move($9)); 
+  function_decl "{" function_body "}"            { 
+      $$ = std::make_shared<WY::ast::FunctionDef>($1->info(),std::move($3)); 
     }
 
 function_body:
@@ -223,37 +233,42 @@ function_body:
     }
 
 sentence:
-  stmt "."                 { $$ = std::dynamic_pointer_cast<WY::ast::Sentence>($1); }
-| exp "."                  { $$ = std::dynamic_pointer_cast<WY::ast::Sentence>($1); }
-| error "."                { 
+  stmt ";"                 { $$ = std::dynamic_pointer_cast<WY::ast::Sentence>($1); }
+| exp ";"                  { $$ = std::dynamic_pointer_cast<WY::ast::Sentence>($1); }
+| error ";"                { 
       yyclearin; 
       $$ = std::dynamic_pointer_cast<WY::ast::Sentence>(std::make_shared<WY::ast::ErrorSentence>());
     }
 
 const:
-  %empty                 { $$ = WY::ConstMut::MUT; }
-| "dizazukere"           { $$ = WY::ConstMut::CONST; };
+  "var"           { $$ = WY::ConstMut::MUT; }
+| "let"           { $$ = WY::ConstMut::CONST; };
 
 
 variable_decl:
-  "«" "identifier" "»" "ni" const "identifier" "valref" "ske" {
-      $$ = std::make_shared<WY::ast::VariableDecl>(WY::ast::SourceVariableIdentifier($2),WY::ast::SourceTypeIdentifier($6));
+  var_decl {
+      $$ = std::make_shared<WY::ast::VariableDecl>($1.name(), $1.type().name());
     };
 
-variable_reference:
-  "identifier" "valref" "se" { $$ = std::make_shared<WY::ast::VariableReference>(WY::ast::SourceVariableIdentifier($1),$2); };
+omittable_ref:
+  %empty             { $$ = WY::ValRef::VALUE; }
+| "ref"              { $$ = WY::ValRef::REFERENCE; }
 
-%left "←";
+
+variable_reference:
+  omittable_ref "identifier" { $$ = std::make_shared<WY::ast::VariableReference>(WY::ast::SourceVariableIdentifier($2),$1); };
+
+%left "=";
 %left "+" "-";
-%left "×" "/" "%";
+%left "*" "/" "%";
 
 binary_operator:
   exp "+" exp        { $$ = std::make_shared<WY::ast::BinaryOperator>(WY::ast::BinaryOperator::OperatorType::ADD,$1,$3); }
 | exp "-" exp        { $$ = std::make_shared<WY::ast::BinaryOperator>(WY::ast::BinaryOperator::OperatorType::SUB,$1,$3); }
-| exp "×" exp        { $$ = std::make_shared<WY::ast::BinaryOperator>(WY::ast::BinaryOperator::OperatorType::MUL,$1,$3); }
+| exp "*" exp        { $$ = std::make_shared<WY::ast::BinaryOperator>(WY::ast::BinaryOperator::OperatorType::MUL,$1,$3); }
 | exp "/" exp        { $$ = std::make_shared<WY::ast::BinaryOperator>(WY::ast::BinaryOperator::OperatorType::DIV,$1,$3); }
 | exp "%" exp        { $$ = std::make_shared<WY::ast::BinaryOperator>(WY::ast::BinaryOperator::OperatorType::MOD,$1,$3); }
-| exp "←" exp        { $$ = std::make_shared<WY::ast::BinaryOperator>(WY::ast::BinaryOperator::OperatorType::ASSIGN,$1,$3); };
+| exp "=" exp        { $$ = std::make_shared<WY::ast::BinaryOperator>(WY::ast::BinaryOperator::OperatorType::ASSIGN,$1,$3); };
 
 floating_point_literal:
   "floating point"   { $$ = std::make_shared<WY::ast::FloatingPointLiteral>($1); };

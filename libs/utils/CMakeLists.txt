@@ -16,3 +16,5 @@ add_library(
     #
 )
 target_include_directories(utils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_options(utils PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra> $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra >
+                                     $<$<CXX_COMPILER_ID:MSVC>:/W4>)
