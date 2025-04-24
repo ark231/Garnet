@@ -2,10 +2,10 @@ func main(var argc: i64, var argv: vec)->i32{
     let hoge: i32 = 42;
     var fuga: i32 = 5;
     var piyo: i32 = hoge + fuga * 2;
-    print(piyo);
+    #print(piyo);
     return 0;
-}
+};
 
-func hello_world(){
-    println("Hello, world!");
-}
+func hello_world()->void{
+    #println("Hello, world!");
+};

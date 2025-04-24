@@ -112,7 +112,7 @@
     LET                      "let"
     FUNC                     "func"
     REF                      "ref"
-    SHARP                    "#"
+    RETURN                   "return"
 ;
 
 %token <std::string>         IDENTIFIER  "identifier"
@@ -225,7 +225,10 @@ function_def:
     }
 
 function_body:
-  sentence                 { 
+  %empty                   {
+      $$ = {};
+    }
+| sentence                 { 
       $$ = {$1};
     }
 | function_body sentence   { 
@@ -311,7 +314,7 @@ variable_decl_statement:
 | variable_init          { $$ = std::make_shared<WY::ast::VariableDeclStatement>($1); }
 
 return_statement:
-  "→" exp                { $$ = std::make_shared<WY::ast::ReturnStatement>($2); }
+  "return" exp                { $$ = std::make_shared<WY::ast::ReturnStatement>($2); }
 
 stmt:
   variable_decl_statement { $$ = std::dynamic_pointer_cast<WY::ast::Statement>($1); }

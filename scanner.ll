@@ -155,6 +155,7 @@ refval    [$&]
 %}
 {blank}+   loc.step ();
 \n+        loc.lines (yyleng); loc.step ();
+"#".*      loc.step (); //one line comment
 
 "se"         return WomuYuro::yy::Parser::make_NOUN_MARKER              (loc);
 "ske"        return WomuYuro::yy::Parser::make_NOMINAL_ADJECTIVE_MARKER (loc);
@@ -182,9 +183,9 @@ refval    [$&]
 ":"          return WomuYuro::yy::Parser::make_COLON                    (loc);
 ";"          return WomuYuro::yy::Parser::make_SEMICOLON                (loc);
 "ref"        return WomuYuro::yy::Parser::make_REF                      (loc);
-"#"          return WomuYuro::yy::Parser::make_SHARP                    (loc);
 "{"          return WomuYuro::yy::Parser::make_LBRACE                   (loc);
 "}"          return WomuYuro::yy::Parser::make_RBRACE                   (loc);
+"return"     return WomuYuro::yy::Parser::make_RETURN                   (loc);
 
 {float}      return make_FLOAT (yytext, loc);
 {int}        return make_INTEGER (yytext, loc);
