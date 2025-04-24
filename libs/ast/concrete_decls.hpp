@@ -7,6 +7,7 @@
 #include "concrete_infos.hpp"
 #include "concrete_source_identifiers.hpp"
 #include "decl_base.hpp"
+#include "expression.hpp"
 namespace WomuYuro::ast {
 class Sentence;
 class FunctionDecl : public DeclBase {
@@ -25,7 +26,8 @@ class FunctionDecl : public DeclBase {
 };
 class VariableDecl : public DeclBase {
    public:
-    VariableDecl(SourceVariableIdentifier name, SourceTypeIdentifier type);
+    VariableDecl(SourceVariableIdentifier name, SourceTypeIdentifier type,
+                 std::optional<std::shared_ptr<Expression>> init = std::nullopt);
     virtual std::string to_string(IndentLevel level) const override;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     std::string mangled_name();
@@ -33,6 +35,7 @@ class VariableDecl : public DeclBase {
    protected:
     SourceVariableIdentifier name_;
     SourceTypeIdentifier type_;
+    std::optional<std::shared_ptr<Expression>> init_;
 };
 class TypeDecl : public DeclBase {
    public:

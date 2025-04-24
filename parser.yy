@@ -130,6 +130,7 @@
 %nterm <std::shared_ptr<WY::ast::Statement>> stmt
 %nterm <std::shared_ptr<WY::ast::FunctionDecl>> function_decl
 %nterm <std::shared_ptr<WY::ast::VariableDecl>> variable_decl
+%nterm <std::shared_ptr<WY::ast::VariableDecl>> variable_init
 %nterm <std::vector<std::shared_ptr<WY::ast::Sentence>>> function_body
 %nterm <std::shared_ptr<WY::ast::BinaryOperator>> binary_operator
 %nterm <std::shared_ptr<WY::ast::FloatingPointLiteral>> floating_point_literal
@@ -150,7 +151,7 @@
 %nterm <WY::ValRef> omittable_ref
 
 
-%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt function_decl variable_decl binary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def function_call return_statement
+%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt function_decl variable_decl variable_init binary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def function_call return_statement
 %printer { 
     std::vector<const void*> ptrs;
     std::ranges::transform($$,std::back_inserter(ptrs),[](auto p){return fmt::ptr(p);});
@@ -250,6 +251,11 @@ variable_decl:
       $$ = std::make_shared<WY::ast::VariableDecl>($1.name(), $1.type().name());
     };
 
+variable_init:
+  var_decl "=" exp {
+      $$ = std::make_shared<WY::ast::VariableDecl>($1.name(), $1.type().name(),$3);
+  }
+
 omittable_ref:
   %empty             { $$ = WY::ValRef::VALUE; }
 | "ref"              { $$ = WY::ValRef::REFERENCE; }
@@ -302,6 +308,7 @@ exp:
 
 variable_decl_statement:
   variable_decl          { $$ = std::make_shared<WY::ast::VariableDeclStatement>($1); }
+| variable_init          { $$ = std::make_shared<WY::ast::VariableDeclStatement>($1); }
 
 return_statement:
   "→" exp                { $$ = std::make_shared<WY::ast::ReturnStatement>($2); }

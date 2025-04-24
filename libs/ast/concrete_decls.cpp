@@ -32,7 +32,9 @@ std::vector<std::shared_ptr<Base>> FunctionDecl::children() const { return {}; }
 
 FunctionInfo FunctionDecl::info() const { return {name_, args_, result_}; }
 
-VariableDecl::VariableDecl(SourceVariableIdentifier name, SourceTypeIdentifier type) : name_(name), type_(type) {}
+VariableDecl::VariableDecl(SourceVariableIdentifier name, SourceTypeIdentifier type,
+                           std::optional<std::shared_ptr<Expression>> init)
+    : name_(name), type_(type), init_(init) {}
 std::string VariableDecl::to_string(IndentLevel level) const {
     return format_with_indent(level, "VariableDecl {}: {}", name_, type_);
 }

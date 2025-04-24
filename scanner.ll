@@ -183,6 +183,8 @@ refval    [$&]
 ";"          return WomuYuro::yy::Parser::make_SEMICOLON                (loc);
 "ref"        return WomuYuro::yy::Parser::make_REF                      (loc);
 "#"          return WomuYuro::yy::Parser::make_SHARP                    (loc);
+"{"          return WomuYuro::yy::Parser::make_LBRACE                   (loc);
+"}"          return WomuYuro::yy::Parser::make_RBRACE                   (loc);
 
 {float}      return make_FLOAT (yytext, loc);
 {int}        return make_INTEGER (yytext, loc);
