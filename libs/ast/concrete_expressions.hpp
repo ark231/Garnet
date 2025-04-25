@@ -4,7 +4,6 @@
 #include <memory>
 #include <vector>
 
-#include "concrete_infos.hpp"
 #include "concrete_source_identifiers.hpp"
 #include "enums.hpp"
 #include "expression.hpp"

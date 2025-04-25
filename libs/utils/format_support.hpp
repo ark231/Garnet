@@ -8,10 +8,12 @@ struct IndentLevel {
 class IFormattable {
    public:
     virtual std::string to_string() const = 0;
+    virtual ~IFormattable() = default;
 };
 class IIndentedFormattable {
    public:
     virtual std::string to_string(IndentLevel level) const = 0;
+    virtual ~IIndentedFormattable() = default;
 };
 inline namespace operators {
 IndentLevel operator""_ind(unsigned long long value);

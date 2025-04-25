@@ -33,7 +33,7 @@ std::vector<std::shared_ptr<Base>> FloatingPointLiteral::children() const { retu
 std::string FunctionCall::to_string(IndentLevel level) const {
     std::string result;
     format_to_with_indent(level, std::back_inserter(result), "FunctionCall\n");
-    for (const auto arg : args_) {
+    for (const auto &arg : args_) {
         fmt::format_to(std::back_inserter(result), "{}", arg->to_string(level + 1));
     }
     return result;
