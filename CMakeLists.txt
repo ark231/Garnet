@@ -85,6 +85,11 @@ target_link_libraries(
 
 target_compile_options(WomuYuroCompiler PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra>
                                                 $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra > $<$<CXX_COMPILER_ID:MSVC>:/W4>)
+add_library(interpreter interpreter/interpreter.cpp)
+target_link_libraries(interpreter ast defs utils fmt::fmt)
+
+target_link_libraries(WomuYuroCompiler interpreter)
+
 # # for debugging message(STATUS "*** dump start cmake variables ***") get_cmake_property(_variableNames VARIABLES)
 # foreach(_variableName ${_variableNames}) message(STATUS "${_variableName}=${${_variableName}}") endforeach()
 # message(STATUS "*** dump end ***")

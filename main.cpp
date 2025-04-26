@@ -26,6 +26,7 @@
 #include <iostream>
 
 #include "driver.hpp"
+#include "interpreter/interpreter.hpp"
 #include "libs/utils/format.hpp"
 
 namespace bpo = boost::program_options;
@@ -58,5 +59,8 @@ int main(int argc, char* argv[]) {
         drv.parse(infilename);
         fmt::println("{}", drv.result()->to_string(0_ind));
     }
+    auto ast = drv.result();
+    WomuYuro::Interpreter interpreter;
+    ast->accept(interpreter);
     return res;
 }

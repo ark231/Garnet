@@ -7,11 +7,13 @@
 #include "statement.hpp"
 namespace WomuYuro::ast {
 class ErrorNode : public Base {
+   public:
     virtual std::string to_string(IndentLevel level) const override { return format_with_indent(level, "ErrorNode"); }
     virtual std::vector<std::shared_ptr<Base>> children() const override { return {}; };
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); };
 };
 class ErrorSentence : public Sentence {
+   public:
     virtual std::string to_string(IndentLevel level) const override {
         return format_with_indent(level, "ErrorSentence");
     }
@@ -19,6 +21,7 @@ class ErrorSentence : public Sentence {
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); };
 };
 class ErrorExpression : public Expression {
+   public:
     virtual std::string to_string(IndentLevel level) const override {
         return format_with_indent(level, "ErrorExpression");
     }
@@ -26,6 +29,7 @@ class ErrorExpression : public Expression {
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); };
 };
 class ErrorStatement : public Statement {
+   public:
     virtual std::string to_string(IndentLevel level) const override {
         return format_with_indent(level, "ErrorStatement");
     }
