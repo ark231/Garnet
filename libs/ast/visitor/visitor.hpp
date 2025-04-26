@@ -23,7 +23,6 @@ class TypeDecl;
 class FunctionDef;
 class VariableDeclStatement;
 class ReturnStatement;
-}  // namespace ast
 class Visitor {
    public:
     virtual ~Visitor() = default;
@@ -46,5 +45,6 @@ class Visitor {
     virtual void visit(const ast::VariableDeclStatement*) = 0;
     virtual void visit(const ast::ReturnStatement*) = 0;
 };
+}  // namespace ast
 };  // namespace WomuYuro
 #endif
