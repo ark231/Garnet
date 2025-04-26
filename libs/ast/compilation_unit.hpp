@@ -10,6 +10,7 @@ class CompilationUnit : public Base {
     virtual std::string to_string(IndentLevel level) const override;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     void add_child(std::shared_ptr<Base> decl);
+    virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
 
    private:
     std::vector<std::shared_ptr<Base>> children_;

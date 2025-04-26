@@ -13,6 +13,7 @@ class VariableDeclStatement : public Statement {
     VariableDeclStatement(std::shared_ptr<VariableDecl> decl) : decl_(decl) {}
     virtual std::string to_string(IndentLevel level) const override;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
+    virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
 
    protected:
     std::shared_ptr<VariableDecl> decl_;
@@ -22,6 +23,7 @@ class ReturnStatement : public Statement {
     ReturnStatement(std::shared_ptr<Expression> retval) : retval_(retval) {}
     virtual std::string to_string(IndentLevel level) const override;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
+    virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
 
    protected:
     std::shared_ptr<Expression> retval_;

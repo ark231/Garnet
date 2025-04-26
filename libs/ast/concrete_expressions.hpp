@@ -25,6 +25,7 @@ class BinaryOperator : public Expression {
     OperatorType op() { return op_; }
     const std::shared_ptr<Expression> left() const { return left_; }
     const std::shared_ptr<Expression> right() const { return right_; }
+    virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
 
    private:
     OperatorType op_;
@@ -36,6 +37,7 @@ class VariableReference : public Expression {
     VariableReference(SourceVariableIdentifier name, ValRef valref) : name_(name), valref_(valref) {}
     virtual std::string to_string(IndentLevel level) const override;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
+    virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
 
    private:
     SourceVariableIdentifier name_;
@@ -47,6 +49,7 @@ class SignedIntegerLiteral : public Expression {
     virtual std::string to_string(IndentLevel level) const override;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     int64_t value() const { return value_; }
+    virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
 
    private:
     int64_t value_;
@@ -57,6 +60,7 @@ class UnsignedIntegerLiteral : public Expression {
     virtual std::string to_string(IndentLevel level) const override;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     uint64_t value() const { return value_; }
+    virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
 
    private:
     uint64_t value_;
@@ -67,18 +71,20 @@ class FloatingPointLiteral : public Expression {
     virtual std::string to_string(IndentLevel level) const override;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     double value() const { return value_; }
+    virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
 
    private:
     double value_;
 };
 class FunctionCall : public Expression {
    public:
-    FunctionCall(SourceFunctionIdentifier name, std::vector<std::shared_ptr<Expression>> &&args)
+    FunctionCall(SourceFunctionIdentifier name, std::vector<std::shared_ptr<Expression>>&& args)
         : name_(name), args_(args) {}
     std::vector<std::shared_ptr<Expression>> args() const { return args_; }
     SourceFunctionIdentifier name() const { return name_; }
     virtual std::string to_string(IndentLevel level) const override;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
+    virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
 
    private:
     SourceFunctionIdentifier name_;

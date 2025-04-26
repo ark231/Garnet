@@ -9,24 +9,28 @@ namespace WomuYuro::ast {
 class ErrorNode : public Base {
     virtual std::string to_string(IndentLevel level) const override { return format_with_indent(level, "ErrorNode"); }
     virtual std::vector<std::shared_ptr<Base>> children() const override { return {}; };
+    virtual void accept(Visitor& visitor) const override { visitor.visit(this); };
 };
 class ErrorSentence : public Sentence {
     virtual std::string to_string(IndentLevel level) const override {
         return format_with_indent(level, "ErrorSentence");
     }
     virtual std::vector<std::shared_ptr<Base>> children() const override { return {}; };
+    virtual void accept(Visitor& visitor) const override { visitor.visit(this); };
 };
 class ErrorExpression : public Expression {
     virtual std::string to_string(IndentLevel level) const override {
         return format_with_indent(level, "ErrorExpression");
     }
     virtual std::vector<std::shared_ptr<Base>> children() const override { return {}; };
+    virtual void accept(Visitor& visitor) const override { visitor.visit(this); };
 };
 class ErrorStatement : public Statement {
     virtual std::string to_string(IndentLevel level) const override {
         return format_with_indent(level, "ErrorStatement");
     }
     virtual std::vector<std::shared_ptr<Base>> children() const override { return {}; };
+    virtual void accept(Visitor& visitor) const override { visitor.visit(this); };
 };
 }  // namespace WomuYuro::ast
 #endif

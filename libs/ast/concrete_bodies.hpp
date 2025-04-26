@@ -11,6 +11,7 @@ class FunctionBody : public BodyBase {
    public:
     virtual std::string to_string(IndentLevel level) const override;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
+    virtual void accept(Visitor& visitor) const override;
 };
 }  // namespace WomuYuro::ast
 #endif

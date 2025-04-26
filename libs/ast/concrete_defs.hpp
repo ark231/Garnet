@@ -19,6 +19,7 @@ class FunctionDef : public DefBase {
     void add_sentence(std::shared_ptr<Sentence> sentence) { sentences_.push_back(sentence); };
     void add_sentences(std::vector<std::shared_ptr<Sentence>>&& sentences);
     const std::vector<std::shared_ptr<Sentence>>& sentences() { return sentences_; };
+    virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
 
    private:
     FunctionInfo info_;
