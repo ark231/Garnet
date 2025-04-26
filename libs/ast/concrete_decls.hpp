@@ -33,6 +33,7 @@ class VariableDecl : public DeclBase {
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     std::string mangled_name();
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
+    std::optional<std::shared_ptr<Expression>> init() const { return init_; };
 
    protected:
     SourceVariableIdentifier name_;

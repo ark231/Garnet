@@ -15,5 +15,13 @@ void format_to_with_indent(IndentLevel indent, OutputIt out, fmt::format_string<
     fmt::format_to(out, "{:{}}", "", indent.level * tabwidth);
     fmt::format_to(out, format_str, std::forward<Args>(args)...);
 }
+template <int tabwidth = 4, typename... Args>
+auto print_with_indent(IndentLevel indent, fmt::format_string<Args...> format_str, Args&&... args) {
+    return fmt::print("{}", format_with_indent<tabwidth, Args...>(indent, format_str, args...));
+}
+template <int tabwidth = 4, typename... Args>
+auto println_with_indent(IndentLevel indent, fmt::format_string<Args...> format_str, Args&&... args) {
+    return fmt::println("{}", format_with_indent<tabwidth, Args...>(indent, format_str, args...));
+}
 }  // namespace WomuYuro
 #endif

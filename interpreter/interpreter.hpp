@@ -1,8 +1,20 @@
 #ifndef WOMUYURO_INTERPRETER_INTERPRETER
 #define WOMUYURO_INTERPRETER_INTERPRETER
+#include <cstdint>
+#include <variant>
+
+// #include "types.hpp"
+#include "format_support.hpp"
 #include "visitor/visitor.hpp"
 namespace WomuYuro {
 class Interpreter : public ast::Visitor {
+    using Value = std::variant<std::uint8_t, std::int8_t, std::uint16_t, std::int16_t, std::uint32_t, std::int32_t,
+                               std::int64_t, std::uint64_t, float, double>;
+
+    Value expr_result_;
+    IndentLevel indent_ = 0_ind;
+
+   public:
     virtual void visit(const ast::FunctionDecl*) override;
     virtual void visit(const ast::VariableDecl*) override;
     virtual void visit(const ast::TypeDecl*) override;
