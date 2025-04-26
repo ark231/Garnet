@@ -60,7 +60,7 @@ int main(int argc, char* argv[]) {
         fmt::println("{}", drv.result()->to_string(0_ind));
     }
     auto ast = drv.result();
-    WomuYuro::Interpreter interpreter;
+    WomuYuro::interpreter::Interpreter interpreter;
     ast->accept(interpreter);
     return res;
 }

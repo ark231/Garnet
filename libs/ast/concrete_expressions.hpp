@@ -22,7 +22,7 @@ class BinaryOperator : public Expression {
         : op_(op), left_(left), right_(right) {}
     virtual std::string to_string(IndentLevel level) const override;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
-    OperatorType op() { return op_; }
+    OperatorType op() const { return op_; }
     const std::shared_ptr<Expression> left() const { return left_; }
     const std::shared_ptr<Expression> right() const { return right_; }
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }

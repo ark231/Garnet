@@ -6,7 +6,7 @@
 // #include "types.hpp"
 #include "format_support.hpp"
 #include "visitor/visitor.hpp"
-namespace WomuYuro {
+namespace WomuYuro::interpreter {
 class Interpreter : public ast::Visitor {
     using Value = std::variant<std::uint8_t, std::int8_t, std::uint16_t, std::int16_t, std::uint32_t, std::int32_t,
                                std::int64_t, std::uint64_t, float, double>;
@@ -34,5 +34,5 @@ class Interpreter : public ast::Visitor {
     virtual void visit(const ast::ReturnStatement*) override;
 };
 
-}  // namespace WomuYuro
+}  // namespace WomuYuro::interpreter
 #endif
