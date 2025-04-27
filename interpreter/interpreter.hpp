@@ -1,9 +1,11 @@
 #ifndef WOMUYURO_INTERPRETER_INTERPRETER
 #define WOMUYURO_INTERPRETER_INTERPRETER
 #include <cstdint>
+#include <functional>
+#include <string>
+#include <unordered_map>
 #include <variant>
 
-// #include "types.hpp"
 #include "format_support.hpp"
 #include "visitor/visitor.hpp"
 namespace WomuYuro::interpreter {
@@ -14,7 +16,21 @@ class Interpreter : public ast::Visitor {
     Value expr_result_;
     IndentLevel indent_ = 0_ind;
 
+    struct Variable {
+        std::string name;
+        Value value;
+    };
+
+    using VariableKey = std::string;
+    VariableKey encode_variable_key_(std::string name) const;
+    std::unordered_map<VariableKey, Variable> variables_;
+
+    using TypeKey = std::string;
+    TypeKey encode_type_key_(std::string name) const;
+    std::unordered_map<TypeKey, std::function<Value()>> types_;
+
    public:
+    Interpreter();
     virtual void visit(const ast::FunctionDecl*) override;
     virtual void visit(const ast::VariableDecl*) override;
     virtual void visit(const ast::TypeDecl*) override;

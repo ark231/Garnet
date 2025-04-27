@@ -39,6 +39,9 @@ class VariableReference : public Expression {
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
 
+    SourceVariableIdentifier name() const { return name_; }
+    ValRef valref() const { return valref_; }
+
    private:
     SourceVariableIdentifier name_;
     ValRef valref_;

@@ -32,6 +32,8 @@ class VariableDecl : public DeclBase {
     virtual std::string to_string(IndentLevel level) const override;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     std::string mangled_name();
+    SourceVariableIdentifier name() const { return name_; }
+    SourceTypeIdentifier type() const { return type_; }
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
     std::optional<std::shared_ptr<Expression>> init() const { return init_; };
 

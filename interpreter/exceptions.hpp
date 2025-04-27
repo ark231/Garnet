@@ -22,5 +22,9 @@ class UnImplementedError : public CriticalExcecutionError {
    public:
     using CriticalExcecutionError::CriticalExcecutionError;
 };
+class InvalidRedeclarationError : public CriticalExcecutionError {
+   public:
+    using CriticalExcecutionError::CriticalExcecutionError;
+};
 }  // namespace WomuYuro::interpreter
 #endif
