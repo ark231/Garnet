@@ -3,7 +3,7 @@ func main(var argc: i64, var argv: vec)->i32{
     var fuga: i32 = 5;
     var piyo: i32 = hoge + fuga * 2;
     var hogehoge: f64;
-    #hogehoge=piyo;
+    hogehoge=piyo;
     #print(piyo);
     return 0;
 };

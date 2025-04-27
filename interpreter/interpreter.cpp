@@ -94,9 +94,9 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                       std::is_convertible_v<RightType, VariableReference>) {
             std::visit(func, variables_[lhs.key].value, variables_[rhs.key].value);
         } else if constexpr (std::is_convertible_v<LeftType, VariableReference>) {
-            std::visit(std::bind(func, _1, rhs), variables_[lhs.key].value);
+            std::visit(std::bind(func, _1, std::ref(rhs)), variables_[lhs.key].value);
         } else if constexpr (std::is_convertible_v<RightType, VariableReference>) {
-            std::visit([lhs, func](auto rhs) { func(lhs, rhs); }, variables_[rhs.key].value);
+            std::visit([&lhs, func](auto& rhs) { func(lhs, rhs); }, variables_[rhs.key].value);
         } else {
             func(lhs, rhs);
         }
@@ -267,28 +267,30 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                     _1, _2),
                 lhs, rhs);
             break;
-        case ASSIGN:
-            throw UnImplementedError("ASSIGN operator is not implemented yet");
-            // std::visit(
-            //     [this](auto lhs, auto rhs) {
-            //         using LeftType = decltype(lhs);
-            //         using RightType = decltype(lhs);
-            //         using Left = std::numeric_limits<LeftType>;
-            //         using Right = std::numeric_limits<RightType>;
-            //         if constexpr (Left::is_integer && (not Right::is_integer)) {
-            //             this->expr_result_ = static_cast<RightType>(static_cast<RightType>(lhs) - rhs);
-            //         } else if constexpr ((not Left::is_integer) && Right::is_integer) {
-            //             this->expr_result_ = static_cast<LeftType>(lhs - static_cast<LeftType>(rhs));
-            //         } else {
-            //             if constexpr (Left::digits >= Right::digits) {
-            //                 this->expr_result_ = static_cast<LeftType>(lhs - static_cast<LeftType>(rhs));
-            //             } else {
-            //                 this->expr_result_ = static_cast<RightType>(static_cast<RightType>(lhs) - rhs);
-            //             }
-            //         }
-            //     },
-            //     lhs, rhs);
-            break;
+        case ASSIGN: {
+            // 左辺は必ず参照でなくてはならないので、deref_and_applyは使えない
+            if (not std::holds_alternative<VariableReference>(lhs)) {
+                throw TypeError("cannot assign to rvalue");
+            }
+            auto& left = variables_[std::get<VariableReference>(lhs).key];
+            Value right;
+            if (std::holds_alternative<VariableReference>(rhs)) {
+                right = variables_[std::get<VariableReference>(rhs).key].value;
+            }
+            std::visit(
+                [this](auto& left, auto right) {
+                    using LeftType = decltype(left);
+                    using RightType = decltype(right);
+                    if constexpr (not StaticConvertible<std::remove_cvref_t<RightType>,
+                                                        std::remove_cvref_t<LeftType>>) {
+                        throw TypeError(fmt::format("cannot ASSIGN a value with type {} into a variable with type {}",
+                                                    typeid(RightType), typeid(LeftType)));
+                    } else {
+                        left = static_cast<std::remove_cvref_t<LeftType>>(right);
+                    }
+                },
+                left.value, right);
+        } break;
     }
 }
 void Interpreter::visit(const ast::VariableReference* node) {
