@@ -21,8 +21,6 @@ concept HasToString = requires(T v) {
 template <class T>
     requires WomuYuro::HasToString<T> && (not WomuYuro::HasIndentableToString<T>)
 struct fmt::formatter<T> : public fmt::formatter<std::string> {
-    auto format(const T& v, fmt::format_context& ctx) const {
-        return fmt::formatter<std::string>::format(v.to_string(), ctx);
-    }
+    auto format(const T& v, fmt::format_context& ctx) const { return fmt::format_to(ctx.out(), "{}", v.to_string()); }
 };
 #endif
