@@ -26,5 +26,9 @@ class InvalidRedeclarationError : public CriticalExcecutionError {
    public:
     using CriticalExcecutionError::CriticalExcecutionError;
 };
+class SyntaxError : public CriticalExcecutionError {
+   public:
+    using CriticalExcecutionError::CriticalExcecutionError;
+};
 }  // namespace WomuYuro::interpreter
 #endif

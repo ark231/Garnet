@@ -92,18 +92,11 @@
     LPAREN                   "("
     RPAREN                   ")"
     DQUOTE                   "dquote"
-    LDAQUOTE                 "«"
-    RDAQUOTE                 "»"
-    NOUN_MARKER              "se"
-    CONST                    "dizazukere"
-    SUBJECT_POSTPOSITION     "ni"
-    NOMINAL_ADJECTIVE_MARKER "ske"
     PERIOD                   "."
     LBRACKET                 "["
     RBRACKET                 "]"
     RARROW                   "->"
     COMMA                    ","
-    INVERTED_VERB_MARKER     "taf"
     LBRACE                   "{"
     RBRACE                   "}"
     SEMICOLON                ";"
@@ -172,8 +165,7 @@ decl_or_def:
     }
 
 decl:
-  function_decl            { $$ = std::dynamic_pointer_cast<WY::ast::DeclBase>($1); }
-| variable_decl            { $$ = std::dynamic_pointer_cast<WY::ast::DeclBase>($1); };
+    variable_decl            { $$ = std::dynamic_pointer_cast<WY::ast::DeclBase>($1); };
 
 type_info:
     omittable_ref "identifier"  { $$ = {$1, WY::ast::SourceTypeIdentifier{$2}}; }
@@ -185,15 +177,15 @@ var_decl:
       };
 
 var_decl_list:
-  %empty                                { $$ = {}; }
+  %empty                           { $$ = {}; }
 | var_decl                         { $$ = {$1}; }
-| var_decl_list "," var_decl  { 
+| var_decl_list "," var_decl       { 
         $$ = std::move($1);
         $$.push_back($3); 
       };
 
 function_decl:
-  "func" "identifier" "(" var_decl_list ")" "->" type_info{
+  "func" "identifier" "(" var_decl_list ")" "->" type_info {
         auto [valref,type] = $7;
       $$ = std::make_shared<WY::ast::FunctionDecl>(
             WY::ast::SourceFunctionIdentifier{$2},std::vector{WY::ast::VariableInfo{{"__unspecified__"},type, valref}},WY::ast::VariableInfo{{"__unspecified__"},type,valref}

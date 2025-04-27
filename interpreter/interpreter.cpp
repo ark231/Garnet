@@ -53,35 +53,19 @@ void Interpreter::visit(const ast::TypeDecl* node) {
 }
 void Interpreter::visit(const ast::ErrorNode* node) {
     println_with_indent(indent_, "visit ErrorNode");
-    for (const auto& child : node->children()) {
-        indent_ = indent_ + 1;
-        child->accept(*this);
-        indent_ = indent_ + (-1);
-    }
+    throw SyntaxError("invalid node");
 }
 void Interpreter::visit(const ast::ErrorSentence* node) {
     println_with_indent(indent_, "visit ErrorSentence");
-    for (const auto& child : node->children()) {
-        indent_ = indent_ + 1;
-        child->accept(*this);
-        indent_ = indent_ + (-1);
-    }
+    throw SyntaxError("invalid sentence");
 }
 void Interpreter::visit(const ast::ErrorExpression* node) {
     println_with_indent(indent_, "visit ErrorExpression");
-    for (const auto& child : node->children()) {
-        indent_ = indent_ + 1;
-        child->accept(*this);
-        indent_ = indent_ + (-1);
-    }
+    throw SyntaxError("invalid expresssion");
 }
 void Interpreter::visit(const ast::ErrorStatement* node) {
     println_with_indent(indent_, "visit ErrorStatement");
-    for (const auto& child : node->children()) {
-        indent_ = indent_ + 1;
-        child->accept(*this);
-        indent_ = indent_ + (-1);
-    }
+    throw SyntaxError("invalid statement");
 }
 void Interpreter::visit(const ast::BinaryOperator* node) {
     println_with_indent(indent_, "visit BinaryOperator");

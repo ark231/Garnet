@@ -157,9 +157,6 @@ refval    [$&]
 \n+        loc.lines (yyleng); loc.step ();
 "#".*      loc.step (); //one line comment
 
-"se"         return WomuYuro::yy::Parser::make_NOUN_MARKER              (loc);
-"ske"        return WomuYuro::yy::Parser::make_NOMINAL_ADJECTIVE_MARKER (loc);
-"dizazukere" return WomuYuro::yy::Parser::make_CONST                    (loc);
 "-"          return WomuYuro::yy::Parser::make_MINUS                    (loc);
 "+"          return WomuYuro::yy::Parser::make_PLUS                     (loc);
 "*"          return WomuYuro::yy::Parser::make_ASTERISK                 (loc);
@@ -168,15 +165,11 @@ refval    [$&]
 ")"          return WomuYuro::yy::Parser::make_RPAREN                   (loc);
 "="          return WomuYuro::yy::Parser::make_ASSIGN                   (loc);
 "\""         return WomuYuro::yy::Parser::make_DQUOTE                   (loc);
-\u{00ab}     return WomuYuro::yy::Parser::make_LDAQUOTE                 (loc);
-\u{00bb}     return WomuYuro::yy::Parser::make_RDAQUOTE                 (loc);
-"ni"         return WomuYuro::yy::Parser::make_SUBJECT_POSTPOSITION     (loc);
 "."          return WomuYuro::yy::Parser::make_PERIOD                   (loc);
 "["          return WomuYuro::yy::Parser::make_LBRACKET                 (loc);
 "]"          return WomuYuro::yy::Parser::make_RBRACKET                 (loc);
 ","          return WomuYuro::yy::Parser::make_COMMA                    (loc);
 "->"         return WomuYuro::yy::Parser::make_RARROW                   (loc);
-"taf"        return WomuYuro::yy::Parser::make_INVERTED_VERB_MARKER     (loc);
 "var"        return WomuYuro::yy::Parser::make_VAR                      (loc);
 "let"        return WomuYuro::yy::Parser::make_LET                      (loc);
 "func"       return WomuYuro::yy::Parser::make_FUNC                     (loc);
