@@ -28,6 +28,7 @@
 #include "driver.hpp"
 #include "interpreter/interpreter.hpp"
 #include "libs/utils/format.hpp"
+#include "pretty_printer/pretty_printer.hpp"
 
 namespace bpo = boost::program_options;
 using namespace WomuYuro::operators;
@@ -57,9 +58,10 @@ int main(int argc, char* argv[]) {
     }
     for (const auto& infilename : varmap["input-file"].as<std::vector<std::string>>()) {
         drv.parse(infilename);
-        fmt::println("{}", drv.result()->to_string(0_ind));
     }
     auto ast = drv.result();
+    WomuYuro::ast::PrettyPrinter printer;
+    ast->accept(printer);
     WomuYuro::interpreter::Interpreter interpreter;
     ast->accept(interpreter);
     return res;

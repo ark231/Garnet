@@ -11,7 +11,6 @@ namespace WomuYuro::ast {
 class VariableDeclStatement : public Statement {
    public:
     VariableDeclStatement(std::shared_ptr<VariableDecl> decl) : decl_(decl) {}
-    virtual std::string to_string(IndentLevel level) const override;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
 
@@ -21,7 +20,6 @@ class VariableDeclStatement : public Statement {
 class ReturnStatement : public Statement {
    public:
     ReturnStatement(std::shared_ptr<Expression> retval) : retval_(retval) {}
-    virtual std::string to_string(IndentLevel level) const override;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
 

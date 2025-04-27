@@ -22,7 +22,7 @@ add_library(
     # lib src end
     # cmake-format: on
     #
-)
+    pretty_printer/pretty_printer.cpp)
 target_include_directories(ast PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${Boost_INCLUDE_DIRS})
 target_link_libraries(ast PUBLIC defs utils magic_enum)
 target_compile_options(ast PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra> $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra >

@@ -22,12 +22,6 @@ FunctionDecl::FunctionDecl()
 FunctionDecl::FunctionDecl(SourceFunctionIdentifier name, std::vector<VariableInfo> args,
                            std::optional<VariableInfo> result)
     : name_(name), args_(args), result_(result) {}
-std::string FunctionDecl::to_string(IndentLevel level) const {
-    std::string result;
-    format_to_with_indent(level, std::back_inserter(result), "FunctionDecl '{}' ({}) -> ({})\n", name_,
-                          fmt::join(args_, ","), result_.has_value() ? result_->to_string() : "void");
-    return result;
-}
 std::vector<std::shared_ptr<Base>> FunctionDecl::children() const { return {}; }
 
 FunctionInfo FunctionDecl::info() const { return {name_, args_, result_}; }
@@ -35,25 +29,12 @@ FunctionInfo FunctionDecl::info() const { return {name_, args_, result_}; }
 VariableDecl::VariableDecl(SourceVariableIdentifier name, SourceTypeIdentifier type,
                            std::optional<std::shared_ptr<Expression>> init)
     : name_(name), type_(type), init_(init) {}
-std::string VariableDecl::to_string(IndentLevel level) const {
-    std::string result;
-    auto iter = std::back_inserter(result);
-    format_to_with_indent(level, iter, "VariableDecl {}: {}\n", name_, type_);
-    format_to_with_indent(level + 1, iter, "init:\n");
-    if (init_) {
-        std::format_to(iter, "{}", init_.value()->to_string(level + 2));
-    } else {
-        format_to_with_indent(level + 2, iter, "null");
-    }
-    return result;
-}
 std::vector<std::shared_ptr<Base>> VariableDecl::children() const { return {}; }
 std::string VariableDecl::mangled_name() {
     return fmt::format("_V{}{}_T{}{}", name_.length(), name_, type_.length(), type_);
 }
 
 TypeDecl::TypeDecl(SourceTypeIdentifier name) : name_(name) {}
-std::string TypeDecl::to_string(IndentLevel level) const { return format_with_indent(level, "TypeDecl {}", name_); }
 std::vector<std::shared_ptr<Base>> TypeDecl::children() const { return {}; }
 std::string TypeDecl::mangled_name() { return fmt::format("_T{}{}", name_.length(), name_); }
 

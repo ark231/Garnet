@@ -1,6 +1,8 @@
 #ifndef WOMUYURO_LIBS_AST_CONCRETE_EXPRESSIONS
 #define WOMUYURO_LIBS_AST_CONCRETE_EXPRESSIONS
 
+#include <magic_enum.hpp>
+#include <magic_enum_format.hpp>
 #include <memory>
 #include <vector>
 
@@ -20,7 +22,6 @@ class BinaryOperator : public Expression {
     };
     BinaryOperator(OperatorType op, std::shared_ptr<Expression> left, std::shared_ptr<Expression> right)
         : op_(op), left_(left), right_(right) {}
-    virtual std::string to_string(IndentLevel level) const override;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     OperatorType op() const { return op_; }
     const std::shared_ptr<Expression> left() const { return left_; }
@@ -35,7 +36,6 @@ class BinaryOperator : public Expression {
 class VariableReference : public Expression {
    public:
     VariableReference(SourceVariableIdentifier name, ValRef valref) : name_(name), valref_(valref) {}
-    virtual std::string to_string(IndentLevel level) const override;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
 
@@ -49,7 +49,6 @@ class VariableReference : public Expression {
 class SignedIntegerLiteral : public Expression {
    public:
     SignedIntegerLiteral(int64_t value) : value_(value) {}
-    virtual std::string to_string(IndentLevel level) const override;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     int64_t value() const { return value_; }
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
@@ -60,7 +59,6 @@ class SignedIntegerLiteral : public Expression {
 class UnsignedIntegerLiteral : public Expression {
    public:
     UnsignedIntegerLiteral(uint64_t value) : value_(value) {}
-    virtual std::string to_string(IndentLevel level) const override;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     uint64_t value() const { return value_; }
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
@@ -71,7 +69,6 @@ class UnsignedIntegerLiteral : public Expression {
 class FloatingPointLiteral : public Expression {
    public:
     FloatingPointLiteral(double value) : value_(value) {}
-    virtual std::string to_string(IndentLevel level) const override;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     double value() const { return value_; }
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
@@ -85,7 +82,6 @@ class FunctionCall : public Expression {
         : name_(name), args_(args) {}
     std::vector<std::shared_ptr<Expression>> args() const { return args_; }
     SourceFunctionIdentifier name() const { return name_; }
-    virtual std::string to_string(IndentLevel level) const override;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
 

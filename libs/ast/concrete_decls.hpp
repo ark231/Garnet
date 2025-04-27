@@ -14,7 +14,6 @@ class FunctionDecl : public DeclBase {
    public:
     FunctionDecl();
     FunctionDecl(SourceFunctionIdentifier name, std::vector<VariableInfo> args, std::optional<VariableInfo> result);
-    virtual std::string to_string(IndentLevel level) const override;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     std::string mangled_name();
     FunctionInfo info() const;
@@ -29,7 +28,6 @@ class VariableDecl : public DeclBase {
    public:
     VariableDecl(SourceVariableIdentifier name, SourceTypeIdentifier type,
                  std::optional<std::shared_ptr<Expression>> init = std::nullopt);
-    virtual std::string to_string(IndentLevel level) const override;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     std::string mangled_name();
     SourceVariableIdentifier name() const { return name_; }
@@ -45,10 +43,10 @@ class VariableDecl : public DeclBase {
 class TypeDecl : public DeclBase {
    public:
     TypeDecl(SourceTypeIdentifier name);
-    virtual std::string to_string(IndentLevel level) const override;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     std::string mangled_name();
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
+    SourceTypeIdentifier name() const { return name_; }
 
    protected:
     SourceTypeIdentifier name_;
