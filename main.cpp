@@ -64,5 +64,6 @@ int main(int argc, char* argv[]) {
     ast->accept(printer);
     WomuYuro::interpreter::Interpreter interpreter;
     ast->accept(interpreter);
+    interpreter.debug_print();
     return res;
 }

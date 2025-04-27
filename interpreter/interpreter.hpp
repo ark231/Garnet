@@ -10,8 +10,17 @@
 #include "visitor/visitor.hpp"
 namespace WomuYuro::interpreter {
 class Interpreter : public ast::Visitor {
+    using VariableKey = std::string;
+    VariableKey encode_variable_key_(std::string name) const;
+    struct VariableReference {
+        VariableKey key;
+        explicit VariableReference() = default;
+        explicit VariableReference(VariableKey key) : key(key) {}
+
+        std::string to_string() const;
+    };
     using Value = std::variant<std::uint8_t, std::int8_t, std::uint16_t, std::int16_t, std::uint32_t, std::int32_t,
-                               std::int64_t, std::uint64_t, float, double>;
+                               std::int64_t, std::uint64_t, float, double, VariableReference>;
 
     Value expr_result_;
     IndentLevel indent_ = 0_ind;
@@ -19,10 +28,10 @@ class Interpreter : public ast::Visitor {
     struct Variable {
         std::string name;
         Value value;
+
+        std::string to_string() const;
     };
 
-    using VariableKey = std::string;
-    VariableKey encode_variable_key_(std::string name) const;
     std::unordered_map<VariableKey, Variable> variables_;
 
     using TypeKey = std::string;
@@ -48,6 +57,8 @@ class Interpreter : public ast::Visitor {
     virtual void visit(const ast::FunctionDef*) override;
     virtual void visit(const ast::VariableDeclStatement*) override;
     virtual void visit(const ast::ReturnStatement*) override;
+
+    void debug_print() const;
 };
 
 }  // namespace WomuYuro::interpreter

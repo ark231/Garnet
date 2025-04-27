@@ -30,5 +30,9 @@ class SyntaxError : public CriticalExcecutionError {
    public:
     using CriticalExcecutionError::CriticalExcecutionError;
 };
+class TypeError : public CriticalExcecutionError {
+   public:
+    using CriticalExcecutionError::CriticalExcecutionError;
+};
 }  // namespace WomuYuro::interpreter
 #endif
