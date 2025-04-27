@@ -3,7 +3,6 @@
 #include <fmt/format.h>
 
 #include <memory>
-#include <sstream>
 
 namespace WomuYuro::ast {
 

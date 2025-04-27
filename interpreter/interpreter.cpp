@@ -13,7 +13,6 @@
 #include "concrete_statements.hpp"
 #include "error_nodes.hpp"
 #include "exceptions.hpp"
-#include "format_utils.hpp"
 namespace WomuYuro::interpreter {
 void Interpreter::visit(const ast::FunctionDecl* node) {
     for (const auto& child : node->children()) {
