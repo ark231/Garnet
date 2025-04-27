@@ -18,6 +18,7 @@
 #include "exceptions.hpp"
 #include "format.hpp"
 namespace WomuYuro::interpreter {
+
 void Interpreter::visit(const ast::FunctionDecl* node) {
     for (const auto& child : node->children()) {
         child->accept(*this);
@@ -102,10 +103,12 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
     };
     switch (node->op()) {
         using enum ast::BinaryOperator::OperatorType;
+        using namespace std::placeholders;
         case ADD:
             std::visit(
-                [this, deref_and_apply](auto lhs, auto rhs) {
-                    auto add_only = [this](auto left, auto right) {
+                std::bind(
+                    deref_and_apply,
+                    [this](auto left, auto right) {
                         using LeftType = decltype(left);
                         using RightType = decltype(right);
                         if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
@@ -127,104 +130,143 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                                 }
                             }
                         }
-                    };
-                    deref_and_apply(add_only, lhs, rhs);
-                },
+                    },
+                    _1, _2),
                 lhs, rhs);
             break;
-        // case SUB:
-        //     std::visit(
-        //         [this](auto lhs, auto rhs) {
-        //             using LeftType = decltype(lhs);
-        //             using RightType = decltype(lhs);
-        //             using Left = std::numeric_limits<LeftType>;
-        //             using Right = std::numeric_limits<RightType>;
-        //             if constexpr (Left::is_integer && (not Right::is_integer)) {
-        //                 this->expr_result_ = static_cast<RightType>(static_cast<RightType>(lhs) - rhs);
-        //             } else if constexpr ((not Left::is_integer) && Right::is_integer) {
-        //                 this->expr_result_ = static_cast<LeftType>(lhs - static_cast<LeftType>(rhs));
-        //             } else {
-        //                 if constexpr (Left::digits >= Right::digits) {
-        //                     this->expr_result_ = static_cast<LeftType>(lhs - static_cast<LeftType>(rhs));
-        //                 } else {
-        //                     this->expr_result_ = static_cast<RightType>(static_cast<RightType>(lhs) - rhs);
-        //                 }
-        //             }
-        //         },
-        //         lhs, rhs);
-        //     break;
-        // case MUL:
-        //     std::visit(
-        //         [this](auto lhs, auto rhs) {
-        //             using LeftType = decltype(lhs);
-        //             using RightType = decltype(lhs);
-        //             using Left = std::numeric_limits<LeftType>;
-        //             using Right = std::numeric_limits<RightType>;
-        //             if constexpr (Left::is_integer && (not Right::is_integer)) {
-        //                 this->expr_result_ = static_cast<RightType>(static_cast<RightType>(lhs) * rhs);
-        //             } else if constexpr ((not Left::is_integer) && Right::is_integer) {
-        //                 this->expr_result_ = static_cast<LeftType>(lhs * static_cast<LeftType>(rhs));
-        //             } else {
-        //                 if constexpr (Left::digits >= Right::digits) {
-        //                     this->expr_result_ = static_cast<LeftType>(lhs * static_cast<LeftType>(rhs));
-        //                 } else {
-        //                     this->expr_result_ = static_cast<RightType>(static_cast<RightType>(lhs) * rhs);
-        //                 }
-        //             }
-        //         },
-        //         lhs, rhs);
-        //     break;
-        // case DIV:
-        //     std::visit(
-        //         [this](auto lhs, auto rhs) {
-        //             using LeftType = decltype(lhs);
-        //             using RightType = decltype(lhs);
-        //             using Left = std::numeric_limits<LeftType>;
-        //             using Right = std::numeric_limits<RightType>;
-        //             if constexpr (Left::is_integer && Right::is_integer) {
-        //                 this->expr_result_ = static_cast<double>(static_cast<double>(lhs) /
-        //                 static_cast<double>(rhs));
-        //             } else if constexpr (Left::is_integer && (not Right::is_integer)) {
-        //                 this->expr_result_ = static_cast<RightType>(static_cast<RightType>(lhs) / rhs);
-        //             } else if constexpr ((not Left::is_integer) && Right::is_integer) {
-        //                 this->expr_result_ = static_cast<LeftType>(lhs / static_cast<LeftType>(rhs));
-        //             } else {
-        //                 if constexpr (Left::digits >= Right::digits) {
-        //                     this->expr_result_ = static_cast<LeftType>(lhs / static_cast<LeftType>(rhs));
-        //                 } else {
-        //                     this->expr_result_ = static_cast<RightType>(static_cast<RightType>(lhs) / rhs);
-        //                 }
-        //             }
-        //         },
-        //         lhs, rhs);
-        //     break;
-        // case MOD:
-        //     std::visit(
-        //         [this](auto lhs, auto rhs) {
-        //             using LeftType = decltype(lhs);
-        //             using RightType = decltype(lhs);
-        //             using Left = std::numeric_limits<LeftType>;
-        //             using Right = std::numeric_limits<RightType>;
-        //             if constexpr (Left::is_integer && (not Right::is_integer)) {
-        //                 this->expr_result_ = static_cast<RightType>(std::fmod(static_cast<RightType>(lhs), rhs));
-        //             } else if constexpr ((not Left::is_integer) && Right::is_integer) {
-        //                 this->expr_result_ = static_cast<LeftType>(std::fmod(lhs, static_cast<LeftType>(rhs)));
-        //             } else if constexpr (Left::is_integer && Right::is_integer) {
-        //                 if constexpr (Left::digits >= Right::digits) {
-        //                     this->expr_result_ = static_cast<LeftType>(lhs % static_cast<LeftType>(rhs));
-        //                 } else {
-        //                     this->expr_result_ = static_cast<RightType>(static_cast<RightType>(lhs) % rhs);
-        //                 }
-        //             } else {
-        //                 if constexpr (Left::digits >= Right::digits) {
-        //                     this->expr_result_ = static_cast<LeftType>(std::fmod(lhs, static_cast<LeftType>(rhs)));
-        //                 } else {
-        //                     this->expr_result_ = static_cast<RightType>(std::fmod(static_cast<RightType>(lhs), rhs));
-        //                 }
-        //             }
-        //         },
-        //         lhs, rhs);
-        //     break;
+        case SUB:
+            std::visit(
+                std::bind(
+                    deref_and_apply,
+                    [this](auto left, auto right) {
+                        using LeftType = decltype(left);
+                        using RightType = decltype(right);
+                        if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
+                                      std::is_convertible_v<RightType, VariableReference>) {
+                            throw TypeError(fmt::format("cannot apply SUB operator to {} and {}", typeid(LeftType),
+                                                        typeid(RightType)));
+                        } else {
+                            using Left = std::numeric_limits<LeftType>;
+                            using Right = std::numeric_limits<RightType>;
+                            if constexpr (Left::is_integer && (not Right::is_integer)) {
+                                this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) - right);
+                            } else if constexpr ((not Left::is_integer) && Right::is_integer) {
+                                this->expr_result_ = static_cast<LeftType>(left - static_cast<LeftType>(right));
+                            } else {
+                                if constexpr (Left::digits >= Right::digits) {
+                                    this->expr_result_ = static_cast<LeftType>(left - static_cast<LeftType>(right));
+                                } else {
+                                    this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) - right);
+                                }
+                            }
+                        }
+                    },
+                    _1, _2),
+                lhs, rhs);
+            break;
+        case MUL:
+            std::visit(
+                std::bind(
+                    deref_and_apply,
+                    [this](auto left, auto right) {
+                        using LeftType = decltype(left);
+                        using RightType = decltype(right);
+                        if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
+                                      std::is_convertible_v<RightType, VariableReference>) {
+                            throw TypeError(fmt::format("cannot apply MUL operator to {} and {}", typeid(LeftType),
+                                                        typeid(RightType)));
+                        } else {
+                            using Left = std::numeric_limits<LeftType>;
+                            using Right = std::numeric_limits<RightType>;
+                            if constexpr (Left::is_integer && (not Right::is_integer)) {
+                                this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) * right);
+                            } else if constexpr ((not Left::is_integer) && Right::is_integer) {
+                                this->expr_result_ = static_cast<LeftType>(left * static_cast<LeftType>(right));
+                            } else {
+                                if constexpr (Left::digits >= Right::digits) {
+                                    this->expr_result_ = static_cast<LeftType>(left * static_cast<LeftType>(right));
+                                } else {
+                                    this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) * right);
+                                }
+                            }
+                        }
+                    },
+                    _1, _2),
+                lhs, rhs);
+            break;
+        case DIV:
+            std::visit(
+                std::bind(
+                    deref_and_apply,
+                    [this](auto left, auto right) {
+                        using LeftType = decltype(left);
+                        using RightType = decltype(right);
+                        if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
+                                      std::is_convertible_v<RightType, VariableReference>) {
+                            throw TypeError(fmt::format("cannot apply DIV operator to {} and {}", typeid(LeftType),
+                                                        typeid(RightType)));
+                        } else {
+                            using Left = std::numeric_limits<LeftType>;
+                            using Right = std::numeric_limits<RightType>;
+                            if constexpr (Left::is_integer && Right::is_integer) {
+                                this->expr_result_ =
+                                    static_cast<double>(static_cast<double>(left) / static_cast<double>(right));
+                            } else if constexpr (Left::is_integer && (not Right::is_integer)) {
+                                this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) / right);
+                            } else if constexpr ((not Left::is_integer) && Right::is_integer) {
+                                this->expr_result_ = static_cast<LeftType>(left / static_cast<LeftType>(right));
+                            } else {
+                                if constexpr (Left::digits >= Right::digits) {
+                                    this->expr_result_ = static_cast<LeftType>(left / static_cast<LeftType>(right));
+                                } else {
+                                    this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) / right);
+                                }
+                            }
+                        }
+                    },
+                    _1, _2),
+                lhs, rhs);
+            break;
+        case MOD:
+            std::visit(
+                std::bind(
+                    deref_and_apply,
+                    [this](auto left, auto right) {
+                        using LeftType = decltype(left);
+                        using RightType = decltype(right);
+                        if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
+                                      std::is_convertible_v<RightType, VariableReference>) {
+                            throw TypeError(fmt::format("cannot apply DIV operator to {} and {}", typeid(LeftType),
+                                                        typeid(RightType)));
+                        } else {
+                            using Left = std::numeric_limits<LeftType>;
+                            using Right = std::numeric_limits<RightType>;
+                            if constexpr (Left::is_integer && (not Right::is_integer)) {
+                                this->expr_result_ =
+                                    static_cast<RightType>(std::fmod(static_cast<RightType>(left), right));
+                            } else if constexpr ((not Left::is_integer) && Right::is_integer) {
+                                this->expr_result_ =
+                                    static_cast<LeftType>(std::fmod(left, static_cast<LeftType>(right)));
+                            } else if constexpr (Left::is_integer && Right::is_integer) {
+                                if constexpr (Left::digits >= Right::digits) {
+                                    this->expr_result_ = static_cast<LeftType>(left % static_cast<LeftType>(right));
+                                } else {
+                                    this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) % right);
+                                }
+                            } else {
+                                if constexpr (Left::digits >= Right::digits) {
+                                    this->expr_result_ =
+                                        static_cast<LeftType>(std::fmod(left, static_cast<LeftType>(right)));
+                                } else {
+                                    this->expr_result_ =
+                                        static_cast<RightType>(std::fmod(static_cast<RightType>(left), right));
+                                }
+                            }
+                        }
+                    },
+                    _1, _2),
+                lhs, rhs);
+            break;
         case ASSIGN:
             throw UnImplementedError("ASSIGN operator is not implemented yet");
             // std::visit(
