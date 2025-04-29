@@ -27,7 +27,6 @@ func fizzbuzz(let n:i64)->void{
     }
     *#
 
-    #*
     {
         var i:i64 = 0;
         loop{
@@ -48,5 +47,4 @@ func fizzbuzz(let n:i64)->void{
             i++;
         }
     }
-    *#
 }

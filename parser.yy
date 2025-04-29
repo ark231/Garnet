@@ -204,7 +204,7 @@ function_decl:
 
 function_def:
   function_decl "{" function_body "}"            { 
-      $$ = std::make_shared<GN::ast::FunctionDef>($1->info(),std::move($3)); 
+      $$ = std::make_shared<GN::ast::FunctionDef>($1->info(),std::make_shared<GN::ast::Block>($3)); 
     }
 
 function_body:

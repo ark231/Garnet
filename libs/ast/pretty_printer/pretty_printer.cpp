@@ -87,9 +87,7 @@ void PrettyPrinter::visit(const ast::FunctionDef* node) {
     println_with_indent(indent_, "FunctionDef '{}' ({}) -> ({})", info.name(), fmt::join(info.args(), ","),
                         info.result_to_string());
     indent_ = indent_ + 1;
-    for (const auto& sentence : node->sentences()) {
-        sentence->accept(*this);
-    }
+    node->block()->accept(*this);
     indent_ = indent_ + (-1);
 }
 void PrettyPrinter::visit(const ast::VariableDeclStatement* node) {
@@ -108,5 +106,13 @@ void PrettyPrinter::visit(const ast::ReturnStatement* node) {
         fmt::println("");
         indent_ = indent_ + (-1);
     }
+}
+void PrettyPrinter::visit(const ast::Block* node) {
+    println_with_indent(indent_, "Block");
+    indent_ = indent_ + 1;
+    for (const auto& sentence : node->sentences()) {
+        sentence->accept(*this);
+    }
+    indent_ = indent_ + (-1);
 }
 }  // namespace Garnet::ast

@@ -324,6 +324,7 @@ void Interpreter::visit(const ast::ReturnStatement* node) {
         child->accept(*this);
     }
 }
+void Interpreter::visit(const ast::Block* node) {}
 Interpreter::VariableKey Interpreter::encode_variable_key_(std::string name) const { return name; }
 Interpreter::TypeKey Interpreter::encode_type_key_(std::string name) const { return name; }
 Interpreter::Interpreter() {

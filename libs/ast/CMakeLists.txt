@@ -19,6 +19,7 @@ add_library(
     concrete_statements.cpp
     concrete_infos.cpp
     concrete_defs.cpp
+    block.cpp
     # lib src end
     # cmake-format: on
     #

@@ -23,6 +23,7 @@ class TypeDecl;
 class FunctionDef;
 class VariableDeclStatement;
 class ReturnStatement;
+class Block;
 class Visitor {
    public:
     virtual ~Visitor() = default;
@@ -44,6 +45,7 @@ class Visitor {
     virtual void visit(const ast::FunctionDef*) = 0;
     virtual void visit(const ast::VariableDeclStatement*) = 0;
     virtual void visit(const ast::ReturnStatement*) = 0;
+    virtual void visit(const ast::Block*) = 0;
 };
 }  // namespace ast
 };  // namespace Garnet
