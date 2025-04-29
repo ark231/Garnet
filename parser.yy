@@ -86,6 +86,10 @@
     ASSIGN                   "="
     MINUS                    "-"
     PLUS                     "+"
+    DECREMENT                "--"
+    INCREMENT                "++"
+    LESSTHAN                 "<"
+    GREATERTHAN              ">"
     ASTERISK                 "*"
     PERCENT                  "%"
     SLASH                    "/"
@@ -106,6 +110,12 @@
     FUNC                     "func"
     REF                      "ref"
     RETURN                   "return"
+    IF                       "if"
+    WHILE                    "while"
+    LOOP                     "loop"
+    FOR                      "for"
+    BREAK                    "break"
+    CONTINUE                 "continue"
 ;
 
 %token <std::string>         IDENTIFIER  "identifier"
@@ -237,6 +247,7 @@ omittable_ref:
 variable_reference:
   omittable_ref "identifier" { $$ = std::make_shared<GN::ast::VariableReference>(GN::ast::SourceVariableIdentifier($2),$1); };
 
+%left "<" ">";
 %left "=";
 %left "+" "-";
 %left "*" "/" "%";
@@ -247,7 +258,10 @@ binary_operator:
 | exp "*" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::MUL,$1,$3); }
 | exp "/" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::DIV,$1,$3); }
 | exp "%" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::MOD,$1,$3); }
-| exp "=" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::ASSIGN,$1,$3); };
+| exp "=" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::ASSIGN,$1,$3); }
+| exp "<" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::LESS,$1,$3); }
+| exp ">" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::GREATER,$1,$3); }
+;
 
 floating_point_literal:
   "floating point"   { $$ = std::make_shared<GN::ast::FloatingPointLiteral>($1); };

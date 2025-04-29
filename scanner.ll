@@ -159,8 +159,13 @@ refval    [$&]
 
 "-"          return Garnet::yy::Parser::make_MINUS                    (loc);
 "+"          return Garnet::yy::Parser::make_PLUS                     (loc);
+"--"         return Garnet::yy::Parser::make_DECREMENT                (loc);
+"++"         return Garnet::yy::Parser::make_INCREMENT                (loc);
 "*"          return Garnet::yy::Parser::make_ASTERISK                 (loc);
 "/"          return Garnet::yy::Parser::make_SLASH                    (loc);
+"%"          return Garnet::yy::Parser::make_PERCENT                  (loc);
+"<"          return Garnet::yy::Parser::make_LESSTHAN                 (loc);
+">"          return Garnet::yy::Parser::make_GREATERTHAN              (loc);
 "("          return Garnet::yy::Parser::make_LPAREN                   (loc);
 ")"          return Garnet::yy::Parser::make_RPAREN                   (loc);
 "="          return Garnet::yy::Parser::make_ASSIGN                   (loc);
@@ -179,6 +184,12 @@ refval    [$&]
 "{"          return Garnet::yy::Parser::make_LBRACE                   (loc);
 "}"          return Garnet::yy::Parser::make_RBRACE                   (loc);
 "return"     return Garnet::yy::Parser::make_RETURN                   (loc);
+"if"         return Garnet::yy::Parser::make_IF                       (loc);
+"while"      return Garnet::yy::Parser::make_WHILE                    (loc);
+"loop"       return Garnet::yy::Parser::make_LOOP                     (loc);
+"for"        return Garnet::yy::Parser::make_FOR                      (loc);
+"break"      return Garnet::yy::Parser::make_BREAK                    (loc);
+"continue"   return Garnet::yy::Parser::make_CONTINUE                 (loc);
 
 {float}      return make_FLOAT (yytext, loc);
 {int}        return make_INTEGER (yytext, loc);
