@@ -153,9 +153,10 @@ refval    [$&]
   // Code run each time yylex is called.
   loc.step ();
 %}
-{blank}+   loc.step ();
-\n+        loc.lines (yyleng); loc.step ();
-"#".*      loc.step (); //one line comment
+{blank}+         loc.step ();
+\n+              loc.lines (yyleng); loc.step ();
+"#".*            loc.step (); //one line comment
+"#*"(.|\n)*?"*#" //muliple line comment
 
 "-"          return Garnet::yy::Parser::make_MINUS                    (loc);
 "+"          return Garnet::yy::Parser::make_PLUS                     (loc);

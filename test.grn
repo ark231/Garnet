@@ -6,24 +6,28 @@ func main(var argc: i64, var argv: vec)->i32{
     hogehoge=piyo;
     #print(piyo);
     return 0;
-};
+}
 
 func hello_world()->void{
     #println("Hello, world!");
-};
+}
 
 func fizzbuzz(let n:i64)->void{
-    #for(var i:i64 = 0;i<n;i++){
-    #    if(i%15==0){
-    #        println("fizzbuzz");
-    #    }elif(i%3 == 0){
-    #        println("fizz");
-    #    }elif(i%5 == 0){
-    #        println("buzz");
-    #    }else{
-    #        println(i);
-    #    }
-    #}
+    #*
+    for(var i:i64 = 0;i<n;i++){
+        if(i%15==0){
+            println("fizzbuzz");
+        }elif(i%3 == 0){
+            println("fizz");
+        }elif(i%5 == 0){
+            println("buzz");
+        }else{
+            println(i);
+        }
+    }
+    *#
+
+    #*
     {
         var i:i64 = 0;
         loop{
@@ -44,4 +48,5 @@ func fizzbuzz(let n:i64)->void{
             i++;
         }
     }
+    *#
 }

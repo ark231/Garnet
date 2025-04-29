@@ -168,7 +168,7 @@ unit:
 
 decl_or_def:
   decl ";"                 { $$ = std::dynamic_pointer_cast<GN::ast::Base>($1); }
-| function_def ";"         { $$ = std::dynamic_pointer_cast<GN::ast::Base>($1);}
+| function_def             { $$ = std::dynamic_pointer_cast<GN::ast::Base>($1);}
 | error ";"                { 
       yyclearin; 
       $$ = std::dynamic_pointer_cast<GN::ast::Base>(std::make_shared<GN::ast::ErrorNode>());
