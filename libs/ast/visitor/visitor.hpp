@@ -1,7 +1,7 @@
-#ifndef WOMUYURO_LIBS_AST_VISITOR_VISITOR
-#define WOMUYURO_LIBS_AST_VISITOR_VISITOR
+#ifndef GARNET_LIBS_AST_VISITOR_VISITOR
+#define GARNET_LIBS_AST_VISITOR_VISITOR
 
-namespace WomuYuro {
+namespace Garnet {
 namespace ast {
 class FunctionDecl;
 class VariableDecl;
@@ -46,5 +46,5 @@ class Visitor {
     virtual void visit(const ast::ReturnStatement*) = 0;
 };
 }  // namespace ast
-};  // namespace WomuYuro
+};  // namespace Garnet
 #endif

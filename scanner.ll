@@ -1,9 +1,9 @@
-/* Scanner for WomuYuroCompiler
+/* Scanner for Garnet
 
    Copyright (C) 2005-2015, 2018-2021 Free Software Foundation, Inc.
    Copyright (C) 2023 ark231
 
-   This file is part of WomuYuroCompiler.
+   This file is part of Garnet.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -21,12 +21,12 @@
 %option flex
 %option bison-complete
 %option bison-locations
-%option params="WomuYuro::Driver& drv"
+%option params="Garnet::Driver& drv"
 
 %option lexer=Lexer
 
-%option namespace=WomuYuro.yy
-%option bison-cc-namespace=WomuYuro.yy
+%option namespace=Garnet.yy
+%option bison-cc-namespace=Garnet.yy
 %option bison-cc-parser=Parser
 
 %option unicode
@@ -120,12 +120,12 @@
 
 %{
   // A number symbol corresponding to the value in S.
-    WomuYuro::yy::Parser::symbol_type
-  make_INTEGER (const std::string &s, const WomuYuro::yy::Parser::location_type& loc);
-    WomuYuro::yy::Parser::symbol_type
-  make_FLOAT (const std::string &s, const WomuYuro::yy::Parser::location_type& loc);
-    WomuYuro::yy::Parser::symbol_type
-  make_VALREF (const std::string &s, const WomuYuro::yy::Parser::location_type& loc);
+    Garnet::yy::Parser::symbol_type
+  make_INTEGER (const std::string &s, const Garnet::yy::Parser::location_type& loc);
+    Garnet::yy::Parser::symbol_type
+  make_FLOAT (const std::string &s, const Garnet::yy::Parser::location_type& loc);
+    Garnet::yy::Parser::symbol_type
+  make_VALREF (const std::string &s, const Garnet::yy::Parser::location_type& loc);
 %}
 
 non_digit [a-zA-Z]
@@ -149,7 +149,7 @@ refval    [$&]
 %%
 %{
   // A handy shortcut to the location held by the Driver.
-  WomuYuro::yy::location& loc = drv.location_;
+  Garnet::yy::location& loc = drv.location_;
   // Code run each time yylex is called.
   loc.step ();
 %}
@@ -157,66 +157,66 @@ refval    [$&]
 \n+        loc.lines (yyleng); loc.step ();
 "#".*      loc.step (); //one line comment
 
-"-"          return WomuYuro::yy::Parser::make_MINUS                    (loc);
-"+"          return WomuYuro::yy::Parser::make_PLUS                     (loc);
-"*"          return WomuYuro::yy::Parser::make_ASTERISK                 (loc);
-"/"          return WomuYuro::yy::Parser::make_SLASH                    (loc);
-"("          return WomuYuro::yy::Parser::make_LPAREN                   (loc);
-")"          return WomuYuro::yy::Parser::make_RPAREN                   (loc);
-"="          return WomuYuro::yy::Parser::make_ASSIGN                   (loc);
-"\""         return WomuYuro::yy::Parser::make_DQUOTE                   (loc);
-"."          return WomuYuro::yy::Parser::make_PERIOD                   (loc);
-"["          return WomuYuro::yy::Parser::make_LBRACKET                 (loc);
-"]"          return WomuYuro::yy::Parser::make_RBRACKET                 (loc);
-","          return WomuYuro::yy::Parser::make_COMMA                    (loc);
-"->"         return WomuYuro::yy::Parser::make_RARROW                   (loc);
-"var"        return WomuYuro::yy::Parser::make_VAR                      (loc);
-"let"        return WomuYuro::yy::Parser::make_LET                      (loc);
-"func"       return WomuYuro::yy::Parser::make_FUNC                     (loc);
-":"          return WomuYuro::yy::Parser::make_COLON                    (loc);
-";"          return WomuYuro::yy::Parser::make_SEMICOLON                (loc);
-"ref"        return WomuYuro::yy::Parser::make_REF                      (loc);
-"{"          return WomuYuro::yy::Parser::make_LBRACE                   (loc);
-"}"          return WomuYuro::yy::Parser::make_RBRACE                   (loc);
-"return"     return WomuYuro::yy::Parser::make_RETURN                   (loc);
+"-"          return Garnet::yy::Parser::make_MINUS                    (loc);
+"+"          return Garnet::yy::Parser::make_PLUS                     (loc);
+"*"          return Garnet::yy::Parser::make_ASTERISK                 (loc);
+"/"          return Garnet::yy::Parser::make_SLASH                    (loc);
+"("          return Garnet::yy::Parser::make_LPAREN                   (loc);
+")"          return Garnet::yy::Parser::make_RPAREN                   (loc);
+"="          return Garnet::yy::Parser::make_ASSIGN                   (loc);
+"\""         return Garnet::yy::Parser::make_DQUOTE                   (loc);
+"."          return Garnet::yy::Parser::make_PERIOD                   (loc);
+"["          return Garnet::yy::Parser::make_LBRACKET                 (loc);
+"]"          return Garnet::yy::Parser::make_RBRACKET                 (loc);
+","          return Garnet::yy::Parser::make_COMMA                    (loc);
+"->"         return Garnet::yy::Parser::make_RARROW                   (loc);
+"var"        return Garnet::yy::Parser::make_VAR                      (loc);
+"let"        return Garnet::yy::Parser::make_LET                      (loc);
+"func"       return Garnet::yy::Parser::make_FUNC                     (loc);
+":"          return Garnet::yy::Parser::make_COLON                    (loc);
+";"          return Garnet::yy::Parser::make_SEMICOLON                (loc);
+"ref"        return Garnet::yy::Parser::make_REF                      (loc);
+"{"          return Garnet::yy::Parser::make_LBRACE                   (loc);
+"}"          return Garnet::yy::Parser::make_RBRACE                   (loc);
+"return"     return Garnet::yy::Parser::make_RETURN                   (loc);
 
 {float}      return make_FLOAT (yytext, loc);
 {int}        return make_INTEGER (yytext, loc);
-{id}         return WomuYuro::yy::Parser::make_IDENTIFIER (yytext, loc);
+{id}         return Garnet::yy::Parser::make_IDENTIFIER (yytext, loc);
 {refval}     return make_VALREF (yytext, loc);
 .            {
-                 throw WomuYuro::yy::Parser::syntax_error
+                 throw Garnet::yy::Parser::syntax_error
                  (loc, "invalid character: " + std::string(yytext));
              }
-<<EOF>>      return WomuYuro::yy::Parser::make_YYEOF (loc);
+<<EOF>>      return Garnet::yy::Parser::make_YYEOF (loc);
 %%
 
-WomuYuro::yy::Parser::symbol_type
-make_INTEGER (const std::string &s, const WomuYuro::yy::Parser::location_type& loc)
+Garnet::yy::Parser::symbol_type
+make_INTEGER (const std::string &s, const Garnet::yy::Parser::location_type& loc)
 {
-  return WomuYuro::yy::Parser::make_INTEGER (static_cast<int64_t>(std::stoll(s)), loc);
+  return Garnet::yy::Parser::make_INTEGER (static_cast<int64_t>(std::stoll(s)), loc);
 }
 
-WomuYuro::yy::Parser::symbol_type
-make_FLOAT (const std::string &s, const WomuYuro::yy::Parser::location_type& loc)
+Garnet::yy::Parser::symbol_type
+make_FLOAT (const std::string &s, const Garnet::yy::Parser::location_type& loc)
 {
-    return WomuYuro::yy::Parser::make_FLOAT (static_cast<double>(std::stod(s)), loc);
+    return Garnet::yy::Parser::make_FLOAT (static_cast<double>(std::stod(s)), loc);
 }
 
-WomuYuro::yy::Parser::symbol_type
-make_VALREF (const std::string &s, const WomuYuro::yy::Parser::location_type& loc)
+Garnet::yy::Parser::symbol_type
+make_VALREF (const std::string &s, const Garnet::yy::Parser::location_type& loc)
 {
     if(s=="$"){
-        return WomuYuro::yy::Parser::make_VALREF(static_cast<WomuYuro::ValRef>(WomuYuro::ValRef::VALUE),loc);
+        return Garnet::yy::Parser::make_VALREF(static_cast<Garnet::ValRef>(Garnet::ValRef::VALUE),loc);
     }else if(s=="&"){
-        return WomuYuro::yy::Parser::make_VALREF(static_cast<WomuYuro::ValRef>(WomuYuro::ValRef::REFERENCE),loc);
+        return Garnet::yy::Parser::make_VALREF(static_cast<Garnet::ValRef>(Garnet::ValRef::REFERENCE),loc);
     }else{
-        throw WomuYuro::yy::Parser::syntax_error (loc, fmt::format("invalid valref qualifier: {}", s));
+        throw Garnet::yy::Parser::syntax_error (loc, fmt::format("invalid valref qualifier: {}", s));
     }
 }
 
 void
-WomuYuro::Driver::scan_begin ()
+Garnet::Driver::scan_begin ()
 
 {
   lexer_->set_debug(trace_scanning);
@@ -230,7 +230,7 @@ WomuYuro::Driver::scan_begin ()
 }
 
 void
-WomuYuro::Driver::scan_end ()
+Garnet::Driver::scan_end ()
 {
     fclose(lexer_->in());
 }

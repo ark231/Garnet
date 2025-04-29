@@ -1,7 +1,7 @@
-#ifndef WOMUYURO_LIBS_AST_EXPRESSION
-#define WOMUYURO_LIBS_AST_EXPRESSION
+#ifndef GARNET_LIBS_AST_EXPRESSION
+#define GARNET_LIBS_AST_EXPRESSION
 #include "sentence.hpp"
-namespace WomuYuro::ast {
+namespace Garnet::ast {
 class Expression : public Sentence {};
-}  // namespace WomuYuro::ast
+}  // namespace Garnet::ast
 #endif

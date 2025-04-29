@@ -1,5 +1,5 @@
-#ifndef WOMUYURO_INTERPRETER_INTERPRETER
-#define WOMUYURO_INTERPRETER_INTERPRETER
+#ifndef GARNET_INTERPRETER_INTERPRETER
+#define GARNET_INTERPRETER_INTERPRETER
 #include <cstdint>
 #include <functional>
 #include <string>
@@ -8,7 +8,7 @@
 
 #include "format_support.hpp"
 #include "visitor/visitor.hpp"
-namespace WomuYuro::interpreter {
+namespace Garnet::interpreter {
 class Interpreter : public ast::Visitor {
     using VariableKey = std::string;
     VariableKey encode_variable_key_(std::string name) const;
@@ -61,5 +61,5 @@ class Interpreter : public ast::Visitor {
     void debug_print() const;
 };
 
-}  // namespace WomuYuro::interpreter
+}  // namespace Garnet::interpreter
 #endif

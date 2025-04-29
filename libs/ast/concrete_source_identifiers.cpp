@@ -1,4 +1,4 @@
 #include <fmt/format.h>
 
 #include <concrete_source_identifiers.hpp>
-namespace WomuYuro::ast {}  // namespace WomuYuro::ast
+namespace Garnet::ast {}  // namespace Garnet::ast

@@ -1,7 +1,7 @@
-#ifndef WOMUYURO_COMPILER_LIBS_AST_BODY_BASE
-#define WOMUYURO_COMPILER_LIBS_AST_BODY_BASE
+#ifndef GARNET_COMPILER_LIBS_AST_BODY_BASE
+#define GARNET_COMPILER_LIBS_AST_BODY_BASE
 #include "base.hpp"
-namespace WomuYuro::ast {
+namespace Garnet::ast {
 class BodyBase : public Base {};
-}  // namespace WomuYuro::ast
+}  // namespace Garnet::ast
 #endif

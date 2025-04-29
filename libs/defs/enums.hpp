@@ -1,7 +1,7 @@
-#ifndef WOMUYURO_ENUMS
-#define WOMUYURO_ENUMS
-namespace WomuYuro {
+#ifndef GARNET_ENUMS
+#define GARNET_ENUMS
+namespace Garnet {
 enum class ValRef { VALUE, REFERENCE };
 enum class ConstMut { CONST, MUT };
-}  // namespace WomuYuro
+}  // namespace Garnet
 #endif

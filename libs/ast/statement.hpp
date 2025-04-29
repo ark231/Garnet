@@ -1,7 +1,7 @@
-#ifndef WOMUYURO_COMPILER_LIBS_AST_STATEMENT
-#define WOMUYURO_COMPILER_LIBS_AST_STATEMENT
+#ifndef GARNET_COMPILER_LIBS_AST_STATEMENT
+#define GARNET_COMPILER_LIBS_AST_STATEMENT
 #include "sentence.hpp"
-namespace WomuYuro::ast {
+namespace Garnet::ast {
 class Statement : public Sentence {};
-}  // namespace WomuYuro::ast
+}  // namespace Garnet::ast
 #endif

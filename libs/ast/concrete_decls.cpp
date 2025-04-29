@@ -11,7 +11,7 @@
 
 #include "../utils/format.hpp"
 #include "enums.hpp"
-namespace WomuYuro::ast {
+namespace Garnet::ast {
 // boost::uuidはto_string()を持ってる
 FunctionDecl::FunctionDecl()
     : name_(fmt::format("_LF{}", boost::lexical_cast<std::string>(boost::uuids::random_generator()()))),
@@ -36,4 +36,4 @@ TypeDecl::TypeDecl(SourceTypeIdentifier name) : name_(name) {}
 std::vector<std::shared_ptr<Base>> TypeDecl::children() const { return {}; }
 std::string TypeDecl::mangled_name() { return fmt::format("_T{}{}", name_.length(), name_); }
 
-}  // namespace WomuYuro::ast
+}  // namespace Garnet::ast

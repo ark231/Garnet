@@ -17,7 +17,7 @@
 #include "error_nodes.hpp"
 #include "exceptions.hpp"
 #include "format.hpp"
-namespace WomuYuro::interpreter {
+namespace Garnet::interpreter {
 
 void Interpreter::visit(const ast::FunctionDecl* node) {
     for (const auto& child : node->children()) {
@@ -343,4 +343,4 @@ std::string Interpreter::Variable::to_string() const {
     return fmt::format("Variable(name: {}, value: {})", name, value);
 }
 std::string Interpreter::VariableReference::to_string() const { return fmt::format("VariableReference(key: {})", key); }
-}  // namespace WomuYuro::interpreter
+}  // namespace Garnet::interpreter

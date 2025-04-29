@@ -1,12 +1,12 @@
-#ifndef WOMUYURO_LIBS_AST_CONCRETE_INFOS
-#define WOMUYURO_LIBS_AST_CONCRETE_INFOS
+#ifndef GARNET_LIBS_AST_CONCRETE_INFOS
+#define GARNET_LIBS_AST_CONCRETE_INFOS
 #include <optional>
 #include <vector>
 
 #include "concrete_source_identifiers.hpp"
 #include "enums.hpp"
 #include "info_base.hpp"
-namespace WomuYuro::ast {
+namespace Garnet::ast {
 class TypeInfo : public InfoBase {
    public:
     TypeInfo(SourceTypeIdentifier name);
@@ -48,5 +48,5 @@ class FunctionInfo : public InfoBase {
     std::optional<VariableInfo> result_;
 };
 
-}  // namespace WomuYuro::ast
+}  // namespace Garnet::ast
 #endif

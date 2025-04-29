@@ -1,9 +1,9 @@
-#ifndef WOMUYURO_LIBS_AST_PRETTY_PRINTER_PRETTY_PRINTER
-#define WOMUYURO_LIBS_AST_PRETTY_PRINTER_PRETTY_PRINTER
+#ifndef GARNET_LIBS_AST_PRETTY_PRINTER_PRETTY_PRINTER
+#define GARNET_LIBS_AST_PRETTY_PRINTER_PRETTY_PRINTER
 
 #include "format_support.hpp"
 #include "visitor/visitor.hpp"
-namespace WomuYuro::ast {
+namespace Garnet::ast {
 class PrettyPrinter : public ast::Visitor {
     IndentLevel indent_ = 0_ind;
 
@@ -27,5 +27,5 @@ class PrettyPrinter : public ast::Visitor {
     virtual void visit(const ast::ReturnStatement*) override;
 };
 
-}  // namespace WomuYuro::ast
+}  // namespace Garnet::ast
 #endif

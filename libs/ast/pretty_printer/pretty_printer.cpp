@@ -12,7 +12,7 @@
 #include "error_nodes.hpp"
 #include "format.hpp"
 #include "format_utils.hpp"
-namespace WomuYuro::ast {
+namespace Garnet::ast {
 void PrettyPrinter::visit(const ast::FunctionDecl* node) {
     std::string result;
     auto info = node->info();
@@ -109,4 +109,4 @@ void PrettyPrinter::visit(const ast::ReturnStatement* node) {
         indent_ = indent_ + (-1);
     }
 }
-}  // namespace WomuYuro::ast
+}  // namespace Garnet::ast

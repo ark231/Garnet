@@ -2,7 +2,7 @@
 
 #include <fmt/core.h>
 
-namespace WomuYuro::ast {
+namespace Garnet::ast {
 std::vector<std::shared_ptr<Base>> VariableDeclStatement::children() const { return {decl_}; }
 std::vector<std::shared_ptr<Base>> ReturnStatement::children() const { return {retval_}; }
-}  // namespace WomuYuro::ast
+}  // namespace Garnet::ast

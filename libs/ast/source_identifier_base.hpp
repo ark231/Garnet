@@ -1,7 +1,7 @@
-#ifndef WOMUYURO_LIBS_AST_SOURCE_TYPE
-#define WOMUYURO_LIBS_AST_SOURCE_TYPE
+#ifndef GARNET_LIBS_AST_SOURCE_TYPE
+#define GARNET_LIBS_AST_SOURCE_TYPE
 #include <string>
-namespace WomuYuro::ast {
+namespace Garnet::ast {
 class SourceIdentifierBase {
    public:
     SourceIdentifierBase() : SourceIdentifierBase("__unspecified__") {}
@@ -14,5 +14,5 @@ class SourceIdentifierBase {
     std::string name_;
 };
 
-}  // namespace WomuYuro::ast
+}  // namespace Garnet::ast
 #endif

@@ -1,7 +1,7 @@
-#ifndef WOMUYURO_LIBS_AST_INFO_BASE
-#define WOMUYURO_LIBS_AST_INFO_BASE
+#ifndef GARNET_LIBS_AST_INFO_BASE
+#define GARNET_LIBS_AST_INFO_BASE
 #include "format_support.hpp"
-namespace WomuYuro::ast {
+namespace Garnet::ast {
 class InfoBase : public IFormattable {};
-}  // namespace WomuYuro::ast
+}  // namespace Garnet::ast
 #endif

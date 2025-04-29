@@ -1,9 +1,9 @@
-/* Main for WomuYuroCompiler
+/* Main for Garnet
 
    Copyright (C) 2005-2015, 2018-2021 Free Software Foundation, Inc.
    Copyright (C) 2023 ark231
 
-   This file is part of WomuYuroCompiler.
+   This file is part of Garnet.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@
 #include "pretty_printer/pretty_printer.hpp"
 
 namespace bpo = boost::program_options;
-using namespace WomuYuro::operators;
+using namespace Garnet::operators;
 
 int main(int argc, char* argv[]) {
     bpo::positional_options_description pos;
@@ -49,7 +49,7 @@ int main(int argc, char* argv[]) {
     }
     bpo::notify(varmap);
     int res = 0;
-    WomuYuro::Driver drv;
+    Garnet::Driver drv;
     if (varmap.count("trace-parsing")) {
         drv.trace_parsing = true;
     }
@@ -60,9 +60,9 @@ int main(int argc, char* argv[]) {
         drv.parse(infilename);
     }
     auto ast = drv.result();
-    WomuYuro::ast::PrettyPrinter printer;
+    Garnet::ast::PrettyPrinter printer;
     ast->accept(printer);
-    WomuYuro::interpreter::Interpreter interpreter;
+    Garnet::interpreter::Interpreter interpreter;
     ast->accept(interpreter);
     interpreter.debug_print();
     return res;

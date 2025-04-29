@@ -7,7 +7,7 @@
 #include <unicode/unistr.h>
 
 #include <stack>
-namespace WomuYuro {
+namespace Garnet {
 constexpr std::string CONS = "KGSZTDNHMRPB";
 
 int64_t mudig_to_int(std::string mudig) {
@@ -116,4 +116,4 @@ double mudig_to_float(std::string mudig) {
     }
     return result_int + result_frac;
 }
-}  // namespace WomuYuro
+}  // namespace Garnet

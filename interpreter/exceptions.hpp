@@ -1,7 +1,7 @@
-#ifndef WOMUYURO_INTERPRETER_EXCEPTIONS
-#define WOMUYURO_INTERPRETER_EXCEPTIONS
+#ifndef GARNET_INTERPRETER_EXCEPTIONS
+#define GARNET_INTERPRETER_EXCEPTIONS
 #include <stdexcept>
-namespace WomuYuro::interpreter {
+namespace Garnet::interpreter {
 class InterpreterError : public std::runtime_error {
    public:
     using std::runtime_error::runtime_error;
@@ -34,5 +34,5 @@ class TypeError : public CriticalExcecutionError {
    public:
     using CriticalExcecutionError::CriticalExcecutionError;
 };
-}  // namespace WomuYuro::interpreter
+}  // namespace Garnet::interpreter
 #endif

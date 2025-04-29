@@ -1,9 +1,9 @@
-/* Driver for WomuYuroCompiler.
+/* Driver for Garnet.
 
    Copyright (C) 2005-2015, 2018-2021 Free Software Foundation, Inc.
    Copyright (C) 2023 ark231
 
-   This file is part of WomuYuroCompiler.
+   This file is part of Garnet.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -27,15 +27,15 @@
 #include "compilation_unit.hpp"
 #include "parser.hpp"
 
-namespace WomuYuro::yy {
+namespace Garnet::yy {
 class Lexer;
 }
 
-namespace WomuYuro {
+namespace Garnet {
 // Conducting the whole scanning and parsing of Calc++.
 class Driver {
-    friend WomuYuro::yy::Parser;
-    friend WomuYuro::yy::Lexer;
+    friend Garnet::yy::Parser;
+    friend Garnet::yy::Lexer;
     yy::Lexer* lexer_;
     std::shared_ptr<ast::CompilationUnit> result_;
 
@@ -64,5 +64,5 @@ class Driver {
     bool trace_scanning;
     void print_error(const yy::location& loc, const std::string& msg);
 };
-}  // namespace WomuYuro
+}  // namespace Garnet
 #endif  // ! DRIVER_HH

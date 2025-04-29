@@ -1,12 +1,12 @@
-#ifndef WOMUYURO_COMPILER_LIBS_AST_CONCRETE_DEFS
-#define WOMUYURO_COMPILER_LIBS_AST_CONCRETE_DEFS
+#ifndef GARNET_COMPILER_LIBS_AST_CONCRETE_DEFS
+#define GARNET_COMPILER_LIBS_AST_CONCRETE_DEFS
 #include <memory>
 #include <vector>
 
 #include "concrete_infos.hpp"
 #include "def_base.hpp"
 #include "sentence.hpp"
-namespace WomuYuro::ast {
+namespace Garnet::ast {
 class FunctionDef : public DefBase {
    public:
     FunctionDef(FunctionInfo info) : info_(info) {}
@@ -23,5 +23,5 @@ class FunctionDef : public DefBase {
     FunctionInfo info_;
     std::vector<std::shared_ptr<Sentence>> sentences_;
 };
-}  // namespace WomuYuro::ast
+}  // namespace Garnet::ast
 #endif

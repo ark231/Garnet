@@ -1,5 +1,5 @@
-#ifndef WOMUYURO_COMPILER_LIBS_AST_CONCRETE_STATEMENTS
-#define WOMUYURO_COMPILER_LIBS_AST_CONCRETE_STATEMENTS
+#ifndef GARNET_COMPILER_LIBS_AST_CONCRETE_STATEMENTS
+#define GARNET_COMPILER_LIBS_AST_CONCRETE_STATEMENTS
 #include <memory>
 #include <vector>
 
@@ -7,7 +7,7 @@
 #include "expression.hpp"
 #include "statement.hpp"
 
-namespace WomuYuro::ast {
+namespace Garnet::ast {
 class VariableDeclStatement : public Statement {
    public:
     VariableDeclStatement(std::shared_ptr<VariableDecl> decl) : decl_(decl) {}
@@ -26,5 +26,5 @@ class ReturnStatement : public Statement {
    protected:
     std::shared_ptr<Expression> retval_;
 };
-}  // namespace WomuYuro::ast
+}  // namespace Garnet::ast
 #endif

@@ -1,10 +1,10 @@
-/* Driver for WomuYuroCompiler.
+/* Driver for Garnet.
 
    Copyright (C) 2005-2015, 2018-2021 Free Software Foundation, Inc.
    Copyright (C) 2023 ark231
 
    This file is part of Bison, the GNU Compiler Compiler.
-   This file is part of WomuYuroCompiler.
+   This file is part of Garnet.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@
 #include "parser.hpp"
 #include "scanner.hpp"
 
-namespace WomuYuro {
+namespace Garnet {
 Driver::Driver()
     : lexer_(new yy::Lexer()), result_(new ast::CompilationUnit()), trace_parsing(false), trace_scanning(false) {}
 
@@ -75,4 +75,4 @@ void Driver::print_error(const yy::location& loc, const std::string& msg) {
         fmt::println(stderr, "{}{}{}", pre_colored, fmt::styled(colored, fmt::fg(fmt::color::red)), post_colored);
     }
 }
-}  // namespace WomuYuro
+}  // namespace Garnet

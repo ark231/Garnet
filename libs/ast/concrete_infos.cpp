@@ -7,7 +7,7 @@
 #include <magic_enum_format.hpp>
 
 #include "../utils/format.hpp"
-namespace WomuYuro::ast {
+namespace Garnet::ast {
 VariableInfo::VariableInfo() : VariableInfo({"__Unspecified__"}, {{"__Unspecified__"}}) {}
 VariableInfo::VariableInfo(SourceVariableIdentifier name, TypeInfo type, ValRef valref, bool is_const)
     : name_(name), type_(type), valref_(valref), is_const_(is_const) {}
@@ -23,4 +23,4 @@ std::string FunctionInfo::to_string() const {
 FunctionInfo::FunctionInfo(SourceFunctionIdentifier name, const std::vector<VariableInfo>& args,
                            std::optional<VariableInfo> result)
     : name_(name), args_(args), result_(result) {}
-}  // namespace WomuYuro::ast
+}  // namespace Garnet::ast

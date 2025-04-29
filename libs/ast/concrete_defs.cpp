@@ -9,7 +9,7 @@
 #include <iterator>
 #include <memory>
 
-namespace WomuYuro::ast {
+namespace Garnet::ast {
 std::vector<std::shared_ptr<Base>> FunctionDef::children() const {
     std::vector<std::shared_ptr<Base>> result;
     std::ranges::transform(sentences_, std::back_inserter(result),
@@ -19,4 +19,4 @@ std::vector<std::shared_ptr<Base>> FunctionDef::children() const {
 void FunctionDef::add_sentences(std::vector<std::shared_ptr<Sentence>>&& sentences) {
     std::ranges::move(sentences, std::back_inserter(sentences_));
 }
-}  // namespace WomuYuro::ast
+}  // namespace Garnet::ast

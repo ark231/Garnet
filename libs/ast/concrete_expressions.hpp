@@ -1,5 +1,5 @@
-#ifndef WOMUYURO_LIBS_AST_CONCRETE_EXPRESSIONS
-#define WOMUYURO_LIBS_AST_CONCRETE_EXPRESSIONS
+#ifndef GARNET_LIBS_AST_CONCRETE_EXPRESSIONS
+#define GARNET_LIBS_AST_CONCRETE_EXPRESSIONS
 
 #include <magic_enum.hpp>
 #include <magic_enum_format.hpp>
@@ -9,7 +9,7 @@
 #include "concrete_source_identifiers.hpp"
 #include "enums.hpp"
 #include "expression.hpp"
-namespace WomuYuro::ast {
+namespace Garnet::ast {
 class BinaryOperator : public Expression {
    public:
     enum class OperatorType {
@@ -89,5 +89,5 @@ class FunctionCall : public Expression {
     SourceFunctionIdentifier name_;
     std::vector<std::shared_ptr<Expression>> args_;
 };
-}  // namespace WomuYuro::ast
+}  // namespace Garnet::ast
 #endif

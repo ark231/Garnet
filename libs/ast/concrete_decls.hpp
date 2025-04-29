@@ -1,5 +1,5 @@
-#ifndef WOMUYURO_LIBS_AST_CONCRETE_DECLS
-#define WOMUYURO_LIBS_AST_CONCRETE_DECLS
+#ifndef GARNET_LIBS_AST_CONCRETE_DECLS
+#define GARNET_LIBS_AST_CONCRETE_DECLS
 #include <memory>
 #include <optional>
 #include <vector>
@@ -8,7 +8,7 @@
 #include "concrete_source_identifiers.hpp"
 #include "decl_base.hpp"
 #include "expression.hpp"
-namespace WomuYuro::ast {
+namespace Garnet::ast {
 class Sentence;
 class FunctionDecl : public DeclBase {
    public:
@@ -51,5 +51,5 @@ class TypeDecl : public DeclBase {
    protected:
     SourceTypeIdentifier name_;
 };
-}  // namespace WomuYuro::ast
+}  // namespace Garnet::ast
 #endif

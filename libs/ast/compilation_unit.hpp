@@ -1,10 +1,10 @@
-#ifndef WOMUYURO_LIB_AST_UNIT_BASE
-#define WOMUYURO_LIB_AST_UNIT_BASE
+#ifndef GARNET_LIB_AST_UNIT_BASE
+#define GARNET_LIB_AST_UNIT_BASE
 #include <memory>
 #include <vector>
 
 #include "base.hpp"
-namespace WomuYuro::ast {
+namespace Garnet::ast {
 class CompilationUnit : public Base {
    public:
     virtual std::vector<std::shared_ptr<Base>> children() const override;
@@ -14,5 +14,5 @@ class CompilationUnit : public Base {
    private:
     std::vector<std::shared_ptr<Base>> children_;
 };
-};  // namespace WomuYuro::ast
+};  // namespace Garnet::ast
 #endif
