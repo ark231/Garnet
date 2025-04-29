@@ -134,7 +134,8 @@
 %nterm <std::shared_ptr<GN::ast::FunctionDecl>> function_decl
 %nterm <std::shared_ptr<GN::ast::VariableDecl>> variable_decl
 %nterm <std::shared_ptr<GN::ast::VariableDecl>> variable_init
-%nterm <std::vector<std::shared_ptr<GN::ast::Sentence>>> function_body
+%nterm <std::shared_ptr<GN::ast::Block>> block
+%nterm <std::vector<std::shared_ptr<GN::ast::Sentence>>> sentences
 %nterm <std::shared_ptr<GN::ast::BinaryOperator>> binary_operator
 %nterm <std::shared_ptr<GN::ast::FloatingPointLiteral>> floating_point_literal
 %nterm <std::shared_ptr<GN::ast::SignedIntegerLiteral>> signed_integer_literal
@@ -151,12 +152,12 @@
 %nterm <GN::ValRef> omittable_ref
 
 
-%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt function_decl variable_decl variable_init binary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def function_call return_statement
+%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt function_decl variable_decl variable_init binary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def function_call return_statement block 
 %printer { 
     std::vector<const void*> ptrs;
     std::ranges::transform($$,std::back_inserter(ptrs),[](auto p){return fmt::ptr(p);});
     fmt::print(yyo,"{}",ptrs); 
-} function_body exp_list
+} sentences exp_list
 %printer { fmt::print(yyo,"{}",$$); } <*>
 
 %%
@@ -203,15 +204,20 @@ function_decl:
     };
 
 function_def:
-  function_decl "{" function_body "}"            { 
-      $$ = std::make_shared<GN::ast::FunctionDef>($1->info(),std::make_shared<GN::ast::Block>($3)); 
+  function_decl block             { 
+      $$ = std::make_shared<GN::ast::FunctionDef>($1->info(),$2); 
     }
 
-function_body:
+block:
+  "{" sentences "}"        {
+    $$ = std::make_shared<GN::ast::Block>(std::move($2));
+  }
+
+sentences:
   %empty                   {
       $$ = {};
     }
-| function_body sentence   { 
+| sentences sentence   { 
       $$ = std::move($1);
       $$.push_back($2);
     }
