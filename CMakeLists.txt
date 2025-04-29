@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.28.1)
 
 project(
-    WomuYuroCompiler
+    Garnet
     VERSION 0.1
     LANGUAGES CXX)
 
@@ -53,7 +53,7 @@ add_subdirectory(libs)
 
 # Build target
 add_executable(
-    WomuYuroCompiler
+    Garnet
     # cmake-format: off
     # exe src start
     main.cpp
@@ -65,12 +65,12 @@ add_executable(
     #
 )
 
-target_include_directories(WomuYuroCompiler PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/bison ${CMAKE_CURRENT_BINARY_DIR}/reflex)
-target_include_directories(WomuYuroCompiler PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(WomuYuroCompiler PUBLIC ${magic_enum_SOURCE_DIR}/include)
-add_dependencies(WomuYuroCompiler Scanner)
+target_include_directories(Garnet PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/bison ${CMAKE_CURRENT_BINARY_DIR}/reflex)
+target_include_directories(Garnet PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(Garnet PUBLIC ${magic_enum_SOURCE_DIR}/include)
+add_dependencies(Garnet Scanner)
 target_link_libraries(
-    WomuYuroCompiler
+    Garnet
     ${reflex_lib}
     ICU::uc
     fmt::fmt
@@ -83,12 +83,12 @@ target_link_libraries(
 
 # target_link_libraries()
 
-target_compile_options(WomuYuroCompiler PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra>
-                                                $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra > $<$<CXX_COMPILER_ID:MSVC>:/W4>)
+target_compile_options(Garnet PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra> $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra
+                                      > $<$<CXX_COMPILER_ID:MSVC>:/W4>)
 add_library(interpreter interpreter/interpreter.cpp)
 target_link_libraries(interpreter ast defs utils fmt::fmt)
 
-target_link_libraries(WomuYuroCompiler interpreter)
+target_link_libraries(Garnet interpreter)
 
 # # for debugging message(STATUS "*** dump start cmake variables ***") get_cmake_property(_variableNames VARIABLES)
 # foreach(_variableName ${_variableNames}) message(STATUS "${_variableName}=${${_variableName}}") endforeach()
