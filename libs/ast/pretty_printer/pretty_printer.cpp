@@ -115,4 +115,13 @@ void PrettyPrinter::visit(const ast::Block* node) {
     }
     indent_ = indent_ + (-1);
 }
+void PrettyPrinter::visit(const ast::LoopStatement* node) {
+    println_with_indent(indent_, "LoopStatement");
+    indent_ = indent_ + 1;
+    println_with_indent(indent_, "block:");
+    indent_ = indent_ + 1;
+    node->block()->accept(*this);
+    indent_ = indent_ + (-1);
+    indent_ = indent_ + (-1);
+}
 }  // namespace Garnet::ast

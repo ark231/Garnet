@@ -309,11 +309,7 @@ void Interpreter::visit(const ast::CompilationUnit* node) {
         child->accept(*this);
     }
 }
-void Interpreter::visit(const ast::FunctionDef* node) {
-    for (const auto& child : node->children()) {
-        child->accept(*this);
-    }
-}
+void Interpreter::visit(const ast::FunctionDef* node) { node->block()->accept(*this); }
 void Interpreter::visit(const ast::VariableDeclStatement* node) {
     for (const auto& child : node->children()) {
         child->accept(*this);
@@ -324,7 +320,12 @@ void Interpreter::visit(const ast::ReturnStatement* node) {
         child->accept(*this);
     }
 }
-void Interpreter::visit(const ast::Block* node) {}
+void Interpreter::visit(const ast::Block* node) {
+    for (const auto& sentence : node->sentences()) {
+        sentence->accept(*this);
+    }
+}
+void Interpreter::visit(const ast::LoopStatement* node) {}
 Interpreter::VariableKey Interpreter::encode_variable_key_(std::string name) const { return name; }
 Interpreter::TypeKey Interpreter::encode_type_key_(std::string name) const { return name; }
 Interpreter::Interpreter() {

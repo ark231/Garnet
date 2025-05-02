@@ -7,7 +7,7 @@
 #include "format_support.hpp"
 #include "sentence.hpp"
 namespace Garnet::ast {
-class Block : public Base {
+class Block : public Sentence {
    public:
     Block() = default;
     Block(std::vector<std::shared_ptr<Sentence>>&& sentences) : sentences_(sentences) {}

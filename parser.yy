@@ -149,10 +149,11 @@
 %nterm <std::shared_ptr<GN::ast::FunctionDef>> function_def
 %nterm <std::shared_ptr<GN::ast::FunctionCall>> function_call
 %nterm <std::shared_ptr<GN::ast::ReturnStatement>> return_statement
+%nterm <std::shared_ptr<GN::ast::LoopStatement>> loop_statement
 %nterm <GN::ValRef> omittable_ref
 
 
-%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt function_decl variable_decl variable_init binary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def function_call return_statement block 
+%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt function_decl variable_decl variable_init binary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def function_call return_statement block loop_statement
 %printer { 
     std::vector<const void*> ptrs;
     std::ranges::transform($$,std::back_inserter(ptrs),[](auto p){return fmt::ptr(p);});
@@ -224,6 +225,7 @@ sentences:
 
 sentence:
   stmt ";"                 { $$ = std::dynamic_pointer_cast<GN::ast::Sentence>($1); }
+| block                    { $$ = std::dynamic_pointer_cast<GN::ast::Sentence>($1); }
 | exp ";"                  { $$ = std::dynamic_pointer_cast<GN::ast::Sentence>($1); }
 | error ";"                { 
       yyclearin; 
@@ -309,6 +311,10 @@ return_statement:
 stmt:
   variable_decl_statement { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
 | return_statement        { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
+| loop_statement          { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
+
+loop_statement:
+  "loop" block            { $$ = std::make_shared<GN::ast::LoopStatement>($2); }
 
 %%
 
