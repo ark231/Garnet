@@ -1,5 +1,6 @@
 #ifndef GARNET_COMPILER_LIBS_AST_CONCRETE_STATEMENTS
 #define GARNET_COMPILER_LIBS_AST_CONCRETE_STATEMENTS
+#include <iterator>
 #include <memory>
 #include <vector>
 
@@ -47,6 +48,10 @@ class IfStatement : public Statement {
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
     std::vector<CondBlock> cond_blocks() const { return cond_blocks_; };
+    void add_cond_block(CondBlock cond_block) { cond_blocks_.push_back(cond_block); }
+    void add_cond_blocks(std::vector<CondBlock>&& cond_blocks) {
+        std::ranges::copy(cond_blocks, std::back_inserter(cond_blocks_));
+    }
 
    protected:
     std::vector<CondBlock> cond_blocks_;

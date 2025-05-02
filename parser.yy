@@ -150,15 +150,29 @@
 %nterm <std::shared_ptr<GN::ast::FunctionCall>> function_call
 %nterm <std::shared_ptr<GN::ast::ReturnStatement>> return_statement
 %nterm <std::shared_ptr<GN::ast::LoopStatement>> loop_statement
+%nterm <std::shared_ptr<GN::ast::IfStatement>> if_statement
+%nterm <std::shared_ptr<GN::ast::IfStatement>> alone_if_statement
+%nterm <std::vector<GN::ast::IfStatement::CondBlock>> elifs
+%nterm <GN::ast::IfStatement::CondBlock> elif
+%nterm <GN::ast::IfStatement::CondBlock> else
 %nterm <GN::ValRef> omittable_ref
 
 
-%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt function_decl variable_decl variable_init binary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def function_call return_statement block loop_statement
+%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt function_decl variable_decl variable_init binary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def function_call return_statement block loop_statement if_statement alone_if_statement
 %printer { 
     std::vector<const void*> ptrs;
     std::ranges::transform($$,std::back_inserter(ptrs),[](auto p){return fmt::ptr(p);});
     fmt::print(yyo,"{}",ptrs); 
 } sentences exp_list
+%printer { 
+    for(auto [cond, block]:$$){
+        fmt::print(yyo,"{{cond: {},block: {}}}",fmt::ptr(cond),fmt::ptr(block));
+    }
+} elifs
+%printer { 
+    auto [cond, block] = $$;
+    fmt::print(yyo,"{{cond: {},block: {}}}",fmt::ptr(cond),fmt::ptr(block));
+} elif else
 %printer { fmt::print(yyo,"{}",$$); } <*>
 
 %%
@@ -312,9 +326,36 @@ stmt:
   variable_decl_statement { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
 | return_statement        { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
 | loop_statement          { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
+| if_statement            { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
 
 loop_statement:
   "loop" block            { $$ = std::make_shared<GN::ast::LoopStatement>($2); }
+
+if_statement:
+  alone_if_statement            { $$ = $1; }
+| alone_if_statement else       { 
+                                    $$ = $1;
+                                    $$->add_cond_block($2);
+                                }
+| alone_if_statement elifs else {
+                                    $$ = $1;
+                                    $$->add_cond_blocks(std::move($2));
+                                    $$->add_cond_block($3);
+                                }
+
+alone_if_statement:
+  "if" "(" exp ")" block  { $$ = std::make_shared<GN::ast::IfStatement>(std::vector{GN::ast::IfStatement::CondBlock{$3, $5}}); }
+
+elifs:
+  elif        { $$ = {$1}; }
+| elifs elif  {
+                $$ = std::move($1);
+                $$.push_back($2);
+              }
+elif:
+  "elif" "(" exp ")" block { $$ = {$3,$5}; }
+else:
+  "else" block { $$ = {nullptr,$2}; }
 
 %%
 
