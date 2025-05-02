@@ -160,10 +160,11 @@
 %nterm <std::vector<GN::ast::IfStatement::CondBlock>> elifs
 %nterm <GN::ast::IfStatement::CondBlock> elif
 %nterm <GN::ast::IfStatement::CondBlock> else
+%nterm <std::shared_ptr<GN::ast::BreakStatement>> break_statement
 %nterm <GN::ValRef> omittable_ref
 
 
-%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt function_decl variable_decl variable_init binary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def function_call return_statement block loop_statement if_statement alone_if_statement
+%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt function_decl variable_decl variable_init binary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def function_call return_statement block loop_statement if_statement alone_if_statement break_statement
 %printer { 
     std::vector<const void*> ptrs;
     std::ranges::transform($$,std::back_inserter(ptrs),[](auto p){return fmt::ptr(p);});
@@ -324,20 +325,24 @@ exp:
     }
 
 variable_decl_statement:
-  variable_decl          { $$ = std::make_shared<GN::ast::VariableDeclStatement>($1); }
-| variable_init          { $$ = std::make_shared<GN::ast::VariableDeclStatement>($1); }
+  variable_decl ";"      { $$ = std::make_shared<GN::ast::VariableDeclStatement>($1); }
+| variable_init ";"      { $$ = std::make_shared<GN::ast::VariableDeclStatement>($1); }
 
 return_statement:
-  "return" exp                { $$ = std::make_shared<GN::ast::ReturnStatement>($2); }
+  "return" exp ";"            { $$ = std::make_shared<GN::ast::ReturnStatement>($2); }
 
 stmt:
-  variable_decl_statement ";" { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
-| return_statement ";"        { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
-| loop_statement              { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
-| if_statement                { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
+  variable_decl_statement { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
+| return_statement        { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
+| loop_statement          { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
+| if_statement            { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
+| break_statement         { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
 
 loop_statement:
   "loop" block            { $$ = std::make_shared<GN::ast::LoopStatement>($2); }
+
+break_statement:
+  "break" ";"             { $$ = std::make_shared<GN::ast::BreakStatement>(); }
 
 if_statement:
   alone_if_statement            { $$ = $1; }
