@@ -39,6 +39,7 @@
 # include <cstring> // strerror
 # include <string>
 # include <fmt/format.h>
+# include <algorithm>
 # include "driver.hpp"
 # include "parser.hpp"
 # include "mudig_converter.hpp"
@@ -155,8 +156,8 @@ refval    [$&]
 %}
 {blank}+         loc.step ();
 \n+              loc.lines (yyleng); loc.step ();
-"#".*            loc.step (); //one line comment
-"#*"(.|\n)*?"*#" //muliple line comment
+"#"([^*].*)?     //one line comment
+"#*"(.|\n)*?"*#" loc.lines(std::ranges::count(str(),'\n'));//multiple line comment
 
 "-"          return Garnet::yy::Parser::make_MINUS                    (loc);
 "+"          return Garnet::yy::Parser::make_PLUS                     (loc);
