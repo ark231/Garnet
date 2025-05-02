@@ -90,6 +90,9 @@
     INCREMENT                "++"
     LESSTHAN                 "<"
     GREATERTHAN              ">"
+    LESSTHAN_EQUAL           "<="
+    GREATERTHAN_EQUAL        ">="
+    EQUAL                    "=="
     ASTERISK                 "*"
     PERCENT                  "%"
     SLASH                    "/"
@@ -111,6 +114,8 @@
     REF                      "ref"
     RETURN                   "return"
     IF                       "if"
+    ELIF                     "elif"
+    ELSE                     "else"
     WHILE                    "while"
     LOOP                     "loop"
     FOR                      "for"
@@ -238,7 +243,7 @@ sentences:
     }
 
 sentence:
-  stmt ";"                 { $$ = std::dynamic_pointer_cast<GN::ast::Sentence>($1); }
+  stmt                     { $$ = std::dynamic_pointer_cast<GN::ast::Sentence>($1); }
 | block                    { $$ = std::dynamic_pointer_cast<GN::ast::Sentence>($1); }
 | exp ";"                  { $$ = std::dynamic_pointer_cast<GN::ast::Sentence>($1); }
 | error ";"                { 
@@ -269,7 +274,7 @@ omittable_ref:
 variable_reference:
   omittable_ref "identifier" { $$ = std::make_shared<GN::ast::VariableReference>(GN::ast::SourceVariableIdentifier($2),$1); };
 
-%left "<" ">";
+%left "<" ">" "<=" ">=" "==";
 %left "=";
 %left "+" "-";
 %left "*" "/" "%";
@@ -283,6 +288,9 @@ binary_operator:
 | exp "=" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::ASSIGN,$1,$3); }
 | exp "<" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::LESS,$1,$3); }
 | exp ">" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::GREATER,$1,$3); }
+| exp "<=" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::LESS_EQUAL,$1,$3); }
+| exp ">=" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::GREATER_EQUAL,$1,$3); }
+| exp "==" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::EQUAL,$1,$3); }
 ;
 
 floating_point_literal:
@@ -323,10 +331,10 @@ return_statement:
   "return" exp                { $$ = std::make_shared<GN::ast::ReturnStatement>($2); }
 
 stmt:
-  variable_decl_statement { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
-| return_statement        { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
-| loop_statement          { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
-| if_statement            { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
+  variable_decl_statement ";" { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
+| return_statement ";"        { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
+| loop_statement              { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
+| if_statement                { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
 
 loop_statement:
   "loop" block            { $$ = std::make_shared<GN::ast::LoopStatement>($2); }

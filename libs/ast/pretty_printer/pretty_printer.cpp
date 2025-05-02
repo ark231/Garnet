@@ -129,13 +129,16 @@ void PrettyPrinter::visit(const ast::IfStatement* node) {
     indent_ = indent_ + 1;
     for (auto [cond, block] : node->cond_blocks()) {
         println_with_indent(indent_, "cond:");
+        indent_ = indent_ + 1;
         if (cond) {
             cond->accept(*this);
         } else {
             println_with_indent(indent_, "else");
         }
+        println_with_indent(indent_, "block:");
         indent_ = indent_ + 1;
         block->accept(*this);
+        indent_ = indent_ + (-1);
         indent_ = indent_ + (-1);
     }
     indent_ = indent_ + (-1);

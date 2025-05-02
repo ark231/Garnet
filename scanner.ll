@@ -168,6 +168,9 @@ refval    [$&]
 "%"          return Garnet::yy::Parser::make_PERCENT                  (loc);
 "<"          return Garnet::yy::Parser::make_LESSTHAN                 (loc);
 ">"          return Garnet::yy::Parser::make_GREATERTHAN              (loc);
+"<="         return Garnet::yy::Parser::make_LESSTHAN_EQUAL           (loc);
+">="         return Garnet::yy::Parser::make_GREATERTHAN_EQUAL        (loc);
+"=="         return Garnet::yy::Parser::make_EQUAL                    (loc);
 "("          return Garnet::yy::Parser::make_LPAREN                   (loc);
 ")"          return Garnet::yy::Parser::make_RPAREN                   (loc);
 "="          return Garnet::yy::Parser::make_ASSIGN                   (loc);
@@ -187,6 +190,8 @@ refval    [$&]
 "}"          return Garnet::yy::Parser::make_RBRACE                   (loc);
 "return"     return Garnet::yy::Parser::make_RETURN                   (loc);
 "if"         return Garnet::yy::Parser::make_IF                       (loc);
+"elif"       return Garnet::yy::Parser::make_ELIF                     (loc);
+"else"       return Garnet::yy::Parser::make_ELSE                     (loc);
 "while"      return Garnet::yy::Parser::make_WHILE                    (loc);
 "loop"       return Garnet::yy::Parser::make_LOOP                     (loc);
 "for"        return Garnet::yy::Parser::make_FOR                      (loc);

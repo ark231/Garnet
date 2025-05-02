@@ -31,20 +31,20 @@ func fizzbuzz(let n:i64)->void{
         var i:i64 = 0;
         loop{
             if(i<n){
-                break;
+                # break;
             }
             {
                 if(i%15==0){
-                    println("fizzbuzz");
+                    # println("fizzbuzz");
                 }elif(i%3 == 0){
-                    println("fizz");
+                    # println("fizz");
                 }elif(i%5 == 0){
-                    println("buzz");
+                    # println("buzz");
                 }else{
-                    println(i);
+                    # println(i);
                 }
             }
-            i++;
+            # i++;
         }
     }
 }

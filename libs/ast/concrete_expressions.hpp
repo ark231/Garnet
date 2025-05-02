@@ -21,6 +21,9 @@ class BinaryOperator : public Expression {
         ASSIGN,
         LESS,
         GREATER,
+        LESS_EQUAL,
+        GREATER_EQUAL,
+        EQUAL,
     };
     BinaryOperator(OperatorType op, std::shared_ptr<Expression> left, std::shared_ptr<Expression> right)
         : op_(op), left_(left), right_(right) {}
