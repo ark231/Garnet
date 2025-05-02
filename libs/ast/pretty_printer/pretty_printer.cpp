@@ -124,6 +124,7 @@ void PrettyPrinter::visit(const ast::LoopStatement* node) {
     indent_ = indent_ + (-1);
     indent_ = indent_ + (-1);
 }
+void PrettyPrinter::visit(const ast::BreakStatement*) { println_with_indent(indent_, "BreakStatement"); }
 void PrettyPrinter::visit(const ast::IfStatement* node) {
     println_with_indent(indent_, "IfStatement");
     indent_ = indent_ + 1;

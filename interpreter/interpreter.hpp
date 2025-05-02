@@ -59,7 +59,7 @@ class Interpreter : public ast::Visitor {
     virtual void visit(const ast::ReturnStatement*) override;
     virtual void visit(const ast::Block*) override;
     virtual void visit(const ast::LoopStatement*) override;
-    // virtual void visit(const ast::BreakStatement*) override;
+    virtual void visit(const ast::BreakStatement*) override;
     virtual void visit(const ast::IfStatement*) override;
 
     void debug_print() const;

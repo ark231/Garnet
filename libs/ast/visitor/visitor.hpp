@@ -50,7 +50,7 @@ class Visitor {
     virtual void visit(const ast::ReturnStatement*) = 0;
     virtual void visit(const ast::Block*) = 0;
     virtual void visit(const ast::LoopStatement*) = 0;
-    // virtual void visit(const ast::BreakStatement*) = 0;
+    virtual void visit(const ast::BreakStatement*) = 0;
     virtual void visit(const ast::IfStatement*) = 0;
 };
 }  // namespace ast

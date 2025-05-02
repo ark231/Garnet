@@ -56,5 +56,11 @@ class IfStatement : public Statement {
    protected:
     std::vector<CondBlock> cond_blocks_;
 };
+class BreakStatement : public Statement {
+   public:
+    BreakStatement() {}
+    virtual std::vector<std::shared_ptr<Base>> children() const override;
+    virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
+};
 }  // namespace Garnet::ast
 #endif
