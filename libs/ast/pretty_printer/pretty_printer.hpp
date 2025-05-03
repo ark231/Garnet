@@ -1,11 +1,27 @@
 #ifndef GARNET_LIBS_AST_PRETTY_PRINTER_PRETTY_PRINTER
 #define GARNET_LIBS_AST_PRETTY_PRINTER_PRETTY_PRINTER
 
+#include <fmt/base.h>
+
 #include "format_support.hpp"
+#include "format_utils.hpp"
 #include "visitor/visitor.hpp"
 namespace Garnet::ast {
 class PrettyPrinter : public ast::Visitor {
     IndentLevel indent_ = 0_ind;
+    bool at_line_beginning_ = false;
+
+    template <int tabwidth = 4, typename... Args>
+    auto print_with_indent_(fmt::format_string<Args...> format_str, Args&&... args) {
+        at_line_beginning_ = false;
+        return print_funcs::print_with_indent(indent_, format_str, std::forward<Args>(args)...);
+    }
+    template <int tabwidth = 4, typename... Args>
+    auto println_with_indent_(fmt::format_string<Args...> format_str, Args&&... args) {
+        at_line_beginning_ = true;
+        return print_funcs::println_with_indent(indent_, format_str, std::forward<Args>(args)...);
+    }
+    void force_line_beginning_();
 
    public:
     virtual void visit(const ast::FunctionDecl*) override;
