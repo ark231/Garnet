@@ -151,6 +151,7 @@
 // %nterm <GN::ValRefType> type_info
 %nterm <GN::ast::VariableInfo> var_decl 
 %nterm <std::vector<GN::ast::VariableInfo>> var_decl_list
+%nterm <std::vector<GN::ast::VariableInfo>> parameter_decl_list
 %nterm <std::shared_ptr<GN::ast::Base>> decl_or_def
 %nterm <std::shared_ptr<GN::ast::FunctionDef>> function_def
 %nterm <std::shared_ptr<GN::ast::FunctionCall>> function_call
@@ -218,8 +219,12 @@ var_decl_list:
         $$.push_back($3); 
       };
 
+parameter_decl_list:
+  %empty                           { $$ = {}; }
+| var_decl_list                    { $$ = std::move($1); }
+
 function_decl:
-  "func" "identifier" "(" var_decl_list ")" "->" type_info {
+  "func" "identifier" "(" parameter_decl_list ")" "->" type_info {
         auto [valref,type] = $7;
       $$ = std::make_shared<GN::ast::FunctionDecl>(
             GN::ast::SourceFunctionIdentifier{$2},std::vector{GN::ast::VariableInfo{{"__unspecified__"},type, valref}},GN::ast::VariableInfo{{"__unspecified__"},type,valref}
