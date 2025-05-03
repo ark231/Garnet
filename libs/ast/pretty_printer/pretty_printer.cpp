@@ -72,6 +72,13 @@ void PrettyPrinter::visit(const ast::StringLiteral* node) { print_with_indent_("
 void PrettyPrinter::visit(const ast::FunctionCall* node) {
     println_with_indent_("FunctionCall");
     indent_ = indent_ + 1;
+    println_with_indent_("callee:");
+    indent_ = indent_ + 1;
+    node->callee()->accept(*this);
+    force_line_beginning_();
+    indent_ = indent_ + (-1);
+    indent_ = indent_ + (-1);
+    indent_ = indent_ + 1;
     for (const auto& arg : node->args()) {
         arg->accept(*this);
         force_line_beginning_();

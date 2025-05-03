@@ -324,7 +324,7 @@ parameter_list:
 
 function_call:
   callable_exp "(" parameter_list ")" { 
-      $$ = std::make_shared<GN::ast::FunctionCall>(GN::ast::SourceFunctionIdentifier{"__unspecified__"},std::move($3)); 
+      $$ = std::make_shared<GN::ast::FunctionCall>($1,std::move($3)); 
     }
 
 callable_exp:

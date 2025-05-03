@@ -93,15 +93,15 @@ class StringLiteral : public Expression {
 };
 class FunctionCall : public Expression {
    public:
-    FunctionCall(SourceFunctionIdentifier name, std::vector<std::shared_ptr<Expression>>&& args)
-        : name_(name), args_(args) {}
+    FunctionCall(std::shared_ptr<Expression> callee, std::vector<std::shared_ptr<Expression>>&& args)
+        : callee_(callee), args_(args) {}
     std::vector<std::shared_ptr<Expression>> args() const { return args_; }
-    SourceFunctionIdentifier name() const { return name_; }
+    std::shared_ptr<Expression> callee() const { return callee_; }
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
 
    private:
-    SourceFunctionIdentifier name_;
+    std::shared_ptr<Expression> callee_;
     std::vector<std::shared_ptr<Expression>> args_;
 };
 }  // namespace Garnet::ast
