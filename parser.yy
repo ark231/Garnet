@@ -135,6 +135,7 @@
 %nterm <std::shared_ptr<GN::ast::DeclBase>> decl
 %nterm <std::shared_ptr<GN::ast::Expression>> exp
 %nterm <std::vector<std::shared_ptr<GN::ast::Expression>>> exp_list
+%nterm <std::vector<std::shared_ptr<GN::ast::Expression>>> parameter_list
 %nterm <std::shared_ptr<GN::ast::Statement>> stmt
 %nterm <std::shared_ptr<GN::ast::FunctionDecl>> function_decl
 %nterm <std::shared_ptr<GN::ast::VariableDecl>> variable_decl
@@ -169,7 +170,7 @@
     std::vector<const void*> ptrs;
     std::ranges::transform($$,std::back_inserter(ptrs),[](auto p){return fmt::ptr(p);});
     fmt::print(yyo,"{}",ptrs); 
-} sentences exp_list
+} sentences exp_list parameter_list
 %printer { 
     for(auto [cond, block]:$$){
         fmt::print(yyo,"{{cond: {},block: {}}}",fmt::ptr(cond),fmt::ptr(block));
@@ -209,8 +210,7 @@ var_decl:
       };
 
 var_decl_list:
-  %empty                           { $$ = {}; }
-| var_decl                         { $$ = {$1}; }
+  var_decl                         { $$ = {$1}; }
 | var_decl_list "," var_decl       { 
         $$ = std::move($1);
         $$.push_back($3); 
@@ -301,15 +301,19 @@ signed_integer_literal:
   "integer"          { $$ = std::make_shared<GN::ast::SignedIntegerLiteral>($1); };
 
 exp_list:
-  %empty             { $$ = {}; }
-| exp_list exp       { 
+  exp                { $$ = {$1}; }
+| exp_list "," exp   { 
       $$ = std::move($1); 
-      $$.push_back($2);
+      $$.push_back($3);
     }
 
+parameter_list:
+  %empty             { $$ = {}; }
+| exp_list           { $$ = std::move($1); }
+
 function_call:
-  "taf" "(" exp_list ")" "«" "identifier" "»" { 
-      $$ = std::make_shared<GN::ast::FunctionCall>(GN::ast::SourceFunctionIdentifier{$6},std::move($3)); 
+  "identifier" "(" parameter_list ")" { 
+      $$ = std::make_shared<GN::ast::FunctionCall>(GN::ast::SourceFunctionIdentifier{$1},std::move($3)); 
     }
 
 exp:

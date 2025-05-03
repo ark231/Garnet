@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "base.hpp"
-#include "format_support.hpp"
 #include "sentence.hpp"
 namespace Garnet::ast {
 class Block : public Sentence {
