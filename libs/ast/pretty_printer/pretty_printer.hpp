@@ -22,6 +22,13 @@ class PrettyPrinter : public ast::Visitor {
         return print_funcs::println_with_indent(indent_, format_str, std::forward<Args>(args)...);
     }
     void force_line_beginning_();
+    class AutoIndent {
+        IndentLevel* indent_;
+
+       public:
+        AutoIndent(IndentLevel& indent) : indent_(&indent) { *indent_ = *indent_ + 1; }
+        ~AutoIndent() { *indent_ = *indent_ + (-1); }
+    };
 
    public:
     virtual void visit(const ast::FunctionDecl*) override;

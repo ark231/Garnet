@@ -19,9 +19,8 @@ void PrettyPrinter::visit(const ast::FunctionDecl* node) {
     println_with_indent_("FunctionDecl '{}' ({}) -> ({})", info.name(), fmt::join(info.args(), ","),
                          info.result().has_value() ? info.result()->to_string() : "void");
     for (const auto& child : node->children()) {
-        indent_ = indent_ + 1;
+        AutoIndent ind(indent_);
         child->accept(*this);
-        indent_ = indent_ + (-1);
     }
 }
 void PrettyPrinter::visit(const ast::VariableDecl* node) {
@@ -29,18 +28,20 @@ void PrettyPrinter::visit(const ast::VariableDecl* node) {
     auto type = node->type();
     auto init = node->init();
     println_with_indent_("VariableDecl {}: {}", name, type);
-    indent_ = indent_ + 1;
-    println_with_indent_("init:");
+    {
+        AutoIndent ind(indent_);
+        println_with_indent_("init:");
 
-    indent_ = indent_ + 1;
-    if (init) {
-        init.value()->accept(*this);
-        fmt::println("");
-    } else {
-        println_with_indent_("null");
+        {
+            AutoIndent ind(indent_);
+            if (init) {
+                init.value()->accept(*this);
+                fmt::println("");
+            } else {
+                println_with_indent_("null");
+            }
+        }
     }
-    indent_ = indent_ + (-1);
-    indent_ = indent_ + (-1);
 }
 void PrettyPrinter::visit(const ast::TypeDecl* node) { println_with_indent_("TypeDecl {}", node->name()); }
 void PrettyPrinter::visit(const ast::ErrorNode*) { println_with_indent_("ErrorNode"); }
@@ -49,12 +50,13 @@ void PrettyPrinter::visit(const ast::ErrorExpression*) { println_with_indent_("E
 void PrettyPrinter::visit(const ast::ErrorStatement*) { println_with_indent_("ErrorStatement"); }
 void PrettyPrinter::visit(const ast::BinaryOperator* node) {
     println_with_indent_("BinaryOperator {}", node->op());
-    indent_ = indent_ + 1;
-    node->left()->accept(*this);
-    force_line_beginning_();
-    node->right()->accept(*this);
-    force_line_beginning_();
-    indent_ = indent_ + (-1);
+    {
+        AutoIndent ind(indent_);
+        node->left()->accept(*this);
+        force_line_beginning_();
+        node->right()->accept(*this);
+        force_line_beginning_();
+    }
 }
 void PrettyPrinter::visit(const ast::VariableReference* node) {
     print_with_indent_("VariableReference<{} {}>", node->name(), node->valref());
@@ -71,88 +73,90 @@ void PrettyPrinter::visit(const ast::FloatingPointLiteral* node) {
 void PrettyPrinter::visit(const ast::StringLiteral* node) { print_with_indent_("StringLiteral<{}>", node->value()); }
 void PrettyPrinter::visit(const ast::FunctionCall* node) {
     println_with_indent_("FunctionCall");
-    indent_ = indent_ + 1;
-    println_with_indent_("callee:");
-    indent_ = indent_ + 1;
-    node->callee()->accept(*this);
-    force_line_beginning_();
-    indent_ = indent_ + (-1);
-    indent_ = indent_ + (-1);
-    indent_ = indent_ + 1;
-    for (const auto& arg : node->args()) {
-        arg->accept(*this);
-        force_line_beginning_();
+    {
+        AutoIndent ind(indent_);
+        println_with_indent_("callee:");
+        {
+            AutoIndent ind(indent_);
+            node->callee()->accept(*this);
+            force_line_beginning_();
+        }
     }
-    indent_ = indent_ + (-1);
+    {
+        AutoIndent ind(indent_);
+        for (const auto& arg : node->args()) {
+            arg->accept(*this);
+            force_line_beginning_();
+        }
+    }
 }
 void PrettyPrinter::visit(const ast::CompilationUnit* node) {
-    // indent_ = indent_ + 1;
     for (const auto& child : node->children()) {
         child->accept(*this);
     }
-    // indent_ = indent_ + (-1);
 }
 void PrettyPrinter::visit(const ast::FunctionDef* node) {
     auto info = node->info();
     println_with_indent_("FunctionDef '{}' ({}) -> ({})", info.name(), fmt::join(info.args(), ","),
                          info.result_to_string());
-    indent_ = indent_ + 1;
-    node->block()->accept(*this);
-    indent_ = indent_ + (-1);
+    {
+        AutoIndent ind(indent_);
+        node->block()->accept(*this);
+    }
 }
 void PrettyPrinter::visit(const ast::VariableDeclStatement* node) {
     println_with_indent_("VariableDeclStatement");
     for (const auto& child : node->children()) {
-        indent_ = indent_ + 1;
+        AutoIndent ind(indent_);
         child->accept(*this);
-        indent_ = indent_ + (-1);
     }
 }
 void PrettyPrinter::visit(const ast::ReturnStatement* node) {
     println_with_indent_("ReturnStatement");
     for (const auto& child : node->children()) {
-        indent_ = indent_ + 1;
+        AutoIndent ind(indent_);
         child->accept(*this);
         fmt::println("");
-        indent_ = indent_ + (-1);
     }
 }
 void PrettyPrinter::visit(const ast::Block* node) {
     println_with_indent_("Block");
-    indent_ = indent_ + 1;
     for (const auto& sentence : node->sentences()) {
+        AutoIndent ind(indent_);
         sentence->accept(*this);
     }
-    indent_ = indent_ + (-1);
 }
 void PrettyPrinter::visit(const ast::LoopStatement* node) {
     println_with_indent_("LoopStatement");
-    indent_ = indent_ + 1;
-    println_with_indent_("block:");
-    indent_ = indent_ + 1;
-    node->block()->accept(*this);
-    indent_ = indent_ + (-1);
-    indent_ = indent_ + (-1);
+    {
+        AutoIndent ind(indent_);
+        println_with_indent_("block:");
+        {
+            AutoIndent ind(indent_);
+            node->block()->accept(*this);
+        }
+    }
 }
 void PrettyPrinter::visit(const ast::BreakStatement*) { println_with_indent_("BreakStatement"); }
 void PrettyPrinter::visit(const ast::IfStatement* node) {
     println_with_indent_("IfStatement");
-    indent_ = indent_ + 1;
     for (auto [cond, block] : node->cond_blocks()) {
+        AutoIndent ind(indent_);
         println_with_indent_("cond:");
-        indent_ = indent_ + 1;
-        if (cond) {
-            cond->accept(*this);
-        } else {
-            println_with_indent_("else");
+        {
+            AutoIndent ind(indent_);
+            if (cond) {
+                cond->accept(*this);
+            } else {
+                println_with_indent_("else");
+            }
+            println_with_indent_("block:");
+            {
+                AutoIndent ind(indent_);
+                block->accept(*this);
+            }
         }
-        println_with_indent_("block:");
-        indent_ = indent_ + 1;
-        block->accept(*this);
-        indent_ = indent_ + (-1);
-        indent_ = indent_ + (-1);
     }
-    indent_ = indent_ + (-1);
 }
 void PrettyPrinter::force_line_beginning_() {
     if (not at_line_beginning_) {
