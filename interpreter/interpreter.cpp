@@ -78,6 +78,29 @@ void Interpreter::visit(const ast::ErrorNode* node) { throw SyntaxError("invalid
 void Interpreter::visit(const ast::ErrorSentence* node) { throw SyntaxError("invalid sentence"); }
 void Interpreter::visit(const ast::ErrorExpression* node) { throw SyntaxError("invalid expresssion"); }
 void Interpreter::visit(const ast::ErrorStatement* node) { throw SyntaxError("invalid statement"); }
+
+namespace {
+template <typename T, typename U>
+concept LessComparable = requires(T a, U b) {
+    { a < b } -> std::convertible_to<bool>;
+};
+template <typename T, typename U>
+concept LessEqualComparable = requires(T a, U b) {
+    { a <= b } -> std::convertible_to<bool>;
+};
+template <typename T, typename U>
+concept GreaterComparable = requires(T a, U b) {
+    { a > b } -> std::convertible_to<bool>;
+};
+template <typename T, typename U>
+concept GreaterEqualComparable = requires(T a, U b) {
+    { a >= b } -> std::convertible_to<bool>;
+};
+template <typename T, typename U>
+concept EqualComparable = requires(T a, U b) {
+    { a == b } -> std::convertible_to<bool>;
+};
+}  // namespace
 void Interpreter::visit(const ast::BinaryOperator* node) {
     node->left()->accept(*this);
 
@@ -111,13 +134,13 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                     [this](auto left, auto right) {
                         using LeftType = decltype(left);
                         using RightType = decltype(right);
+                        using Left = std::numeric_limits<LeftType>;
+                        using Right = std::numeric_limits<RightType>;
                         if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
                                       std::is_convertible_v<RightType, VariableReference>) {
                             throw TypeError(fmt::format("cannot apply ADD operator to {} and {}", typeid(LeftType),
                                                         typeid(RightType)));
-                        } else {
-                            using Left = std::numeric_limits<LeftType>;
-                            using Right = std::numeric_limits<RightType>;
+                        } else if constexpr (Left::is_specialized && Right::is_specialized) {
                             if constexpr (Left::is_integer && (not Right::is_integer)) {
                                 this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) + right);
                             } else if constexpr ((not Left::is_integer) && Right::is_integer) {
@@ -129,6 +152,12 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                                     this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) + right);
                                 }
                             }
+                        } else if constexpr (std::is_convertible_v<LeftType, std::string> &&
+                                             std::is_convertible_v<RightType, std::string>) {
+                            this->expr_result_ = left + right;
+                        } else {
+                            throw TypeError(fmt::format("cannot apply ADD operator to {} and {}", typeid(LeftType),
+                                                        typeid(RightType)));
                         }
                     },
                     _1, _2),
@@ -141,13 +170,13 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                     [this](auto left, auto right) {
                         using LeftType = decltype(left);
                         using RightType = decltype(right);
+                        using Left = std::numeric_limits<LeftType>;
+                        using Right = std::numeric_limits<RightType>;
                         if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
                                       std::is_convertible_v<RightType, VariableReference>) {
                             throw TypeError(fmt::format("cannot apply SUB operator to {} and {}", typeid(LeftType),
                                                         typeid(RightType)));
-                        } else {
-                            using Left = std::numeric_limits<LeftType>;
-                            using Right = std::numeric_limits<RightType>;
+                        } else if constexpr (Left::is_specialized && Right::is_specialized) {
                             if constexpr (Left::is_integer && (not Right::is_integer)) {
                                 this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) - right);
                             } else if constexpr ((not Left::is_integer) && Right::is_integer) {
@@ -159,6 +188,9 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                                     this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) - right);
                                 }
                             }
+                        } else {
+                            throw TypeError(fmt::format("cannot apply SUB operator to {} and {}", typeid(LeftType),
+                                                        typeid(RightType)));
                         }
                     },
                     _1, _2),
@@ -171,13 +203,13 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                     [this](auto left, auto right) {
                         using LeftType = decltype(left);
                         using RightType = decltype(right);
+                        using Left = std::numeric_limits<LeftType>;
+                        using Right = std::numeric_limits<RightType>;
                         if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
                                       std::is_convertible_v<RightType, VariableReference>) {
                             throw TypeError(fmt::format("cannot apply MUL operator to {} and {}", typeid(LeftType),
                                                         typeid(RightType)));
-                        } else {
-                            using Left = std::numeric_limits<LeftType>;
-                            using Right = std::numeric_limits<RightType>;
+                        } else if constexpr (Left::is_specialized && Right::is_specialized) {
                             if constexpr (Left::is_integer && (not Right::is_integer)) {
                                 this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) * right);
                             } else if constexpr ((not Left::is_integer) && Right::is_integer) {
@@ -189,6 +221,9 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                                     this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) * right);
                                 }
                             }
+                        } else {
+                            throw TypeError(fmt::format("cannot apply MUL operator to {} and {}", typeid(LeftType),
+                                                        typeid(RightType)));
                         }
                     },
                     _1, _2),
@@ -201,13 +236,14 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                     [this](auto left, auto right) {
                         using LeftType = decltype(left);
                         using RightType = decltype(right);
+                        using Left = std::numeric_limits<LeftType>;
+                        using Right = std::numeric_limits<RightType>;
                         if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
                                       std::is_convertible_v<RightType, VariableReference>) {
                             throw TypeError(fmt::format("cannot apply DIV operator to {} and {}", typeid(LeftType),
+
                                                         typeid(RightType)));
-                        } else {
-                            using Left = std::numeric_limits<LeftType>;
-                            using Right = std::numeric_limits<RightType>;
+                        } else if constexpr (Left::is_specialized && Right::is_specialized) {
                             if constexpr (Left::is_integer && Right::is_integer) {
                                 this->expr_result_ =
                                     static_cast<double>(static_cast<double>(left) / static_cast<double>(right));
@@ -222,6 +258,9 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                                     this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) / right);
                                 }
                             }
+                        } else {
+                            throw TypeError(fmt::format("cannot apply DIV operator to {} and {}", typeid(LeftType),
+                                                        typeid(RightType)));
                         }
                     },
                     _1, _2),
@@ -234,13 +273,13 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                     [this](auto left, auto right) {
                         using LeftType = decltype(left);
                         using RightType = decltype(right);
+                        using Left = std::numeric_limits<LeftType>;
+                        using Right = std::numeric_limits<RightType>;
                         if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
                                       std::is_convertible_v<RightType, VariableReference>) {
-                            throw TypeError(fmt::format("cannot apply DIV operator to {} and {}", typeid(LeftType),
+                            throw TypeError(fmt::format("cannot apply MOD operator to {} and {}", typeid(LeftType),
                                                         typeid(RightType)));
-                        } else {
-                            using Left = std::numeric_limits<LeftType>;
-                            using Right = std::numeric_limits<RightType>;
+                        } else if constexpr (Left::is_specialized && Right::is_specialized) {
                             if constexpr (Left::is_integer && (not Right::is_integer)) {
                                 this->expr_result_ =
                                     static_cast<RightType>(std::fmod(static_cast<RightType>(left), right));
@@ -262,6 +301,9 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                                         static_cast<RightType>(std::fmod(static_cast<RightType>(left), right));
                                 }
                             }
+                        } else {
+                            throw TypeError(fmt::format("cannot apply MOD operator to {} and {}", typeid(LeftType),
+                                                        typeid(RightType)));
                         }
                     },
                     _1, _2),
@@ -291,6 +333,86 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                 },
                 left.value, right);
         } break;
+        case LESS:
+            std::visit(std::bind(
+                           deref_and_apply,
+                           [this](auto left, auto right) {
+                               using LeftType = decltype(left);
+                               using RightType = decltype(right);
+                               if constexpr (LessComparable<LeftType, RightType>) {
+                                   this->expr_result_ = left < right;
+                               } else {
+                                   throw TypeError(fmt::format("cannot apply LESS operator to {} and {}",
+                                                               typeid(LeftType), typeid(RightType)));
+                               }
+                           },
+                           _1, _2),
+                       lhs, rhs);
+            break;
+        case LESS_EQUAL:
+            std::visit(std::bind(
+                           deref_and_apply,
+                           [this](auto left, auto right) {
+                               using LeftType = decltype(left);
+                               using RightType = decltype(right);
+                               if constexpr (LessEqualComparable<LeftType, RightType>) {
+                                   this->expr_result_ = left <= right;
+                               } else {
+                                   throw TypeError(fmt::format("cannot apply LESS_EQUAL operator to {} and {}",
+                                                               typeid(LeftType), typeid(RightType)));
+                               }
+                           },
+                           _1, _2),
+                       lhs, rhs);
+            break;
+        case GREATER:
+            std::visit(std::bind(
+                           deref_and_apply,
+                           [this](auto left, auto right) {
+                               using LeftType = decltype(left);
+                               using RightType = decltype(right);
+                               if constexpr (GreaterComparable<LeftType, RightType>) {
+                                   this->expr_result_ = left < right;
+                               } else {
+                                   throw TypeError(fmt::format("cannot apply GREATER operator to {} and {}",
+                                                               typeid(LeftType), typeid(RightType)));
+                               }
+                           },
+                           _1, _2),
+                       lhs, rhs);
+            break;
+        case GREATER_EQUAL:
+            std::visit(std::bind(
+                           deref_and_apply,
+                           [this](auto left, auto right) {
+                               using LeftType = decltype(left);
+                               using RightType = decltype(right);
+                               if constexpr (GreaterEqualComparable<LeftType, RightType>) {
+                                   this->expr_result_ = left <= right;
+                               } else {
+                                   throw TypeError(fmt::format("cannot apply GREATER_EQUAL operator to {} and {}",
+                                                               typeid(LeftType), typeid(RightType)));
+                               }
+                           },
+                           _1, _2),
+                       lhs, rhs);
+            break;
+        case EQUAL:
+            std::visit(std::bind(
+                           deref_and_apply,
+                           [this](auto left, auto right) {
+                               using LeftType = decltype(left);
+                               using RightType = decltype(right);
+                               if constexpr (EqualComparable<LeftType, RightType>) {
+                                   this->expr_result_ = left == right;
+                               } else {
+                                   throw TypeError(fmt::format("cannot apply GREATER_EQUAL operator to {} and {}",
+                                                               typeid(LeftType), typeid(RightType)));
+                               }
+                           },
+                           _1, _2),
+                       lhs, rhs);
+            break;
     }
 }
 void Interpreter::visit(const ast::VariableReference* node) {
