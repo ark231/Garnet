@@ -163,9 +163,11 @@
 %nterm <GN::ast::IfStatement::CondBlock> else
 %nterm <std::shared_ptr<GN::ast::BreakStatement>> break_statement
 %nterm <GN::ValRef> omittable_ref
+%nterm <std::shared_ptr<GN::ast::Expression>> callable_exp
+%nterm <std::shared_ptr<GN::ast::Expression>> uncallable_exp
 
 
-%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt function_decl variable_decl variable_init binary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def function_call return_statement block loop_statement if_statement alone_if_statement break_statement
+%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt function_decl variable_decl variable_init binary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def function_call return_statement block loop_statement if_statement alone_if_statement break_statement callable_exp uncallable_exp
 %printer { 
     std::vector<const void*> ptrs;
     std::ranges::transform($$,std::back_inserter(ptrs),[](auto p){return fmt::ptr(p);});
@@ -312,21 +314,28 @@ parameter_list:
 | exp_list           { $$ = std::move($1); }
 
 function_call:
-  "identifier" "(" parameter_list ")" { 
-      $$ = std::make_shared<GN::ast::FunctionCall>(GN::ast::SourceFunctionIdentifier{$1},std::move($3)); 
+  callable_exp "(" parameter_list ")" { 
+      $$ = std::make_shared<GN::ast::FunctionCall>(GN::ast::SourceFunctionIdentifier{"__unspecified__"},std::move($3)); 
     }
 
-exp:
+callable_exp:
+  variable_reference     { $$ = std::dynamic_pointer_cast<GN::ast::Expression>($1); }
+| function_call          { $$ = std::dynamic_pointer_cast<GN::ast::Expression>($1); }
+| "(" callable_exp ")"   { $$ = $2; }
+
+uncallable_exp:
   floating_point_literal { $$ = std::dynamic_pointer_cast<GN::ast::Expression>($1); }
 | signed_integer_literal { $$ = std::dynamic_pointer_cast<GN::ast::Expression>($1); }
-| variable_reference     { $$ = std::dynamic_pointer_cast<GN::ast::Expression>($1); }
 | binary_operator        { $$ = std::dynamic_pointer_cast<GN::ast::Expression>($1); }
-| function_call          { $$ = std::dynamic_pointer_cast<GN::ast::Expression>($1); }
-| "(" exp ")"            { $$ = $2; }
+| "(" uncallable_exp ")"            { $$ = $2; }
 | "(" error ")"          { 
       yyclearin;
       $$ = std::dynamic_pointer_cast<GN::ast::Expression>(std::make_shared<GN::ast::ErrorExpression>());
     }
+
+exp:
+  callable_exp           { $$ = $1; }
+| uncallable_exp         { $$ = $1; }
 
 variable_decl_statement:
   variable_decl ";"      { $$ = std::make_shared<GN::ast::VariableDeclStatement>($1); }
