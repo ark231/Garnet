@@ -4,7 +4,7 @@ func main(var argc: i64, var argv: vec)->i32{
     var piyo: i32 = hoge + fuga * 2;
     var hogehoge: f64;
     hogehoge=piyo;
-    #print(piyo);
+    print(piyo);
     return 0;
 }
 
