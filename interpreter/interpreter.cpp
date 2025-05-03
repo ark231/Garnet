@@ -299,6 +299,7 @@ void Interpreter::visit(const ast::VariableReference* node) {
 void Interpreter::visit(const ast::SignedIntegerLiteral* node) { expr_result_ = node->value(); }
 void Interpreter::visit(const ast::UnsignedIntegerLiteral* node) { expr_result_ = node->value(); }
 void Interpreter::visit(const ast::FloatingPointLiteral* node) { expr_result_ = node->value(); }
+void Interpreter::visit(const ast::StringLiteral* node) {}
 void Interpreter::visit(const ast::FunctionCall* node) {
     for (const auto& child : node->children()) {
         child->accept(*this);

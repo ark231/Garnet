@@ -67,11 +67,15 @@ void PrettyPrinter::visit(const ast::UnsignedIntegerLiteral* node) {
 void PrettyPrinter::visit(const ast::FloatingPointLiteral* node) {
     print_with_indent(indent_, "FloatingPointLiteral<{}>", node->value());
 }
+void PrettyPrinter::visit(const ast::StringLiteral* node) {
+    print_with_indent(indent_, "StringLiteral<{}>", node->value());
+}
 void PrettyPrinter::visit(const ast::FunctionCall* node) {
     println_with_indent(indent_, "FunctionCall");
     indent_ = indent_ + 1;
     for (const auto& arg : node->args()) {
         arg->accept(*this);
+        fmt::println("");
     }
     indent_ = indent_ + (-1);
 }

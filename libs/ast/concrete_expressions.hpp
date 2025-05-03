@@ -81,6 +81,16 @@ class FloatingPointLiteral : public Expression {
    private:
     double value_;
 };
+class StringLiteral : public Expression {
+   public:
+    StringLiteral(std::string value) : value_(value) {}
+    virtual std::vector<std::shared_ptr<Base>> children() const override;
+    std::string value() const { return value_; }
+    virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
+
+   private:
+    std::string value_;
+};
 class FunctionCall : public Expression {
    public:
     FunctionCall(SourceFunctionIdentifier name, std::vector<std::shared_ptr<Expression>>&& args)

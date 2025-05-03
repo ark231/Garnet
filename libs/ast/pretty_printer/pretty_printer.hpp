@@ -20,6 +20,7 @@ class PrettyPrinter : public ast::Visitor {
     virtual void visit(const ast::SignedIntegerLiteral*) override;
     virtual void visit(const ast::UnsignedIntegerLiteral*) override;
     virtual void visit(const ast::FloatingPointLiteral*) override;
+    virtual void visit(const ast::StringLiteral*) override;
     virtual void visit(const ast::FunctionCall*) override;
     virtual void visit(const ast::CompilationUnit*) override;
     virtual void visit(const ast::FunctionDef*) override;

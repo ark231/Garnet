@@ -15,6 +15,7 @@ class VariableReference;
 class SignedIntegerLiteral;
 class UnsignedIntegerLiteral;
 class FloatingPointLiteral;
+class StringLiteral;
 class FunctionCall;
 class CompilationUnit;
 class FunctionDecl;
@@ -43,6 +44,7 @@ class Visitor {
     virtual void visit(const ast::SignedIntegerLiteral*) = 0;
     virtual void visit(const ast::UnsignedIntegerLiteral*) = 0;
     virtual void visit(const ast::FloatingPointLiteral*) = 0;
+    virtual void visit(const ast::StringLiteral*) = 0;
     virtual void visit(const ast::FunctionCall*) = 0;
     virtual void visit(const ast::CompilationUnit*) = 0;
     virtual void visit(const ast::FunctionDef*) = 0;

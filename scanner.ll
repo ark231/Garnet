@@ -126,6 +126,8 @@
     Garnet::yy::Parser::symbol_type
   make_FLOAT (const std::string &s, const Garnet::yy::Parser::location_type& loc);
     Garnet::yy::Parser::symbol_type
+  make_STRING (const std::string &s, const Garnet::yy::Parser::location_type& loc);
+    Garnet::yy::Parser::symbol_type
   make_VALREF (const std::string &s, const Garnet::yy::Parser::location_type& loc);
 %}
 
@@ -141,6 +143,7 @@ float_neg  -{float_pos}
 float     {float_pos}|{float_neg}
 blank     [ \t\r]
 refval    [$&]
+string    \"([^\"]|\\\")*\"
 
 %{
   # undef YY_USER_ACTION 
@@ -174,7 +177,6 @@ refval    [$&]
 "("          return Garnet::yy::Parser::make_LPAREN                   (loc);
 ")"          return Garnet::yy::Parser::make_RPAREN                   (loc);
 "="          return Garnet::yy::Parser::make_ASSIGN                   (loc);
-"\""         return Garnet::yy::Parser::make_DQUOTE                   (loc);
 "."          return Garnet::yy::Parser::make_PERIOD                   (loc);
 "["          return Garnet::yy::Parser::make_LBRACKET                 (loc);
 "]"          return Garnet::yy::Parser::make_RBRACKET                 (loc);
@@ -202,6 +204,7 @@ refval    [$&]
 {int}        return make_INTEGER (yytext, loc);
 {id}         return Garnet::yy::Parser::make_IDENTIFIER (yytext, loc);
 {refval}     return make_VALREF (yytext, loc);
+{string}     return make_STRING(yytext, loc);
 .            {
                  throw Garnet::yy::Parser::syntax_error
                  (loc, "invalid character: " + std::string(yytext));
@@ -219,6 +222,12 @@ Garnet::yy::Parser::symbol_type
 make_FLOAT (const std::string &s, const Garnet::yy::Parser::location_type& loc)
 {
     return Garnet::yy::Parser::make_FLOAT (static_cast<double>(std::stod(s)), loc);
+}
+
+Garnet::yy::Parser::symbol_type
+make_STRING (const std::string &s, const Garnet::yy::Parser::location_type& loc)
+{
+    return Garnet::yy::Parser::make_STRING (s, loc);
 }
 
 Garnet::yy::Parser::symbol_type
