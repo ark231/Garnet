@@ -31,11 +31,6 @@ concept StaticConvertible = requires(From a, To b) {
 };
 
 void Interpreter::visit(const ast::VariableDecl* node) {
-    Value value;
-    if (node->init().has_value()) {
-        node->init().value()->accept(*this);
-        value = expr_result_;
-    }
     auto key = encode_variable_key_(node->name().source_name());
     if (variables_.contains(key)) {
         throw InvalidRedeclarationError(
@@ -45,30 +40,35 @@ void Interpreter::visit(const ast::VariableDecl* node) {
     Variable var;
     var.name = node->name().source_name();
     var.value = types_.at(encode_type_key_(node->type().source_name()))();
-    auto location = node->location();
-    std::visit(
-        [this, &location](auto& target, auto& source) mutable {
-            auto assign_only = [&location](auto& target, auto& source) {
-                if constexpr (StaticConvertible<decltype(source), std::remove_cvref_t<decltype(target)>>) {
-                    target = static_cast<std::remove_cvref_t<decltype(target)>>(source);
+    if (node->init().has_value()) {
+        node->init().value()->accept(*this);
+        Value value = expr_result_;
+        auto location = node->location();
+        std::visit(
+            [this, &location](auto& target, auto& source) mutable {
+                auto assign_only = [&location](auto& target, auto& source) {
+                    if constexpr (StaticConvertible<decltype(source), std::remove_cvref_t<decltype(target)>>) {
+                        target = static_cast<std::remove_cvref_t<decltype(target)>>(source);
+                    } else {
+                        throw TypeError(fmt::format("cannot convert {} to {}", typeid(source), typeid(target)),
+                                        location);
+                    }
+                };
+                using namespace std::placeholders;
+                if constexpr (std::is_convertible_v<decltype(source), VariableReference> &&
+                              std::is_convertible_v<decltype(target), VariableReference>) {
+                    std::visit(assign_only, variables_[target.key].value, variables_[source.key].value);
+                } else if constexpr (std::is_convertible_v<decltype(source), VariableReference>) {
+                    std::visit([&target, assign_only](auto& source) { assign_only(target, source); },
+                               variables_[source.key].value);
+                } else if constexpr (std::is_convertible_v<decltype(target), VariableReference>) {
+                    std::visit(std::bind(assign_only, std::ref(_1), source), variables_[target.key].value);
                 } else {
-                    throw TypeError(fmt::format("cannot convert {} to {}", typeid(source), typeid(target)), location);
+                    assign_only(target, source);
                 }
-            };
-            using namespace std::placeholders;
-            if constexpr (std::is_convertible_v<decltype(source), VariableReference> &&
-                          std::is_convertible_v<decltype(target), VariableReference>) {
-                std::visit(assign_only, variables_[target.key].value, variables_[source.key].value);
-            } else if constexpr (std::is_convertible_v<decltype(source), VariableReference>) {
-                std::visit([&target, assign_only](auto& source) { assign_only(target, source); },
-                           variables_[source.key].value);
-            } else if constexpr (std::is_convertible_v<decltype(target), VariableReference>) {
-                std::visit(std::bind(assign_only, std::ref(_1), source), variables_[target.key].value);
-            } else {
-                assign_only(target, source);
-            }
-        },
-        var.value, value);
+            },
+            var.value, value);
+    }
     variables_[key] = var;
 }
 void Interpreter::visit(const ast::TypeDecl* node) {
