@@ -39,18 +39,20 @@ void Interpreter::visit(const ast::VariableDecl* node) {
     auto key = encode_variable_key_(node->name().source_name());
     if (variables_.contains(key)) {
         throw InvalidRedeclarationError(
-            std::format("variable {} is already declared in this scope.", node->name().source_name()));
+            std::format("variable {} is already declared in this scope.", node->name().source_name()),
+            node->location());
     }
     Variable var;
     var.name = node->name().source_name();
     var.value = types_.at(encode_type_key_(node->type().source_name()))();
+    auto location = node->location();
     std::visit(
-        [this](auto& target, auto& source) mutable {
-            auto assign_only = [](auto& target, auto& source) {
+        [this, &location](auto& target, auto& source) mutable {
+            auto assign_only = [&location](auto& target, auto& source) {
                 if constexpr (StaticConvertible<decltype(source), std::remove_cvref_t<decltype(target)>>) {
                     target = static_cast<std::remove_cvref_t<decltype(target)>>(source);
                 } else {
-                    throw TypeError(fmt::format("cannot convert {} to {}", typeid(source), typeid(target)));
+                    throw TypeError(fmt::format("cannot convert {} to {}", typeid(source), typeid(target)), location);
                 }
             };
             using namespace std::placeholders;
@@ -74,10 +76,12 @@ void Interpreter::visit(const ast::TypeDecl* node) {
         child->accept(*this);
     }
 }
-void Interpreter::visit(const ast::ErrorNode* node) { throw SyntaxError("invalid node"); }
-void Interpreter::visit(const ast::ErrorSentence* node) { throw SyntaxError("invalid sentence"); }
-void Interpreter::visit(const ast::ErrorExpression* node) { throw SyntaxError("invalid expresssion"); }
-void Interpreter::visit(const ast::ErrorStatement* node) { throw SyntaxError("invalid statement"); }
+void Interpreter::visit(const ast::ErrorNode* node) { throw SyntaxError("invalid node", node->location()); }
+void Interpreter::visit(const ast::ErrorSentence* node) { throw SyntaxError("invalid sentence", node->location()); }
+void Interpreter::visit(const ast::ErrorExpression* node) {
+    throw SyntaxError("invalid expresssion", node->location());
+}
+void Interpreter::visit(const ast::ErrorStatement* node) { throw SyntaxError("invalid statement", node->location()); }
 
 namespace {
 template <typename T, typename U>
@@ -124,6 +128,7 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
             func(lhs, rhs);
         }
     };
+    auto location = node->location();
     switch (node->op()) {
         using enum ast::BinaryOperator::OperatorType;
         using namespace std::placeholders;
@@ -131,7 +136,7 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
             std::visit(
                 std::bind(
                     deref_and_apply,
-                    [this](auto left, auto right) {
+                    [this, &location](auto left, auto right) {
                         using LeftType = decltype(left);
                         using RightType = decltype(right);
                         using Left = std::numeric_limits<LeftType>;
@@ -139,7 +144,8 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                         if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
                                       std::is_convertible_v<RightType, VariableReference>) {
                             throw TypeError(fmt::format("cannot apply ADD operator to {} and {}", typeid(LeftType),
-                                                        typeid(RightType)));
+                                                        typeid(RightType)),
+                                            location);
                         } else if constexpr (Left::is_specialized && Right::is_specialized) {
                             if constexpr (Left::is_integer && (not Right::is_integer)) {
                                 this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) + right);
@@ -157,7 +163,8 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                             this->expr_result_ = left + right;
                         } else {
                             throw TypeError(fmt::format("cannot apply ADD operator to {} and {}", typeid(LeftType),
-                                                        typeid(RightType)));
+                                                        typeid(RightType)),
+                                            location);
                         }
                     },
                     _1, _2),
@@ -167,7 +174,7 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
             std::visit(
                 std::bind(
                     deref_and_apply,
-                    [this](auto left, auto right) {
+                    [this, &location](auto left, auto right) {
                         using LeftType = decltype(left);
                         using RightType = decltype(right);
                         using Left = std::numeric_limits<LeftType>;
@@ -175,7 +182,8 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                         if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
                                       std::is_convertible_v<RightType, VariableReference>) {
                             throw TypeError(fmt::format("cannot apply SUB operator to {} and {}", typeid(LeftType),
-                                                        typeid(RightType)));
+                                                        typeid(RightType)),
+                                            location);
                         } else if constexpr (Left::is_specialized && Right::is_specialized) {
                             if constexpr (Left::is_integer && (not Right::is_integer)) {
                                 this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) - right);
@@ -190,7 +198,8 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                             }
                         } else {
                             throw TypeError(fmt::format("cannot apply SUB operator to {} and {}", typeid(LeftType),
-                                                        typeid(RightType)));
+                                                        typeid(RightType)),
+                                            location);
                         }
                     },
                     _1, _2),
@@ -200,7 +209,7 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
             std::visit(
                 std::bind(
                     deref_and_apply,
-                    [this](auto left, auto right) {
+                    [this, &location](auto left, auto right) {
                         using LeftType = decltype(left);
                         using RightType = decltype(right);
                         using Left = std::numeric_limits<LeftType>;
@@ -208,7 +217,8 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                         if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
                                       std::is_convertible_v<RightType, VariableReference>) {
                             throw TypeError(fmt::format("cannot apply MUL operator to {} and {}", typeid(LeftType),
-                                                        typeid(RightType)));
+                                                        typeid(RightType)),
+                                            location);
                         } else if constexpr (Left::is_specialized && Right::is_specialized) {
                             if constexpr (Left::is_integer && (not Right::is_integer)) {
                                 this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) * right);
@@ -223,7 +233,8 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                             }
                         } else {
                             throw TypeError(fmt::format("cannot apply MUL operator to {} and {}", typeid(LeftType),
-                                                        typeid(RightType)));
+                                                        typeid(RightType)),
+                                            location);
                         }
                     },
                     _1, _2),
@@ -233,7 +244,7 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
             std::visit(
                 std::bind(
                     deref_and_apply,
-                    [this](auto left, auto right) {
+                    [this, &location](auto left, auto right) {
                         using LeftType = decltype(left);
                         using RightType = decltype(right);
                         using Left = std::numeric_limits<LeftType>;
@@ -242,7 +253,8 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                                       std::is_convertible_v<RightType, VariableReference>) {
                             throw TypeError(fmt::format("cannot apply DIV operator to {} and {}", typeid(LeftType),
 
-                                                        typeid(RightType)));
+                                                        typeid(RightType)),
+                                            location);
                         } else if constexpr (Left::is_specialized && Right::is_specialized) {
                             if constexpr (Left::is_integer && Right::is_integer) {
                                 this->expr_result_ =
@@ -260,7 +272,8 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                             }
                         } else {
                             throw TypeError(fmt::format("cannot apply DIV operator to {} and {}", typeid(LeftType),
-                                                        typeid(RightType)));
+                                                        typeid(RightType)),
+                                            location);
                         }
                     },
                     _1, _2),
@@ -270,7 +283,7 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
             std::visit(
                 std::bind(
                     deref_and_apply,
-                    [this](auto left, auto right) {
+                    [this, &location](auto left, auto right) {
                         using LeftType = decltype(left);
                         using RightType = decltype(right);
                         using Left = std::numeric_limits<LeftType>;
@@ -278,7 +291,8 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                         if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
                                       std::is_convertible_v<RightType, VariableReference>) {
                             throw TypeError(fmt::format("cannot apply MOD operator to {} and {}", typeid(LeftType),
-                                                        typeid(RightType)));
+                                                        typeid(RightType)),
+                                            location);
                         } else if constexpr (Left::is_specialized && Right::is_specialized) {
                             if constexpr (Left::is_integer && (not Right::is_integer)) {
                                 this->expr_result_ =
@@ -303,7 +317,8 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                             }
                         } else {
                             throw TypeError(fmt::format("cannot apply MOD operator to {} and {}", typeid(LeftType),
-                                                        typeid(RightType)));
+                                                        typeid(RightType)),
+                                            location);
                         }
                     },
                     _1, _2),
@@ -312,7 +327,7 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
         case ASSIGN: {
             // 左辺は必ず参照でなくてはならないので、deref_and_applyは使えない
             if (not std::holds_alternative<VariableReference>(lhs)) {
-                throw TypeError("cannot assign to rvalue");
+                throw TypeError("cannot assign to rvalue", location);
             }
             auto& left = variables_[std::get<VariableReference>(lhs).key];
             Value right;
@@ -320,13 +335,14 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                 right = variables_[std::get<VariableReference>(rhs).key].value;
             }
             std::visit(
-                [this](auto& left, auto right) {
+                [this, &location](auto& left, auto right) {
                     using LeftType = decltype(left);
                     using RightType = decltype(right);
                     if constexpr (not StaticConvertible<std::remove_cvref_t<RightType>,
                                                         std::remove_cvref_t<LeftType>>) {
                         throw TypeError(fmt::format("cannot ASSIGN a value with type {} into a variable with type {}",
-                                                    typeid(RightType), typeid(LeftType)));
+                                                    typeid(RightType), typeid(LeftType)),
+                                        location);
                     } else {
                         left = static_cast<std::remove_cvref_t<LeftType>>(right);
                     }
@@ -336,14 +352,15 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
         case LESS:
             std::visit(std::bind(
                            deref_and_apply,
-                           [this](auto left, auto right) {
+                           [this, &location](auto left, auto right) {
                                using LeftType = decltype(left);
                                using RightType = decltype(right);
                                if constexpr (LessComparable<LeftType, RightType>) {
                                    this->expr_result_ = left < right;
                                } else {
                                    throw TypeError(fmt::format("cannot apply LESS operator to {} and {}",
-                                                               typeid(LeftType), typeid(RightType)));
+                                                               typeid(LeftType), typeid(RightType)),
+                                                   location);
                                }
                            },
                            _1, _2),
@@ -352,14 +369,15 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
         case LESS_EQUAL:
             std::visit(std::bind(
                            deref_and_apply,
-                           [this](auto left, auto right) {
+                           [this, &location](auto left, auto right) {
                                using LeftType = decltype(left);
                                using RightType = decltype(right);
                                if constexpr (LessEqualComparable<LeftType, RightType>) {
                                    this->expr_result_ = left <= right;
                                } else {
                                    throw TypeError(fmt::format("cannot apply LESS_EQUAL operator to {} and {}",
-                                                               typeid(LeftType), typeid(RightType)));
+                                                               typeid(LeftType), typeid(RightType)),
+                                                   location);
                                }
                            },
                            _1, _2),
@@ -368,14 +386,15 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
         case GREATER:
             std::visit(std::bind(
                            deref_and_apply,
-                           [this](auto left, auto right) {
+                           [this, &location](auto left, auto right) {
                                using LeftType = decltype(left);
                                using RightType = decltype(right);
                                if constexpr (GreaterComparable<LeftType, RightType>) {
                                    this->expr_result_ = left < right;
                                } else {
                                    throw TypeError(fmt::format("cannot apply GREATER operator to {} and {}",
-                                                               typeid(LeftType), typeid(RightType)));
+                                                               typeid(LeftType), typeid(RightType)),
+                                                   location);
                                }
                            },
                            _1, _2),
@@ -384,14 +403,15 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
         case GREATER_EQUAL:
             std::visit(std::bind(
                            deref_and_apply,
-                           [this](auto left, auto right) {
+                           [this, &location](auto left, auto right) {
                                using LeftType = decltype(left);
                                using RightType = decltype(right);
                                if constexpr (GreaterEqualComparable<LeftType, RightType>) {
                                    this->expr_result_ = left <= right;
                                } else {
                                    throw TypeError(fmt::format("cannot apply GREATER_EQUAL operator to {} and {}",
-                                                               typeid(LeftType), typeid(RightType)));
+                                                               typeid(LeftType), typeid(RightType)),
+                                                   location);
                                }
                            },
                            _1, _2),
@@ -400,14 +420,15 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
         case EQUAL:
             std::visit(std::bind(
                            deref_and_apply,
-                           [this](auto left, auto right) {
+                           [this, &location](auto left, auto right) {
                                using LeftType = decltype(left);
                                using RightType = decltype(right);
                                if constexpr (EqualComparable<LeftType, RightType>) {
                                    this->expr_result_ = left == right;
                                } else {
                                    throw TypeError(fmt::format("cannot apply GREATER_EQUAL operator to {} and {}",
-                                                               typeid(LeftType), typeid(RightType)));
+                                                               typeid(LeftType), typeid(RightType)),
+                                                   location);
                                }
                            },
                            _1, _2),

@@ -10,7 +10,7 @@ class InterpreterError : public std::runtime_error {
     location::SourceRegion location_;
 
    public:
-    InterpreterError(std::string message, location::SourceRegion location = {})
+    InterpreterError(std::string message, location::SourceRegion location)
         : std::runtime_error(message), location_(location) {
         trace_ = boost::stacktrace::stacktrace();
     }
