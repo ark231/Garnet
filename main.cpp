@@ -19,6 +19,7 @@
    along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #include <fmt/base.h>
+#include <fmt/color.h>
 #include <fmt/core.h>
 #include <fmt/ostream.h>
 
@@ -36,6 +37,30 @@
 namespace bpo = boost::program_options;
 using namespace Garnet::operators;
 
+void print_source(const Garnet::location::SourceRegion& loc) {
+    std::ifstream file(loc.begin.source_file);
+    std::string line;
+    for (auto i = 1; i <= loc.begin.line - 1; i++) {
+        std::getline(file, line);
+    }
+    for (auto i = loc.begin.line; i <= loc.end.line; i++) {
+        std::getline(file, line);
+        std::string_view pre_colored, colored, post_colored;
+        decltype(line.cbegin()) colored_begin = line.cbegin(), colored_end = line.cend();
+        if (i == loc.begin.line) {
+            pre_colored = {line.cbegin(), line.cbegin() + loc.begin.column - 1};
+            colored_begin = line.cbegin() + loc.begin.column - 1;
+        }
+        if (i == loc.end.line) {
+            colored_end = line.cbegin() + loc.end.column - 1;
+            if (static_cast<size_t>(loc.end.column) < line.size()) {
+                post_colored = {line.cbegin() + loc.end.column - 1, line.cend()};
+            }
+        }
+        colored = {colored_begin, colored_end};
+        fmt::println(stderr, "{}{}{}", pre_colored, fmt::styled(colored, fmt::fg(fmt::color::red)), post_colored);
+    }
+}
 int main(int argc, char* argv[]) {
     bpo::positional_options_description pos;
     pos.add("input-file", -1);
@@ -77,6 +102,7 @@ int main(int argc, char* argv[]) {
         fmt::println(std::cerr, "interpreter error: {}", typeid(e));
         auto loc = e.location();
         fmt::println(std::cerr, "    at {}, line {}, col {}", loc.begin.source_file, loc.begin.line, loc.begin.column);
+        print_source(loc);
         fmt::println(std::cerr, "    what(): {}", e.what());
         if (show_backtrace) {
             fmt::println(std::cerr, "    backtrace:");
