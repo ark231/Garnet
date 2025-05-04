@@ -41,23 +41,28 @@ int main(int argc, char* argv[]) {
     pos.add("input-file", -1);
     bpo::options_description opt;
     opt.add_options()("help,h", "show this help")("trace-parsing,p", "enable debug output for parsing")(
-        "trace-scanning,s", "enable debug output for scanning")(
+        "trace-scanning,s", "enable debug output for scanning")("backtrace,b",
+                                                                "show backtrace of interpreter on error")(
         "input-file", bpo::value<std::vector<std::string>>()->required(), "input file (positional)");
     bpo::variables_map varmap;
     bpo::store(bpo::command_line_parser(argc, argv).options(opt).positional(pos).run(), varmap);
 
-    if (varmap.count("help")) {
+    if (varmap.contains("help")) {
         std::cout << opt;
         std::exit(0);
     }
     bpo::notify(varmap);
     int res = 0;
     Garnet::Driver drv;
-    if (varmap.count("trace-parsing")) {
+    if (varmap.contains("trace-parsing")) {
         drv.trace_parsing = true;
     }
-    if (varmap.count("trace-scanning")) {
+    if (varmap.contains("trace-scanning")) {
         drv.trace_scanning = true;
+    }
+    bool show_backtrace = false;
+    if (varmap.contains("backtrace")) {
+        show_backtrace = true;
     }
     for (const auto& infilename : varmap["input-file"].as<std::vector<std::string>>()) {
         drv.parse(infilename);
@@ -70,9 +75,13 @@ int main(int argc, char* argv[]) {
         ast->accept(interpreter);
     } catch (Garnet::interpreter::InterpreterError& e) {
         fmt::println(std::cerr, "interpreter error: {}", typeid(e));
+        auto loc = e.location();
+        fmt::println(std::cerr, "    at {}, line {}, col {}", loc.begin.source_file, loc.begin.line, loc.begin.column);
         fmt::println(std::cerr, "    what(): {}", e.what());
-        fmt::println(std::cerr, "    backtrace:");
-        fmt::println(std::cerr, "{}", fmt::streamed(e.trace()));
+        if (show_backtrace) {
+            fmt::println(std::cerr, "    backtrace:");
+            fmt::println(std::cerr, "{}", fmt::streamed(e.trace()));
+        }
     }
     interpreter.debug_print();
     return res;

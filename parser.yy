@@ -79,6 +79,15 @@
 # include "scanner.hpp"
 # undef yylex
 # define yylex drv.lexer_->yylex
+
+namespace Garnet::yy{
+Garnet::location::SourceRegion conv_loc(const location& l){
+    return Garnet::location::SourceRegion{
+        .begin = {.source_file = *l.begin.filename, .line = l.begin.line, .column = l.begin.column},
+        .end   = {.source_file = *l.end.filename,   .line = l.end.line,   .column = l.end.column}
+        };
+}
+}
 }
 
 %define api.token.prefix {TOK_}
@@ -198,7 +207,7 @@ decl_or_def:
 | function_def             { $$ = std::dynamic_pointer_cast<GN::ast::Base>($1);}
 | error ";"                { 
       yyclearin; 
-      $$ = std::dynamic_pointer_cast<GN::ast::Base>(std::make_shared<GN::ast::ErrorNode>());
+      $$ = std::dynamic_pointer_cast<GN::ast::Base>(std::make_shared<GN::ast::ErrorNode>(conv_loc(@$)));
     }
 
 decl:
@@ -228,18 +237,18 @@ function_decl:
   "func" "identifier" "(" parameter_decl_list ")" "->" type_info {
         auto [valref,type] = $7;
       $$ = std::make_shared<GN::ast::FunctionDecl>(
-            GN::ast::SourceFunctionIdentifier{$2},std::move($4),GN::ast::VariableInfo{{"__return__"},type,valref}
+            GN::ast::SourceFunctionIdentifier{$2},std::move($4),GN::ast::VariableInfo{{"__return__"},type,valref}, conv_loc(@$)
            );
     };
 
 function_def:
   function_decl block             { 
-      $$ = std::make_shared<GN::ast::FunctionDef>($1->info(),$2); 
+      $$ = std::make_shared<GN::ast::FunctionDef>($1->info(),$2,conv_loc(@$)); 
     }
 
 block:
   "{" sentences "}"        {
-    $$ = std::make_shared<GN::ast::Block>(std::move($2));
+    $$ = std::make_shared<GN::ast::Block>(std::move($2),conv_loc(@$));
   }
 
 sentences:
@@ -257,7 +266,7 @@ sentence:
 | exp ";"                  { $$ = std::dynamic_pointer_cast<GN::ast::Sentence>($1); }
 | error ";"                { 
       yyclearin; 
-      $$ = std::dynamic_pointer_cast<GN::ast::Sentence>(std::make_shared<GN::ast::ErrorSentence>());
+      $$ = std::dynamic_pointer_cast<GN::ast::Sentence>(std::make_shared<GN::ast::ErrorSentence>(conv_loc(@$)));
     }
 
 const:
@@ -267,12 +276,12 @@ const:
 
 variable_decl:
   var_decl {
-      $$ = std::make_shared<GN::ast::VariableDecl>($1.name(), $1.type().name());
+      $$ = std::make_shared<GN::ast::VariableDecl>($1.name(), $1.type().name(),std::nullopt,conv_loc(@$));
     };
 
 variable_init:
   var_decl "=" exp {
-      $$ = std::make_shared<GN::ast::VariableDecl>($1.name(), $1.type().name(),$3);
+      $$ = std::make_shared<GN::ast::VariableDecl>($1.name(), $1.type().name(),$3,conv_loc(@$));
   }
 
 omittable_ref:
@@ -281,7 +290,7 @@ omittable_ref:
 
 
 variable_reference:
-  omittable_ref "identifier" { $$ = std::make_shared<GN::ast::VariableReference>(GN::ast::SourceVariableIdentifier($2),$1); };
+  omittable_ref "identifier" { $$ = std::make_shared<GN::ast::VariableReference>(GN::ast::SourceVariableIdentifier($2),$1,conv_loc(@$)); };
 
 %left "<" ">" "<=" ">=" "==";
 %left "=";
@@ -289,27 +298,27 @@ variable_reference:
 %left "*" "/" "%";
 
 binary_operator:
-  exp "+" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::ADD,$1,$3); }
-| exp "-" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::SUB,$1,$3); }
-| exp "*" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::MUL,$1,$3); }
-| exp "/" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::DIV,$1,$3); }
-| exp "%" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::MOD,$1,$3); }
-| exp "=" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::ASSIGN,$1,$3); }
-| exp "<" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::LESS,$1,$3); }
-| exp ">" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::GREATER,$1,$3); }
-| exp "<=" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::LESS_EQUAL,$1,$3); }
-| exp ">=" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::GREATER_EQUAL,$1,$3); }
-| exp "==" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::EQUAL,$1,$3); }
+  exp "+" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::ADD,$1,$3,conv_loc(@$)); }
+| exp "-" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::SUB,$1,$3,conv_loc(@$)); }
+| exp "*" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::MUL,$1,$3,conv_loc(@$)); }
+| exp "/" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::DIV,$1,$3,conv_loc(@$)); }
+| exp "%" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::MOD,$1,$3,conv_loc(@$)); }
+| exp "=" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::ASSIGN,$1,$3,conv_loc(@$)); }
+| exp "<" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::LESS,$1,$3,conv_loc(@$)); }
+| exp ">" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::GREATER,$1,$3,conv_loc(@$)); }
+| exp "<=" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::LESS_EQUAL,$1,$3,conv_loc(@$)); }
+| exp ">=" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::GREATER_EQUAL,$1,$3,conv_loc(@$)); }
+| exp "==" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::EQUAL,$1,$3,conv_loc(@$)); }
 ;
 
 floating_point_literal:
-  "floating point"   { $$ = std::make_shared<GN::ast::FloatingPointLiteral>($1); };
+  "floating point"   { $$ = std::make_shared<GN::ast::FloatingPointLiteral>($1,conv_loc(@$)); };
 
 signed_integer_literal:
-  "integer"          { $$ = std::make_shared<GN::ast::SignedIntegerLiteral>($1); };
+  "integer"          { $$ = std::make_shared<GN::ast::SignedIntegerLiteral>($1,conv_loc(@$)); };
 
 string_literal:
-  "string"           { $$ = std::make_shared<GN::ast::StringLiteral>($1); };
+  "string"           { $$ = std::make_shared<GN::ast::StringLiteral>($1,conv_loc(@$)); };
 
 exp_list:
   exp                { $$ = {$1}; }
@@ -324,7 +333,7 @@ parameter_list:
 
 function_call:
   callable_exp "(" parameter_list ")" { 
-      $$ = std::make_shared<GN::ast::FunctionCall>($1,std::move($3)); 
+      $$ = std::make_shared<GN::ast::FunctionCall>($1,std::move($3),conv_loc(@$)); 
     }
 
 callable_exp:
@@ -340,7 +349,7 @@ uncallable_exp:
 | "(" uncallable_exp ")"            { $$ = $2; }
 | "(" error ")"          { 
       yyclearin;
-      $$ = std::dynamic_pointer_cast<GN::ast::Expression>(std::make_shared<GN::ast::ErrorExpression>());
+      $$ = std::dynamic_pointer_cast<GN::ast::Expression>(std::make_shared<GN::ast::ErrorExpression>(conv_loc(@$)));
     }
 
 exp:
@@ -348,11 +357,11 @@ exp:
 | uncallable_exp         { $$ = $1; }
 
 variable_decl_statement:
-  variable_decl ";"      { $$ = std::make_shared<GN::ast::VariableDeclStatement>($1); }
-| variable_init ";"      { $$ = std::make_shared<GN::ast::VariableDeclStatement>($1); }
+  variable_decl ";"      { $$ = std::make_shared<GN::ast::VariableDeclStatement>($1,conv_loc(@$)); }
+| variable_init ";"      { $$ = std::make_shared<GN::ast::VariableDeclStatement>($1,conv_loc(@$)); }
 
 return_statement:
-  "return" exp ";"            { $$ = std::make_shared<GN::ast::ReturnStatement>($2); }
+  "return" exp ";"            { $$ = std::make_shared<GN::ast::ReturnStatement>($2,conv_loc(@$)); }
 
 stmt:
   variable_decl_statement { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
@@ -362,10 +371,10 @@ stmt:
 | break_statement         { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
 
 loop_statement:
-  "loop" block            { $$ = std::make_shared<GN::ast::LoopStatement>($2); }
+  "loop" block            { $$ = std::make_shared<GN::ast::LoopStatement>($2,conv_loc(@$)); }
 
 break_statement:
-  "break" ";"             { $$ = std::make_shared<GN::ast::BreakStatement>(); }
+  "break" ";"             { $$ = std::make_shared<GN::ast::BreakStatement>(conv_loc(@$)); }
 
 if_statement:
   alone_if_statement            { $$ = $1; }
@@ -380,7 +389,7 @@ if_statement:
                                 }
 
 alone_if_statement:
-  "if" "(" exp ")" block  { $$ = std::make_shared<GN::ast::IfStatement>(std::vector{GN::ast::IfStatement::CondBlock{$3, $5}}); }
+  "if" "(" exp ")" block  { $$ = std::make_shared<GN::ast::IfStatement>(std::vector{GN::ast::IfStatement::CondBlock{$3, $5}},conv_loc(@$)); }
 
 elifs:
   elif        { $$ = {$1}; }
