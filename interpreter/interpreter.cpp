@@ -7,6 +7,7 @@
 #include <concepts>
 #include <functional>
 #include <limits>
+#include <memory>
 #include <type_traits>
 
 #include "compilation_unit.hpp"
@@ -444,11 +445,16 @@ void Interpreter::visit(const ast::UnsignedIntegerLiteral* node) { expr_result_ 
 void Interpreter::visit(const ast::FloatingPointLiteral* node) { expr_result_ = node->value(); }
 void Interpreter::visit(const ast::StringLiteral* node) {}
 void Interpreter::visit(const ast::FunctionCall* node) {
-    for (const auto& child : node->children()) {
-        child->accept(*this);
-    }
+    node->callee()->accept(*this);
+    auto callee = expr_result_;
 }
 void Interpreter::visit(const ast::CompilationUnit* node) {
+    for (const auto& child : node->children()) {
+        const auto& raw = *child;
+        if (typeid(raw) == typeid(ast::FunctionDef)) {
+            fmt::println("{}", std::static_pointer_cast<ast::FunctionDef>(child)->info());
+        }
+    }
     for (const auto& child : node->children()) {
         child->accept(*this);
     }
@@ -473,6 +479,7 @@ void Interpreter::visit(const ast::LoopStatement* node) {}
 void Interpreter::visit(const ast::BreakStatement* node) {}
 void Interpreter::visit(const ast::IfStatement* node) {}
 Interpreter::VariableKey Interpreter::encode_variable_key_(std::string name) const { return name; }
+Interpreter::FunctionKey Interpreter::encode_function_key_(std::string name) const { return name; }
 Interpreter::TypeKey Interpreter::encode_type_key_(std::string name) const { return name; }
 Interpreter::Interpreter() {
     types_[encode_type_key_("u8")] = [] { return Value(static_cast<std::uint8_t>(0)); };
@@ -491,4 +498,5 @@ std::string Interpreter::Variable::to_string() const {
     return fmt::format("Variable(name: {}, value: {})", name, value);
 }
 std::string Interpreter::VariableReference::to_string() const { return fmt::format("VariableReference(key: {})", key); }
+std::string Interpreter::FunctionReference::to_string() const { return fmt::format("FunctionReference(key: {})", key); }
 }  // namespace Garnet::interpreter
