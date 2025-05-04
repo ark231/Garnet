@@ -1,11 +1,11 @@
-cmake_minimum_required(VERSION 3.28.1)
+cmake_minimum_required(VERSION 3.30)
 
 project(
     Garnet
     VERSION 0.1
     LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(cmake/CPM.cmake)
@@ -19,8 +19,10 @@ find_package(
     COMPONENTS uc
     REQUIRED)
 find_package(fmt REQUIRED)
+
+cmake_policy(SET CMP0167 NEW)
 find_package(
-    Boost
+    Boost 1.88
     COMPONENTS program_options
     REQUIRED)
 
@@ -75,9 +77,13 @@ target_link_libraries(
     ICU::uc
     fmt::fmt
     Boost::program_options
+    dl
+    backtrace
     ast
     defs
     utils)
+
+target_compile_definitions(Garnet PRIVATE BOOST_STACKTRACE_USE_ADDR2LINE BOOST_STACKTRACE_USE_BACKTRACE)
 
 # cpmaddpackage()
 

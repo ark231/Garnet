@@ -5,6 +5,7 @@ project(
     VERSION 0.1
     LANGUAGES CXX)
 
+cmake_policy(SET CMP0167 NEW)
 find_package(Boost REQUIRED)
 find_package(magic_enum REQUIRED)
 

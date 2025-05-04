@@ -18,7 +18,9 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
+#include <fmt/base.h>
 #include <fmt/core.h>
+#include <fmt/ostream.h>
 
 #include <boost/program_options.hpp>
 #include <boost/program_options/parsers.hpp>
@@ -26,6 +28,7 @@
 #include <iostream>
 
 #include "driver.hpp"
+#include "interpreter/exceptions.hpp"
 #include "interpreter/interpreter.hpp"
 #include "libs/utils/format.hpp"
 #include "pretty_printer/pretty_printer.hpp"
@@ -63,7 +66,14 @@ int main(int argc, char* argv[]) {
     Garnet::ast::PrettyPrinter printer;
     ast->accept(printer);
     Garnet::interpreter::Interpreter interpreter;
-    ast->accept(interpreter);
+    try {
+        ast->accept(interpreter);
+    } catch (Garnet::interpreter::InterpreterError& e) {
+        fmt::println(std::cerr, "interpreter error: {}", typeid(e));
+        fmt::println(std::cerr, "    what(): {}", e.what());
+        fmt::println(std::cerr, "    backtrace:");
+        fmt::println(std::cerr, "{}", fmt::streamed(e.trace()));
+    }
     interpreter.debug_print();
     return res;
 }
