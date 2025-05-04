@@ -2,6 +2,8 @@
 #define GARNET_LIB_AST_DECL_BASE
 #include "base.hpp"
 namespace Garnet::ast {
-class DeclBase : public Base {};
+class DeclBase : public Base {
+    using Base::Base;
+};
 }  // namespace Garnet::ast
 #endif

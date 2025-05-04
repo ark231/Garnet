@@ -9,8 +9,9 @@
 namespace Garnet::ast {
 class FunctionDef : public DefBase {
    public:
-    FunctionDef(FunctionInfo info) : info_(info) {}
-    FunctionDef(FunctionInfo info, std::shared_ptr<Block> block) : info_(info), block_(block) {}
+    FunctionDef(FunctionInfo info, location::SourceRegion location = {}) : DefBase(location), info_(info) {}
+    FunctionDef(FunctionInfo info, std::shared_ptr<Block> block, location::SourceRegion location = {})
+        : DefBase(location), info_(info), block_(block) {}
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     const FunctionInfo& info() const { return info_; }
     std::shared_ptr<Block> block() const { return block_; }

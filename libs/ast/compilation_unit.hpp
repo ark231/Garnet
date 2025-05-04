@@ -7,6 +7,7 @@
 namespace Garnet::ast {
 class CompilationUnit : public Base {
    public:
+    using Base::Base;
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     void add_child(std::shared_ptr<Base> decl);
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }

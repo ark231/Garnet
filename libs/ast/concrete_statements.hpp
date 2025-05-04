@@ -12,7 +12,8 @@
 namespace Garnet::ast {
 class VariableDeclStatement : public Statement {
    public:
-    VariableDeclStatement(std::shared_ptr<VariableDecl> decl) : decl_(decl) {}
+    VariableDeclStatement(std::shared_ptr<VariableDecl> decl, location::SourceRegion location = {})
+        : Statement(location), decl_(decl) {}
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
 
@@ -21,7 +22,8 @@ class VariableDeclStatement : public Statement {
 };
 class ReturnStatement : public Statement {
    public:
-    ReturnStatement(std::shared_ptr<Expression> retval) : retval_(retval) {}
+    ReturnStatement(std::shared_ptr<Expression> retval, location::SourceRegion location = {})
+        : Statement(location), retval_(retval) {}
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
 
@@ -30,7 +32,8 @@ class ReturnStatement : public Statement {
 };
 class LoopStatement : public Statement {
    public:
-    LoopStatement(std::shared_ptr<Block> block) : block_(block) {}
+    LoopStatement(std::shared_ptr<Block> block, location::SourceRegion location = {})
+        : Statement(location), block_(block) {}
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
     std::shared_ptr<Block> block() const { return block_; }
@@ -44,7 +47,8 @@ class IfStatement : public Statement {
         std::shared_ptr<Expression> cond;
         std::shared_ptr<Block> block;
     };
-    IfStatement(std::vector<CondBlock> cond_blocks) : cond_blocks_{cond_blocks} {}
+    IfStatement(std::vector<CondBlock> cond_blocks, location::SourceRegion location = {})
+        : Statement(location), cond_blocks_{cond_blocks} {}
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
     std::vector<CondBlock> cond_blocks() const { return cond_blocks_; };
@@ -58,7 +62,7 @@ class IfStatement : public Statement {
 };
 class BreakStatement : public Statement {
    public:
-    BreakStatement() {}
+    BreakStatement(location::SourceRegion location = {}) : Statement(location) {}
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
 };

@@ -2,6 +2,8 @@
 #define GARNET_COMPILER_LIBS_AST_DEF_BASE
 #include "base.hpp"
 namespace Garnet::ast {
-class DefBase : public Base {};
+class DefBase : public Base {
+    using Base::Base;
+};
 }  // namespace Garnet::ast
 #endif

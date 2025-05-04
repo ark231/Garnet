@@ -25,8 +25,9 @@ class BinaryOperator : public Expression {
         GREATER_EQUAL,
         EQUAL,
     };
-    BinaryOperator(OperatorType op, std::shared_ptr<Expression> left, std::shared_ptr<Expression> right)
-        : op_(op), left_(left), right_(right) {}
+    BinaryOperator(OperatorType op, std::shared_ptr<Expression> left, std::shared_ptr<Expression> right,
+                   location::SourceRegion location = {})
+        : Expression(location), op_(op), left_(left), right_(right) {}
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     OperatorType op() const { return op_; }
     const std::shared_ptr<Expression> left() const { return left_; }
@@ -40,7 +41,8 @@ class BinaryOperator : public Expression {
 };
 class VariableReference : public Expression {
    public:
-    VariableReference(SourceVariableIdentifier name, ValRef valref) : name_(name), valref_(valref) {}
+    VariableReference(SourceVariableIdentifier name, ValRef valref, location::SourceRegion location = {})
+        : Expression(location), name_(name), valref_(valref) {}
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
 
@@ -53,7 +55,7 @@ class VariableReference : public Expression {
 };
 class SignedIntegerLiteral : public Expression {
    public:
-    SignedIntegerLiteral(int64_t value) : value_(value) {}
+    SignedIntegerLiteral(int64_t value, location::SourceRegion location = {}) : Expression(location), value_(value) {}
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     int64_t value() const { return value_; }
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
@@ -63,7 +65,8 @@ class SignedIntegerLiteral : public Expression {
 };
 class UnsignedIntegerLiteral : public Expression {
    public:
-    UnsignedIntegerLiteral(uint64_t value) : value_(value) {}
+    UnsignedIntegerLiteral(uint64_t value, location::SourceRegion location = {})
+        : Expression(location), value_(value) {}
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     uint64_t value() const { return value_; }
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
@@ -73,7 +76,7 @@ class UnsignedIntegerLiteral : public Expression {
 };
 class FloatingPointLiteral : public Expression {
    public:
-    FloatingPointLiteral(double value) : value_(value) {}
+    FloatingPointLiteral(double value, location::SourceRegion location = {}) : Expression(location), value_(value) {}
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     double value() const { return value_; }
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
@@ -83,7 +86,7 @@ class FloatingPointLiteral : public Expression {
 };
 class StringLiteral : public Expression {
    public:
-    StringLiteral(std::string value) : value_(value) {}
+    StringLiteral(std::string value, location::SourceRegion location = {}) : Expression(location), value_(value) {}
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     std::string value() const { return value_; }
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
@@ -93,8 +96,9 @@ class StringLiteral : public Expression {
 };
 class FunctionCall : public Expression {
    public:
-    FunctionCall(std::shared_ptr<Expression> callee, std::vector<std::shared_ptr<Expression>>&& args)
-        : callee_(callee), args_(args) {}
+    FunctionCall(std::shared_ptr<Expression> callee, std::vector<std::shared_ptr<Expression>>&& args,
+                 location::SourceRegion location = {})
+        : Expression(location), callee_(callee), args_(args) {}
     std::vector<std::shared_ptr<Expression>> args() const { return args_; }
     std::shared_ptr<Expression> callee() const { return callee_; }
     virtual std::vector<std::shared_ptr<Base>> children() const override;

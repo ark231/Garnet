@@ -12,8 +12,9 @@ namespace Garnet::ast {
 class Sentence;
 class FunctionDecl : public DeclBase {
    public:
-    FunctionDecl();
-    FunctionDecl(SourceFunctionIdentifier name, std::vector<VariableInfo> args, std::optional<VariableInfo> result);
+    FunctionDecl(location::SourceRegion location = {});
+    FunctionDecl(SourceFunctionIdentifier name, std::vector<VariableInfo> args, std::optional<VariableInfo> result,
+                 location::SourceRegion location = {});
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     std::string mangled_name();
     FunctionInfo info() const;
@@ -27,7 +28,7 @@ class FunctionDecl : public DeclBase {
 class VariableDecl : public DeclBase {
    public:
     VariableDecl(SourceVariableIdentifier name, SourceTypeIdentifier type,
-                 std::optional<std::shared_ptr<Expression>> init = std::nullopt);
+                 std::optional<std::shared_ptr<Expression>> init = std::nullopt, location::SourceRegion location = {});
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     std::string mangled_name();
     SourceVariableIdentifier name() const { return name_; }
@@ -42,7 +43,7 @@ class VariableDecl : public DeclBase {
 };
 class TypeDecl : public DeclBase {
    public:
-    TypeDecl(SourceTypeIdentifier name);
+    TypeDecl(SourceTypeIdentifier name, location::SourceRegion location = {});
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     std::string mangled_name();
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }

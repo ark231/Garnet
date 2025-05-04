@@ -43,7 +43,7 @@ void Interpreter::visit(const ast::VariableDecl* node) {
     }
     Variable var;
     var.name = node->name().source_name();
-    var.value = types_[encode_type_key_(node->type().source_name())]();
+    var.value = types_.at(encode_type_key_(node->type().source_name()))();
     std::visit(
         [this](auto& target, auto& source) mutable {
             auto assign_only = [](auto& target, auto& source) {
