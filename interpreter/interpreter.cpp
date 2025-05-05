@@ -491,6 +491,7 @@ void Interpreter::visit(const ast::CompilationUnit* node) {
             child->accept(*this);
         }
     }
+    functions_[encode_function_key_("main")]({0}, {});
     current_scope_ = nullptr;
 }
 void Interpreter::visit(const ast::FunctionDef* node) {

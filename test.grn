@@ -1,4 +1,4 @@
-func main(var argc: i64, var argv: vec)->i32{
+func main(var argc: i64 #* , var argv: vec *#)->i32{
     let hoge: i32 = 42;
     var fuga: i32 = 5;
     var piyo: i32 = hoge + fuga * 2;
