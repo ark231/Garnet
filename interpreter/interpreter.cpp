@@ -465,7 +465,7 @@ void Interpreter::visit(const ast::FunctionCall* node) {
     node->callee()->accept(*this);
     auto raw_callee = expr_result_;
     while (std::holds_alternative<VariableReference>(raw_callee)) {
-        raw_callee = variables_[std::get<VariableReference>(raw_callee).key].value;
+        raw_callee = variables_.at(std::get<VariableReference>(raw_callee).key).value;
     }
     std::visit(
         [this, node](auto callee) {
@@ -475,6 +475,7 @@ void Interpreter::visit(const ast::FunctionCall* node) {
                 ArgType args;
                 for (const auto arg : node->args()) {
                     arg->accept(*this);
+                    auto& raw = *arg;
                     args.push_back(expr_result_);
                 }
                 expr_result_ = functions_[callee.key](args, {});
@@ -579,6 +580,11 @@ std::string Interpreter::VariableReference::to_string() const { return fmt::form
 std::string Interpreter::FunctionReference::to_string() const { return fmt::format("FunctionReference(key: {})", key); }
 Interpreter::Value Interpreter::print_(ArgType args, KwArgType kwargs) {
     for (auto arg : args) {
+        // VariableReferenceExpressionの都合上どんな変数でもVariableReferenceで覆われているので、剥がす
+        // その中身がVariableReferenceでもそれは追わない
+        if (std::holds_alternative<VariableReference>(arg)) {
+            arg = variables_.at(std::get<VariableReference>(arg).key).value;
+        }
         std::visit([](auto value) { fmt::print("{}", value); }, arg);
     }
     return None{};
@@ -590,12 +596,13 @@ Interpreter::Value Interpreter::println_(ArgType args, KwArgType kwargs) {
 }
 void Interpreter::init_builtin_functions_() {
     using namespace std::placeholders;
-    functions_[encode_function_key_("print")] = std::bind(std::mem_fn(&Interpreter::print_), *this, _1, _2);
+    functions_[encode_function_key_("print")] = std::bind(std::mem_fn(&Interpreter::print_), std::ref(*this), _1, _2);
     VariableKey var_key = key_generator_();
     variables_[var_key] = {.name = "print", .value = FunctionReference{encode_function_key_("print")}};
     global_scope_->keymap["print"] = var_key;
 
-    functions_[encode_function_key_("println")] = std::bind(std::mem_fn(&Interpreter::println_), *this, _1, _2);
+    functions_[encode_function_key_("println")] =
+        std::bind(std::mem_fn(&Interpreter::println_), std::ref(*this), _1, _2);
     var_key = key_generator_();
     variables_[var_key] = {.name = "println", .value = FunctionReference{encode_function_key_("println")}};
     global_scope_->keymap["print"] = var_key;
