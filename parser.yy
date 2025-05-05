@@ -237,7 +237,7 @@ function_decl:
   "func" "identifier" "(" parameter_decl_list ")" "->" type_info {
         auto [valref,type] = $7;
       $$ = std::make_shared<GN::ast::FunctionDecl>(
-            GN::ast::SourceFunctionIdentifier{$2},std::move($4),GN::ast::VariableInfo{{"__return__"},type,valref}, conv_loc(@$)
+            GN::ast::SourceFunctionIdentifier{$2},std::move($4),GN::ast::VariableInfo{{GN::RETURN_SPECIAL_VARNAME},type,valref}, conv_loc(@$)
            );
     };
 

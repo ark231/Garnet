@@ -11,7 +11,11 @@
 
 #include "format_support.hpp"
 #include "visitor/visitor.hpp"
-namespace Garnet::interpreter {
+namespace Garnet {
+namespace ast {
+class Expression;
+}
+namespace interpreter {
 class Interpreter : public ast::Visitor {
     using VariableKey = boost::uuids::uuid;
     boost::uuids::random_generator key_generator_;
@@ -60,7 +64,8 @@ class Interpreter : public ast::Visitor {
 
     Scope* current_scope_ = nullptr;
 
-    using Function = std::function<Value(std::vector<Value>, std::unordered_map<std::string, Value>)>;
+    using Function = std::function<Value(std::vector<std::shared_ptr<ast::Expression>>,
+                                         std::unordered_map<std::string, std::shared_ptr<ast::Expression>>)>;
 
     std::unordered_map<FunctionKey, Function> functions_;
 
@@ -98,5 +103,6 @@ class Interpreter : public ast::Visitor {
     void debug_print() const;
 };
 
-}  // namespace Garnet::interpreter
+}  // namespace interpreter
+}  // namespace Garnet
 #endif

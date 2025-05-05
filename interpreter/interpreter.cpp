@@ -460,13 +460,42 @@ void Interpreter::visit(const ast::FunctionCall* node) {
     auto callee = expr_result_;
 }
 void Interpreter::visit(const ast::CompilationUnit* node) {
-    Scope scope;
-    current_scope_ = &scope;
+    Scope global_scope;
+    current_scope_ = &global_scope;
     for (const auto& child : node->children()) {
         const auto& raw = *child;
         if (typeid(raw) == typeid(ast::FunctionDef)) {
-            fmt::println("{}", std::static_pointer_cast<ast::FunctionDef>(child)->info());
+            auto info = std::static_pointer_cast<ast::FunctionDef>(child)->info();
+            functions_[encode_function_key_(info.name().source_name())] =
+                [this, child, info, &global_scope](
+                    std::vector<std::shared_ptr<ast::Expression>> args,
+                    std::unordered_map<std::string, std::shared_ptr<ast::Expression>> kwargs) {
+                    auto previous_scope = current_scope_;
+                    current_scope_ = &global_scope;
+                    ast::Block block;
+                    auto arg_iter = args.begin();
+                    for (const auto& arginfo : info.args()) {
+                        std::shared_ptr<ast::Expression> arg_value;
+                        auto name = arginfo.name();
+                        if (kwargs.contains(name.source_name())) {
+                            arg_value = kwargs[name.source_name()];
+                        } else if (arg_iter != args.end()) {
+                            arg_value = *arg_iter;
+                            ++arg_iter;
+                        } else {
+                            throw InvalidArgument("insufficient argument", child->location());
+                        }
+                        block.add_sentence(std::make_shared<ast::VariableDeclStatement>(
+                            std::make_shared<ast::VariableDecl>(name, arginfo.type().name(), arg_value)));
+                    }
+                    block.add_sentence(std::static_pointer_cast<ast::FunctionDef>(child)->block());
+                    block.accept(*this);
+                    auto result = variables_[current_scope_->keymap[RETURN_SPECIAL_VARNAME]];
+                    current_scope_ = previous_scope;
+                    return result.value;
+                };
         } else if (typeid(raw) == typeid(ast::VariableDecl)) {
+            child->accept(*this);
         }
     }
     for (const auto& child : node->children()) {
