@@ -522,6 +522,11 @@ void Interpreter::visit(const ast::FunctionDef* node) {
         current_scope_ = previous_scope;
         return result.value;
     };
+    VariableKey var_key = key_generator_();
+    auto name = info.name().source_name();
+    FunctionKey func_key = encode_function_key_(name);
+    variables_[var_key] = {.name = name, .value = FunctionReference{func_key}};
+    global_scope_->keymap[name] = var_key;
 }
 void Interpreter::visit(const ast::VariableDeclStatement* node) {
     for (const auto& child : node->children()) {
