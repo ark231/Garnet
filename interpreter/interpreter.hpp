@@ -40,6 +40,7 @@ class Interpreter : public ast::Visitor {
     using Value = std::variant<std::monostate, std::uint8_t, std::int8_t, std::uint16_t, std::int16_t, std::uint32_t,
                                std::int32_t, std::int64_t, std::uint64_t, float, double, bool, std::string,
                                VariableReference, FunctionReference>;
+    using None = std::monostate;
 
     Value expr_result_;
     IndentLevel indent_ = 0_ind;
@@ -63,11 +64,17 @@ class Interpreter : public ast::Visitor {
     };
 
     Scope* current_scope_ = nullptr;
+    Scope* global_scope_ = nullptr;
 
-    using Function = std::function<Value(std::vector<std::shared_ptr<ast::Expression>>,
-                                         std::unordered_map<std::string, std::shared_ptr<ast::Expression>>)>;
+    using ArgType = std::vector<std::shared_ptr<ast::Expression>>;
+    using KwArgType = std::unordered_map<std::string, std::shared_ptr<ast::Expression>>;
+    using Function = std::function<Value(ArgType, KwArgType)>;
 
     std::unordered_map<FunctionKey, Function> functions_;
+
+    /* builtin functions */
+    Value print_(ArgType args, KwArgType kwargs);
+    Value println_(ArgType args, KwArgType kwargs);
 
     using TypeKey = std::string;
     TypeKey encode_type_key_(std::string name) const;

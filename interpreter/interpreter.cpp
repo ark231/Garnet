@@ -465,35 +465,7 @@ void Interpreter::visit(const ast::CompilationUnit* node) {
     for (const auto& child : node->children()) {
         const auto& raw = *child;
         if (typeid(raw) == typeid(ast::FunctionDef)) {
-            auto info = std::static_pointer_cast<ast::FunctionDef>(child)->info();
-            functions_[encode_function_key_(info.name().source_name())] =
-                [this, child, info, &global_scope](
-                    std::vector<std::shared_ptr<ast::Expression>> args,
-                    std::unordered_map<std::string, std::shared_ptr<ast::Expression>> kwargs) {
-                    auto previous_scope = current_scope_;
-                    current_scope_ = &global_scope;
-                    ast::Block block;
-                    auto arg_iter = args.begin();
-                    for (const auto& arginfo : info.args()) {
-                        std::shared_ptr<ast::Expression> arg_value;
-                        auto name = arginfo.name();
-                        if (kwargs.contains(name.source_name())) {
-                            arg_value = kwargs[name.source_name()];
-                        } else if (arg_iter != args.end()) {
-                            arg_value = *arg_iter;
-                            ++arg_iter;
-                        } else {
-                            throw InvalidArgument("insufficient argument", child->location());
-                        }
-                        block.add_sentence(std::make_shared<ast::VariableDeclStatement>(
-                            std::make_shared<ast::VariableDecl>(name, arginfo.type().name(), arg_value)));
-                    }
-                    block.add_sentence(std::static_pointer_cast<ast::FunctionDef>(child)->block());
-                    block.accept(*this);
-                    auto result = variables_[current_scope_->keymap[RETURN_SPECIAL_VARNAME]];
-                    current_scope_ = previous_scope;
-                    return result.value;
-                };
+            child->accept(*this);
         } else if (typeid(raw) == typeid(ast::VariableDecl)) {
             child->accept(*this);
         }
@@ -503,7 +475,34 @@ void Interpreter::visit(const ast::CompilationUnit* node) {
     }
     current_scope_ = nullptr;
 }
-void Interpreter::visit(const ast::FunctionDef* node) { node->block()->accept(*this); }
+void Interpreter::visit(const ast::FunctionDef* node) {
+    auto info = node->info();
+    functions_[encode_function_key_(info.name().source_name())] = [this, node, info](ArgType args, KwArgType kwargs) {
+        auto previous_scope = current_scope_;
+        current_scope_ = global_scope_;
+        ast::Block block;
+        auto arg_iter = args.begin();
+        for (const auto& arginfo : info.args()) {
+            std::shared_ptr<ast::Expression> arg_value;
+            auto name = arginfo.name();
+            if (kwargs.contains(name.source_name())) {
+                arg_value = kwargs[name.source_name()];
+            } else if (arg_iter != args.end()) {
+                arg_value = *arg_iter;
+                ++arg_iter;
+            } else {
+                throw InvalidArgument("insufficient argument", node->location());
+            }
+            block.add_sentence(std::make_shared<ast::VariableDeclStatement>(
+                std::make_shared<ast::VariableDecl>(name, arginfo.type().name(), arg_value)));
+        }
+        block.add_sentence(node->block());
+        block.accept(*this);
+        auto result = variables_[current_scope_->keymap[RETURN_SPECIAL_VARNAME]];
+        current_scope_ = previous_scope;
+        return result.value;
+    };
+}
 void Interpreter::visit(const ast::VariableDeclStatement* node) {
     for (const auto& child : node->children()) {
         child->accept(*this);
@@ -542,6 +541,10 @@ Interpreter::Interpreter() {
     types_[encode_type_key_("i64")] = [] { return Value(static_cast<std::int64_t>(0)); };
     types_[encode_type_key_("f32")] = [] { return Value(static_cast<float>(0)); };
     types_[encode_type_key_("f64")] = [] { return Value(static_cast<double>(0)); };
+
+    using namespace std::placeholders;
+    functions_[encode_function_key_("print")] = std::bind(std::mem_fn(&Interpreter::print_), *this, _1, _2);
+    functions_[encode_function_key_("println")] = std::bind(std::mem_fn(&Interpreter::println_), *this, _1, _2);
 }
 void Interpreter::debug_print() const { fmt::println("variables: {}", variables_); }
 std::string Interpreter::Variable::to_string() const {
@@ -549,4 +552,16 @@ std::string Interpreter::Variable::to_string() const {
 }
 std::string Interpreter::VariableReference::to_string() const { return fmt::format("VariableReference(key: {})", key); }
 std::string Interpreter::FunctionReference::to_string() const { return fmt::format("FunctionReference(key: {})", key); }
+Interpreter::Value Interpreter::print_(ArgType args, KwArgType kwargs) {
+    for (auto arg : args) {
+        arg->accept(*this);
+        std::visit([](auto value) { fmt::print("{}", value); }, expr_result_);
+    }
+    return None{};
+}
+Interpreter::Value Interpreter::println_(ArgType args, KwArgType kwargs) {
+    print_(args, kwargs);
+    fmt::println("");
+    return None{};
+}
 }  // namespace Garnet::interpreter
