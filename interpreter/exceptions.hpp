@@ -46,5 +46,9 @@ class TypeError : public CriticalExcecutionError {
    public:
     using CriticalExcecutionError::CriticalExcecutionError;
 };
+class NameError : public CriticalExcecutionError {
+   public:
+    using CriticalExcecutionError::CriticalExcecutionError;
+};
 }  // namespace Garnet::interpreter
 #endif

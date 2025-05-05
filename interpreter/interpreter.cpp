@@ -4,6 +4,7 @@
 #include <fmt/ranges.h>
 #include <fmt/std.h>
 
+#include <boost/uuid/random_generator.hpp>
 #include <concepts>
 #include <functional>
 #include <limits>
@@ -32,7 +33,7 @@ concept StaticConvertible = requires(From a, To b) {
 };
 
 void Interpreter::visit(const ast::VariableDecl* node) {
-    auto key = encode_variable_key_(node->name().source_name());
+    auto key = key_generator_();
     if (variables_.contains(key)) {
         throw InvalidRedeclarationError(
             std::format("variable {} is already declared in this scope.", node->name().source_name()),
@@ -71,6 +72,7 @@ void Interpreter::visit(const ast::VariableDecl* node) {
             var.value, value);
     }
     variables_[key] = var;
+    current_scope_->keymap[var.name] = key;
 }
 void Interpreter::visit(const ast::TypeDecl* node) {
     for (const auto& child : node->children()) {
@@ -438,7 +440,16 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
     }
 }
 void Interpreter::visit(const ast::VariableReference* node) {
-    expr_result_ = VariableReference(encode_variable_key_(node->name().source_name()));
+    Scope* scope = current_scope_;
+    auto name = node->name().source_name();
+    while (scope != nullptr) {
+        if (scope->keymap.contains(name)) {
+            expr_result_ = VariableReference(scope->keymap[name]);
+            return;
+        }
+        scope = scope->parent;
+    }
+    throw NameError(fmt::format("variable {} is not defined", name), node->location());
 }
 void Interpreter::visit(const ast::SignedIntegerLiteral* node) { expr_result_ = node->value(); }
 void Interpreter::visit(const ast::UnsignedIntegerLiteral* node) { expr_result_ = node->value(); }
@@ -449,15 +460,19 @@ void Interpreter::visit(const ast::FunctionCall* node) {
     auto callee = expr_result_;
 }
 void Interpreter::visit(const ast::CompilationUnit* node) {
+    Scope scope;
+    current_scope_ = &scope;
     for (const auto& child : node->children()) {
         const auto& raw = *child;
         if (typeid(raw) == typeid(ast::FunctionDef)) {
             fmt::println("{}", std::static_pointer_cast<ast::FunctionDef>(child)->info());
+        } else if (typeid(raw) == typeid(ast::VariableDecl)) {
         }
     }
     for (const auto& child : node->children()) {
         child->accept(*this);
     }
+    current_scope_ = nullptr;
 }
 void Interpreter::visit(const ast::FunctionDef* node) { node->block()->accept(*this); }
 void Interpreter::visit(const ast::VariableDeclStatement* node) {
@@ -471,14 +486,20 @@ void Interpreter::visit(const ast::ReturnStatement* node) {
     }
 }
 void Interpreter::visit(const ast::Block* node) {
+    Scope scope;
+    scope.parent = current_scope_;
+    current_scope_ = &scope;
     for (const auto& sentence : node->sentences()) {
         sentence->accept(*this);
     }
+    for (const auto& [name, key] : scope.keymap) {
+        variables_.erase(key);
+    }
+    current_scope_ = scope.parent;
 }
 void Interpreter::visit(const ast::LoopStatement* node) {}
 void Interpreter::visit(const ast::BreakStatement* node) {}
 void Interpreter::visit(const ast::IfStatement* node) {}
-Interpreter::VariableKey Interpreter::encode_variable_key_(std::string name) const { return name; }
 Interpreter::FunctionKey Interpreter::encode_function_key_(std::string name) const { return name; }
 Interpreter::TypeKey Interpreter::encode_type_key_(std::string name) const { return name; }
 Interpreter::Interpreter() {

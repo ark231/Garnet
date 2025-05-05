@@ -1,5 +1,7 @@
 #ifndef GARNET_INTERPRETER_INTERPRETER
 #define GARNET_INTERPRETER_INTERPRETER
+#include <boost/uuid/random_generator.hpp>
+#include <boost/uuid/uuid.hpp>
 #include <cstdint>
 #include <functional>
 #include <string>
@@ -11,8 +13,8 @@
 #include "visitor/visitor.hpp"
 namespace Garnet::interpreter {
 class Interpreter : public ast::Visitor {
-    using VariableKey = std::string;
-    VariableKey encode_variable_key_(std::string name) const;
+    using VariableKey = boost::uuids::uuid;
+    boost::uuids::random_generator key_generator_;
     struct VariableReference {
         VariableKey key;
         explicit VariableReference() = default;
@@ -45,7 +47,18 @@ class Interpreter : public ast::Visitor {
         std::string to_string() const;
     };
 
-    std::unordered_map<VariableKey, Variable> variables_;
+    using VariableMap = std::unordered_map<VariableKey, Variable>;
+    VariableMap variables_;
+
+    struct Scope {
+        Scope* parent = nullptr;
+
+        std::unordered_map<std::string, VariableKey> keymap;
+
+       private:
+    };
+
+    Scope* current_scope_ = nullptr;
 
     using Function = std::function<Value(std::vector<Value>, std::unordered_map<std::string, Value>)>;
 
