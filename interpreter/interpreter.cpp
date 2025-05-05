@@ -464,6 +464,9 @@ void Interpreter::visit(const ast::StringLiteral* node) {}
 void Interpreter::visit(const ast::FunctionCall* node) {
     node->callee()->accept(*this);
     auto raw_callee = expr_result_;
+    while (std::holds_alternative<VariableReference>(raw_callee)) {
+        raw_callee = variables_[std::get<VariableReference>(raw_callee).key].value;
+    }
     std::visit(
         [this, node](auto callee) {
             if constexpr (not std::is_convertible_v<decltype(callee), FunctionReference>) {
