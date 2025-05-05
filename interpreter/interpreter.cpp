@@ -42,9 +42,7 @@ void Interpreter::visit(const ast::VariableDecl* node) {
     Variable var;
     var.name = node->name().source_name();
     var.value = types_.at(encode_type_key_(node->type().source_name()))();
-    if (node->init().has_value()) {
-        node->init().value()->accept(*this);
-        Value value = expr_result_;
+    auto init_var = [&, this](Value value) {
         auto location = node->location();
         std::visit(
             [this, &location](auto& target, auto& source) mutable {
@@ -70,6 +68,14 @@ void Interpreter::visit(const ast::VariableDecl* node) {
                 }
             },
             var.value, value);
+    };
+    if (node->init().has_value()) {
+        node->init().value()->accept(*this);
+        Value value = expr_result_;
+        init_var(value);
+    } else if (node->userdata.has_value()) {
+        auto value = std::any_cast<Value>(node->userdata);
+        init_var(value);
     }
     variables_[key] = var;
     current_scope_->keymap[var.name] = key;
@@ -456,8 +462,23 @@ void Interpreter::visit(const ast::UnsignedIntegerLiteral* node) { expr_result_ 
 void Interpreter::visit(const ast::FloatingPointLiteral* node) { expr_result_ = node->value(); }
 void Interpreter::visit(const ast::StringLiteral* node) {}
 void Interpreter::visit(const ast::FunctionCall* node) {
+    fmt::println("FunctionCall");
     node->callee()->accept(*this);
-    auto callee = expr_result_;
+    auto raw_callee = expr_result_;
+    std::visit(
+        [this, node](auto callee) {
+            if constexpr (not std::is_convertible_v<decltype(callee), FunctionReference>) {
+                throw TypeError(fmt::format("{} cannot be called", typeid(callee)), node->location());
+            } else {
+                ArgType args;
+                for (const auto arg : node->args()) {
+                    arg->accept(*this);
+                    args.push_back(expr_result_);
+                }
+                expr_result_ = functions_[callee.key](args, {});
+            }
+        },
+        raw_callee);
 }
 void Interpreter::visit(const ast::CompilationUnit* node) {
     Scope global_scope;
@@ -470,9 +491,6 @@ void Interpreter::visit(const ast::CompilationUnit* node) {
             child->accept(*this);
         }
     }
-    for (const auto& child : node->children()) {
-        child->accept(*this);
-    }
     current_scope_ = nullptr;
 }
 void Interpreter::visit(const ast::FunctionDef* node) {
@@ -483,7 +501,7 @@ void Interpreter::visit(const ast::FunctionDef* node) {
         ast::Block block;
         auto arg_iter = args.begin();
         for (const auto& arginfo : info.args()) {
-            std::shared_ptr<ast::Expression> arg_value;
+            Value arg_value;
             auto name = arginfo.name();
             if (kwargs.contains(name.source_name())) {
                 arg_value = kwargs[name.source_name()];
@@ -493,8 +511,9 @@ void Interpreter::visit(const ast::FunctionDef* node) {
             } else {
                 throw InvalidArgument("insufficient argument", node->location());
             }
-            block.add_sentence(std::make_shared<ast::VariableDeclStatement>(
-                std::make_shared<ast::VariableDecl>(name, arginfo.type().name(), arg_value)));
+            auto var_decl = std::make_shared<ast::VariableDecl>(name, arginfo.type().name());
+            var_decl->userdata = arg_value;
+            block.add_sentence(std::make_shared<ast::VariableDeclStatement>(var_decl));
         }
         block.add_sentence(node->block());
         block.accept(*this);
@@ -554,8 +573,7 @@ std::string Interpreter::VariableReference::to_string() const { return fmt::form
 std::string Interpreter::FunctionReference::to_string() const { return fmt::format("FunctionReference(key: {})", key); }
 Interpreter::Value Interpreter::print_(ArgType args, KwArgType kwargs) {
     for (auto arg : args) {
-        arg->accept(*this);
-        std::visit([](auto value) { fmt::print("{}", value); }, expr_result_);
+        std::visit([](auto value) { fmt::print("{}", value); }, arg);
     }
     return None{};
 }

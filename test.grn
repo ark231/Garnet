@@ -9,7 +9,7 @@ func main(var argc: i64, var argv: vec)->i32{
 }
 
 func hello_world()->void{
-    #println("Hello, world!");
+    println("Hello, world!");
 }
 
 func fizzbuzz(let n:i64)->void{

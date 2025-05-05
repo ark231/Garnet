@@ -66,8 +66,8 @@ class Interpreter : public ast::Visitor {
     Scope* current_scope_ = nullptr;
     Scope* global_scope_ = nullptr;
 
-    using ArgType = std::vector<std::shared_ptr<ast::Expression>>;
-    using KwArgType = std::unordered_map<std::string, std::shared_ptr<ast::Expression>>;
+    using ArgType = std::vector<Value>;
+    using KwArgType = std::unordered_map<std::string, Value>;
     using Function = std::function<Value(ArgType, KwArgType)>;
 
     std::unordered_map<FunctionKey, Function> functions_;
