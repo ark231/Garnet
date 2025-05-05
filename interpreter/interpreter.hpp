@@ -76,6 +76,8 @@ class Interpreter : public ast::Visitor {
     Value print_(ArgType args, KwArgType kwargs);
     Value println_(ArgType args, KwArgType kwargs);
 
+    void init_builtin_functions_();
+
     using TypeKey = std::string;
     TypeKey encode_type_key_(std::string name) const;
     std::unordered_map<TypeKey, std::function<Value()>> types_;

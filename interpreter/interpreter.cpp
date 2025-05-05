@@ -462,7 +462,6 @@ void Interpreter::visit(const ast::UnsignedIntegerLiteral* node) { expr_result_ 
 void Interpreter::visit(const ast::FloatingPointLiteral* node) { expr_result_ = node->value(); }
 void Interpreter::visit(const ast::StringLiteral* node) {}
 void Interpreter::visit(const ast::FunctionCall* node) {
-    fmt::println("FunctionCall");
     node->callee()->accept(*this);
     auto raw_callee = expr_result_;
     std::visit(
@@ -481,8 +480,10 @@ void Interpreter::visit(const ast::FunctionCall* node) {
         raw_callee);
 }
 void Interpreter::visit(const ast::CompilationUnit* node) {
-    Scope global_scope;
-    current_scope_ = &global_scope;
+    Scope scope;
+    current_scope_ = &scope;
+    global_scope_ = &scope;
+    init_builtin_functions_();
     for (const auto& child : node->children()) {
         const auto& raw = *child;
         if (typeid(raw) == typeid(ast::FunctionDef)) {
@@ -566,10 +567,6 @@ Interpreter::Interpreter() {
     types_[encode_type_key_("i64")] = [] { return Value(static_cast<std::int64_t>(0)); };
     types_[encode_type_key_("f32")] = [] { return Value(static_cast<float>(0)); };
     types_[encode_type_key_("f64")] = [] { return Value(static_cast<double>(0)); };
-
-    using namespace std::placeholders;
-    functions_[encode_function_key_("print")] = std::bind(std::mem_fn(&Interpreter::print_), *this, _1, _2);
-    functions_[encode_function_key_("println")] = std::bind(std::mem_fn(&Interpreter::println_), *this, _1, _2);
 }
 void Interpreter::debug_print() const { fmt::println("variables: {}", variables_); }
 std::string Interpreter::Variable::to_string() const {
@@ -587,5 +584,17 @@ Interpreter::Value Interpreter::println_(ArgType args, KwArgType kwargs) {
     print_(args, kwargs);
     fmt::println("");
     return None{};
+}
+void Interpreter::init_builtin_functions_() {
+    using namespace std::placeholders;
+    functions_[encode_function_key_("print")] = std::bind(std::mem_fn(&Interpreter::print_), *this, _1, _2);
+    VariableKey var_key = key_generator_();
+    variables_[var_key] = {.name = "print", .value = FunctionReference{encode_function_key_("print")}};
+    global_scope_->keymap["print"] = var_key;
+
+    functions_[encode_function_key_("println")] = std::bind(std::mem_fn(&Interpreter::println_), *this, _1, _2);
+    var_key = key_generator_();
+    variables_[var_key] = {.name = "println", .value = FunctionReference{encode_function_key_("println")}};
+    global_scope_->keymap["print"] = var_key;
 }
 }  // namespace Garnet::interpreter
