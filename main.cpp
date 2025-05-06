@@ -66,8 +66,8 @@ int main(int argc, char* argv[]) {
     pos.add("input-file", -1);
     bpo::options_description opt;
     opt.add_options()("help,h", "show this help")("trace-parsing,p", "enable debug output for parsing")(
-        "trace-scanning,s", "enable debug output for scanning")("backtrace,b",
-                                                                "show backtrace of interpreter on error")(
+        "trace-scanning,s", "enable debug output for scanning")(
+        "backtrace,b", "show backtrace of interpreter on error")("debug,d", "show debug output")(
         "input-file", bpo::value<std::vector<std::string>>()->required(), "input file (positional)");
     bpo::variables_map varmap;
     bpo::store(bpo::command_line_parser(argc, argv).options(opt).positional(pos).run(), varmap);
@@ -93,8 +93,10 @@ int main(int argc, char* argv[]) {
         drv.parse(infilename);
     }
     auto ast = drv.result();
-    Garnet::ast::PrettyPrinter printer;
-    ast->accept(printer);
+    if (varmap.contains("debug")) {
+        Garnet::ast::PrettyPrinter printer;
+        ast->accept(printer);
+    }
     Garnet::interpreter::Interpreter interpreter;
     try {
         ast->accept(interpreter);
@@ -109,6 +111,8 @@ int main(int argc, char* argv[]) {
             fmt::println(std::cerr, "{}", fmt::streamed(e.trace()));
         }
     }
-    interpreter.debug_print();
+    if (varmap.contains("debug")) {
+        interpreter.debug_print();
+    }
     return res;
 }

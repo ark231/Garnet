@@ -72,6 +72,8 @@ class Interpreter : public ast::Visitor {
 
     std::unordered_map<FunctionKey, Function> functions_;
 
+    void register_function_(std::string name, Function func);
+
     /* builtin functions */
     Value print_(ArgType args, KwArgType kwargs);
     Value println_(ArgType args, KwArgType kwargs);

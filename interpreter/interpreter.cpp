@@ -501,7 +501,7 @@ void Interpreter::visit(const ast::CompilationUnit* node) {
 }
 void Interpreter::visit(const ast::FunctionDef* node) {
     auto info = node->info();
-    functions_[encode_function_key_(info.name().source_name())] = [this, node, info](ArgType args, KwArgType kwargs) {
+    register_function_(info.name().source_name(), [this, node, info](ArgType args, KwArgType kwargs) {
         auto previous_scope = current_scope_;
         current_scope_ = global_scope_;
         ast::Block block;
@@ -526,12 +526,8 @@ void Interpreter::visit(const ast::FunctionDef* node) {
         auto result = variables_[current_scope_->keymap[RETURN_SPECIAL_VARNAME]];
         current_scope_ = previous_scope;
         return result.value;
-    };
-    VariableKey var_key = key_generator_();
-    auto name = info.name().source_name();
-    FunctionKey func_key = encode_function_key_(name);
-    variables_[var_key] = {.name = name, .value = FunctionReference{func_key}};
-    global_scope_->keymap[name] = var_key;
+    });
+    ;
 }
 void Interpreter::visit(const ast::VariableDeclStatement* node) {
     for (const auto& child : node->children()) {
@@ -557,7 +553,29 @@ void Interpreter::visit(const ast::Block* node) {
 }
 void Interpreter::visit(const ast::LoopStatement* node) {}
 void Interpreter::visit(const ast::BreakStatement* node) {}
-void Interpreter::visit(const ast::IfStatement* node) {}
+void Interpreter::visit(const ast::IfStatement* node) {
+    for (auto [raw_cond, block] : node->cond_blocks()) {
+        if (raw_cond.use_count() == 0) {
+            block->accept(*this);
+            break;
+        }
+        raw_cond->accept(*this);
+        bool cond = false;
+        std::visit(
+            [this, raw_cond, &cond](auto value) {
+                if constexpr (std::is_convertible_v<decltype(value), bool>) {
+                    cond = value;
+                } else {
+                    throw TypeError(fmt::format("{} cannot be converted to bool", typeid(value)), raw_cond->location());
+                }
+            },
+            expr_result_);
+        if (cond) {
+            block->accept(*this);
+            break;
+        }
+    }
+}
 Interpreter::FunctionKey Interpreter::encode_function_key_(std::string name) const { return name; }
 Interpreter::TypeKey Interpreter::encode_type_key_(std::string name) const { return name; }
 Interpreter::Interpreter() {
@@ -596,15 +614,13 @@ Interpreter::Value Interpreter::println_(ArgType args, KwArgType kwargs) {
 }
 void Interpreter::init_builtin_functions_() {
     using namespace std::placeholders;
-    functions_[encode_function_key_("print")] = std::bind(std::mem_fn(&Interpreter::print_), std::ref(*this), _1, _2);
+    register_function_("print", std::bind(std::mem_fn(&Interpreter::print_), std::ref(*this), _1, _2));
+    register_function_("println", std::bind(std::mem_fn(&Interpreter::println_), std::ref(*this), _1, _2));
+}
+void Interpreter::register_function_(std::string name, Function func) {
+    functions_[encode_function_key_(name)] = func;
     VariableKey var_key = key_generator_();
-    variables_[var_key] = {.name = "print", .value = FunctionReference{encode_function_key_("print")}};
-    global_scope_->keymap["print"] = var_key;
-
-    functions_[encode_function_key_("println")] =
-        std::bind(std::mem_fn(&Interpreter::println_), std::ref(*this), _1, _2);
-    var_key = key_generator_();
-    variables_[var_key] = {.name = "println", .value = FunctionReference{encode_function_key_("println")}};
-    global_scope_->keymap["print"] = var_key;
+    variables_[var_key] = {.name = name, .value = FunctionReference{encode_function_key_(name)}};
+    global_scope_->keymap[name] = var_key;
 }
 }  // namespace Garnet::interpreter
