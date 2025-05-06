@@ -40,7 +40,7 @@ class Interpreter : public ast::Visitor {
     using Value = std::variant<std::monostate, std::uint8_t, std::int8_t, std::uint16_t, std::int16_t, std::uint32_t,
                                std::int32_t, std::int64_t, std::uint64_t, float, double, bool, std::string,
                                VariableReference, FunctionReference>;
-    using None = std::monostate;
+    using Nil = std::monostate;
 
     Value expr_result_;
     IndentLevel indent_ = 0_ind;
@@ -87,6 +87,7 @@ class Interpreter : public ast::Visitor {
     void gather_global_decls_();
 
     bool is_broken_ = false;
+    bool is_returned_ = false;
 
    public:
     Interpreter();

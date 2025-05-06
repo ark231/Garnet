@@ -31,13 +31,16 @@
 #include "driver.hpp"
 #include "interpreter/exceptions.hpp"
 #include "interpreter/interpreter.hpp"
-#include "libs/utils/format.hpp"
+#include "libs/utils/format.hpp"  // NOLINT(clang-diagnostic-unused-header)
 #include "pretty_printer/pretty_printer.hpp"
 
 namespace bpo = boost::program_options;
 using namespace Garnet::operators;
 
 void print_source(const Garnet::location::SourceRegion& loc) {
+    if (loc.begin.source_file.empty()) {
+        return;
+    }
     std::ifstream file(loc.begin.source_file);
     std::string line;
     for (auto i = 1; i <= loc.begin.line - 1; i++) {

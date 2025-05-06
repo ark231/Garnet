@@ -1,0 +1,12 @@
+func main(let argc:i64)->void{
+    println(tarai(10,5,0));
+}
+
+func tarai(let x:i64, let y:i64, let z:i64)->i64{
+    println(x,y,z);
+    if(x <= y){
+        return y;
+    }else{
+        return tarai(tarai(x - 1, y, z), tarai(y - 1, z, x), tarai(z - 1, x, y));
+    }
+}

@@ -3,7 +3,7 @@
 #include <filesystem>
 namespace Garnet::location {
 struct SourcePosition {
-    std::filesystem::path source_file = "/dev/null";
+    std::filesystem::path source_file = "";
     int line = -1;
     int column = -1;
 };

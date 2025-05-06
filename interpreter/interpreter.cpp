@@ -7,7 +7,6 @@
 #include <boost/uuid/random_generator.hpp>
 #include <concepts>
 #include <functional>
-#include <iostream>
 #include <limits>
 #include <memory>
 #include <type_traits>
@@ -16,10 +15,11 @@
 #include "concrete_decls.hpp"
 #include "concrete_defs.hpp"
 #include "concrete_expressions.hpp"
+#include "concrete_source_identifiers.hpp"
 #include "concrete_statements.hpp"
 #include "error_nodes.hpp"
 #include "exceptions.hpp"
-#include "format.hpp"
+#include "format.hpp"  // NOLINT(clang-diagnostic-unused-header)
 namespace Garnet::interpreter {
 
 void Interpreter::visit(const ast::FunctionDecl* node) {
@@ -519,13 +519,23 @@ void Interpreter::visit(const ast::FunctionDef* node) {
             } else {
                 throw InvalidArgument("insufficient argument", node->location());
             }
-            auto var_decl = std::make_shared<ast::VariableDecl>(name, arginfo.type().name());
+            auto var_decl =
+                std::make_shared<ast::VariableDecl>(name, arginfo.type().name(), std::nullopt, node->location());
             var_decl->userdata = arg_value;
-            block.add_sentence(std::make_shared<ast::VariableDeclStatement>(var_decl));
+            block.add_sentence(std::make_shared<ast::VariableDeclStatement>(var_decl, node->location()));
         }
+        auto return_type = info.result()->type().name();
+        using namespace ast::operators;
+        if (return_type == ast::SourceTypeIdentifier{"void"}) {
+            return_type = ast::SourceTypeIdentifier{"nil"};
+        }
+        block.add_sentence(std::make_shared<ast::VariableDeclStatement>(
+            std::make_shared<ast::VariableDecl>(info.result()->name(), return_type, std::nullopt, node->location()),
+            node->location()));
         block.add_sentence(node->block());
         block.accept(*this);
         auto result = variables_[current_scope_->keymap[RETURN_SPECIAL_VARNAME]];
+        is_returned_ = false;
         current_scope_ = previous_scope;
         return result.value;
     });
@@ -537,9 +547,12 @@ void Interpreter::visit(const ast::VariableDeclStatement* node) {
     }
 }
 void Interpreter::visit(const ast::ReturnStatement* node) {
-    for (const auto& child : node->children()) {
-        child->accept(*this);
-    }
+    ast::BinaryOperator(ast::BinaryOperator::OperatorType::ASSIGN,
+                        std::make_shared<ast::VariableReference>(ast::SourceVariableIdentifier{RETURN_SPECIAL_VARNAME},
+                                                                 ValRef::VALUE, node->location()),
+                        node->retval(), node->location())
+        .accept(*this);
+    is_returned_ = true;
 }
 void Interpreter::visit(const ast::Block* node) {
     Scope scope;
@@ -547,7 +560,7 @@ void Interpreter::visit(const ast::Block* node) {
     current_scope_ = &scope;
     for (const auto& sentence : node->sentences()) {
         sentence->accept(*this);
-        if (is_broken_) {
+        if (is_broken_ && is_returned_) {
             break;
         }
     }
@@ -599,6 +612,8 @@ Interpreter::Interpreter() {
     types_[encode_type_key_("i64")] = [] { return Value(static_cast<std::int64_t>(0)); };
     types_[encode_type_key_("f32")] = [] { return Value(static_cast<float>(0)); };
     types_[encode_type_key_("f64")] = [] { return Value(static_cast<double>(0)); };
+    types_[encode_type_key_("str")] = [] { return Value(static_cast<std::string>("")); };
+    types_[encode_type_key_("nil")] = [] { return Value(static_cast<std::string>("")); };
 }
 void Interpreter::debug_print() const { fmt::println("variables: {}", variables_); }
 std::string Interpreter::Variable::to_string() const {
@@ -615,12 +630,12 @@ Interpreter::Value Interpreter::print_(ArgType args, KwArgType kwargs) {
         }
         std::visit([](auto value) { fmt::print("{}", value); }, arg);
     }
-    return None{};
+    return Nil{};
 }
 Interpreter::Value Interpreter::println_(ArgType args, KwArgType kwargs) {
     print_(args, kwargs);
     fmt::println("");
-    return None{};
+    return Nil{};
 }
 void Interpreter::init_builtin_functions_() {
     using namespace std::placeholders;

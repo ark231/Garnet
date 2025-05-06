@@ -4,7 +4,6 @@
 
 #include <concepts>
 #include <utility>
-#include <vector>
 
 #include "format_support.hpp"
 namespace Garnet {

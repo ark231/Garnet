@@ -14,5 +14,12 @@ class SourceIdentifierBase {
     std::string name_;
 };
 
+inline namespace operators {
+
+inline bool operator==(const SourceIdentifierBase& one, const SourceIdentifierBase& theother) {
+    return one.source_name() == theother.source_name();
+}
+}  // namespace operators
+
 }  // namespace Garnet::ast
 #endif

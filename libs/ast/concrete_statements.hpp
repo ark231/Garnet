@@ -26,6 +26,7 @@ class ReturnStatement : public Statement {
         : Statement(location), retval_(retval) {}
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
+    std::shared_ptr<Expression> retval() const { return retval_; }
 
    protected:
     std::shared_ptr<Expression> retval_;
