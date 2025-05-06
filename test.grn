@@ -5,9 +5,13 @@ func main(var argc: i64 #* , var argv: vec *#)->i32{
     var hogehoge: f64;
     hogehoge=piyo;
     println(piyo);
+    println(hogehoge);
     if(piyo == 52){
         println("true");
+    }else{
+        println("false");
     }
+    fizzbuzz(31);
     return 0;
 }
 
@@ -33,7 +37,7 @@ func fizzbuzz(let n:i64)->void{
     {
         var i:i64 = 0;
         loop{
-            if(i<n){
+            if(i>=n){
                 break;
             }
             {
@@ -47,7 +51,7 @@ func fizzbuzz(let n:i64)->void{
                     println(i);
                 }
             }
-            # i++;
+            i=i+1;
         }
     }
 }

@@ -340,7 +340,7 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                 throw TypeError("cannot assign to rvalue", location);
             }
             auto& left = variables_[std::get<VariableReference>(lhs).key];
-            Value right;
+            Value right = rhs;
             if (std::holds_alternative<VariableReference>(rhs)) {
                 right = variables_[std::get<VariableReference>(rhs).key].value;
             }
@@ -400,7 +400,7 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                                using LeftType = decltype(left);
                                using RightType = decltype(right);
                                if constexpr (GreaterComparable<LeftType, RightType>) {
-                                   this->expr_result_ = left < right;
+                                   this->expr_result_ = left > right;
                                } else {
                                    throw TypeError(fmt::format("cannot apply GREATER operator to {} and {}",
                                                                typeid(LeftType), typeid(RightType)),
@@ -417,7 +417,7 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                                using LeftType = decltype(left);
                                using RightType = decltype(right);
                                if constexpr (GreaterEqualComparable<LeftType, RightType>) {
-                                   this->expr_result_ = left <= right;
+                                   this->expr_result_ = left >= right;
                                } else {
                                    throw TypeError(fmt::format("cannot apply GREATER_EQUAL operator to {} and {}",
                                                                typeid(LeftType), typeid(RightType)),
@@ -547,14 +547,22 @@ void Interpreter::visit(const ast::Block* node) {
     current_scope_ = &scope;
     for (const auto& sentence : node->sentences()) {
         sentence->accept(*this);
+        if (is_broken_) {
+            break;
+        }
     }
     for (const auto& [name, key] : scope.keymap) {
         variables_.erase(key);
     }
     current_scope_ = scope.parent;
 }
-void Interpreter::visit(const ast::LoopStatement* node) {}
-void Interpreter::visit(const ast::BreakStatement* node) {}
+void Interpreter::visit(const ast::LoopStatement* node) {
+    while (not is_broken_) {
+        node->block()->accept(*this);
+    }
+    is_broken_ = false;
+}
+void Interpreter::visit(const ast::BreakStatement* node) { is_broken_ = true; }
 void Interpreter::visit(const ast::IfStatement* node) {
     for (auto [raw_cond, block] : node->cond_blocks()) {
         if (raw_cond.use_count() == 0) {

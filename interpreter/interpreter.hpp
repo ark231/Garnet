@@ -86,6 +86,8 @@ class Interpreter : public ast::Visitor {
 
     void gather_global_decls_();
 
+    bool is_broken_ = false;
+
    public:
     Interpreter();
     virtual void visit(const ast::FunctionDecl*) override;
