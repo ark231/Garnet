@@ -227,7 +227,7 @@ make_FLOAT (const std::string &s, const Garnet::yy::Parser::location_type& loc)
 Garnet::yy::Parser::symbol_type
 make_STRING (const std::string &s, const Garnet::yy::Parser::location_type& loc)
 {
-    return Garnet::yy::Parser::make_STRING (s, loc);
+    return Garnet::yy::Parser::make_STRING (s.substr(1,s.size()-2), loc);
 }
 
 Garnet::yy::Parser::symbol_type

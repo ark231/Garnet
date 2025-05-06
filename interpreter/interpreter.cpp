@@ -7,6 +7,7 @@
 #include <boost/uuid/random_generator.hpp>
 #include <concepts>
 #include <functional>
+#include <iostream>
 #include <limits>
 #include <memory>
 #include <type_traits>
@@ -450,6 +451,7 @@ void Interpreter::visit(const ast::VariableReference* node) {
     auto name = node->name().source_name();
     while (scope != nullptr) {
         if (scope->keymap.contains(name)) {
+            // ASSIGN演算子の都合上値ではなく参照を返す
             expr_result_ = VariableReference(scope->keymap[name]);
             return;
         }
@@ -460,7 +462,7 @@ void Interpreter::visit(const ast::VariableReference* node) {
 void Interpreter::visit(const ast::SignedIntegerLiteral* node) { expr_result_ = node->value(); }
 void Interpreter::visit(const ast::UnsignedIntegerLiteral* node) { expr_result_ = node->value(); }
 void Interpreter::visit(const ast::FloatingPointLiteral* node) { expr_result_ = node->value(); }
-void Interpreter::visit(const ast::StringLiteral* node) {}
+void Interpreter::visit(const ast::StringLiteral* node) { expr_result_ = node->value(); }
 void Interpreter::visit(const ast::FunctionCall* node) {
     node->callee()->accept(*this);
     auto raw_callee = expr_result_;
