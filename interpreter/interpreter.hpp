@@ -1,7 +1,7 @@
 #ifndef GARNET_INTERPRETER_INTERPRETER
 #define GARNET_INTERPRETER_INTERPRETER
-#include <boost/uuid/random_generator.hpp>
-#include <boost/uuid/uuid.hpp>
+// #include <boost/uuid/random_generator.hpp>
+// #include <boost/uuid/uuid.hpp>
 #include <cstdint>
 #include <functional>
 #include <string>
@@ -17,8 +17,11 @@ class Expression;
 }
 namespace interpreter {
 class Interpreter : public ast::Visitor {
-    using VariableKey = boost::uuids::uuid;
-    boost::uuids::random_generator key_generator_;
+    // using VariableKey = boost::uuids::uuid;
+    // boost::uuids::random_generator key_generator_;
+    using VariableKey = std::uint64_t;
+    VariableKey counter_ = 0;
+    VariableKey key_generator_() { return counter_++; }
     struct VariableReference {
         VariableKey key;
         explicit VariableReference() = default;

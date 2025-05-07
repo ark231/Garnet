@@ -38,10 +38,10 @@ namespace bpo = boost::program_options;
 using namespace Garnet::operators;
 
 void print_source(const Garnet::location::SourceRegion& loc) {
-    if (loc.begin.source_file.empty()) {
+    if (loc.begin.source_file().empty()) {
         return;
     }
-    std::ifstream file(loc.begin.source_file);
+    std::ifstream file(loc.begin.source_file());
     std::string line;
     for (auto i = 1; i <= loc.begin.line - 1; i++) {
         std::getline(file, line);
@@ -106,7 +106,8 @@ int main(int argc, char* argv[]) {
     } catch (Garnet::interpreter::InterpreterError& e) {
         fmt::println(std::cerr, "interpreter error: {}", typeid(e));
         auto loc = e.location();
-        fmt::println(std::cerr, "    at {}, line {}, col {}", loc.begin.source_file, loc.begin.line, loc.begin.column);
+        fmt::println(std::cerr, "    at {}, line {}, col {}", loc.begin.source_file(), loc.begin.line,
+                     loc.begin.column);
         print_source(loc);
         fmt::println(std::cerr, "    what(): {}", e.what());
         if (show_backtrace) {

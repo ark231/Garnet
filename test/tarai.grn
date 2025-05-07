@@ -1,5 +1,5 @@
 func main(let argc:i64)->void{
-    println(tarai(12,5,0));
+    println(tarai(11,5,0));
 }
 
 func tarai(let x:i64, let y:i64, let z:i64)->i64{

@@ -83,8 +83,8 @@
 namespace Garnet::yy{
 Garnet::location::SourceRegion conv_loc(const location& l){
     return Garnet::location::SourceRegion{
-        .begin = {.source_file = *l.begin.filename, .line = l.begin.line, .column = l.begin.column},
-        .end   = {.source_file = *l.end.filename,   .line = l.end.line,   .column = l.end.column}
+        .begin = {*l.begin.filename, l.begin.line, l.begin.column},
+        .end   = {*l.end.filename,   l.end.line,   l.end.column}
         };
 }
 }

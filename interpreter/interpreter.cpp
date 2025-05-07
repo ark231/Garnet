@@ -4,7 +4,6 @@
 #include <fmt/ranges.h>
 #include <fmt/std.h>
 
-#include <boost/uuid/random_generator.hpp>
 #include <concepts>
 #include <functional>
 #include <limits>
@@ -507,7 +506,6 @@ void Interpreter::visit(const ast::FunctionDef* node) {
         auto previous_scope = current_scope_;
         Scope arg_scope(global_scope_, &variables_);
         current_scope_ = &arg_scope;
-        ast::Block block;
         auto arg_iter = args.begin();
         for (const auto& arginfo : info.args()) {
             Value arg_value;
@@ -535,8 +533,7 @@ void Interpreter::visit(const ast::FunctionDef* node) {
             std::make_shared<ast::VariableDecl>(info.result()->name(), return_type, std::nullopt, return_loc),
             return_loc)
             .accept(*this);
-        block.add_sentence(node->block());
-        block.accept(*this);
+        node->block()->accept(*this);
         auto result = variables_.at(current_scope_->keymap.at(RETURN_SPECIAL_VARNAME));
         is_returned_ = false;
         current_scope_ = previous_scope;
