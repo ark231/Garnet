@@ -520,18 +520,19 @@ void Interpreter::visit(const ast::FunctionDef* node) {
                 throw InvalidArgument("insufficient argument", node->location());
             }
             auto var_decl =
-                std::make_shared<ast::VariableDecl>(name, arginfo.type().name(), std::nullopt, node->location());
+                std::make_shared<ast::VariableDecl>(name, arginfo.type().name(), std::nullopt, arginfo.location());
             var_decl->userdata = arg_value;
-            block.add_sentence(std::make_shared<ast::VariableDeclStatement>(var_decl, node->location()));
+            block.add_sentence(std::make_shared<ast::VariableDeclStatement>(var_decl, arginfo.location()));
         }
         auto return_type = info.result()->type().name();
         using namespace ast::operators;
         if (return_type == ast::SourceTypeIdentifier{"void"}) {
             return_type = ast::SourceTypeIdentifier{"nil"};
         }
+        auto return_loc = info.result()->location();
         block.add_sentence(std::make_shared<ast::VariableDeclStatement>(
-            std::make_shared<ast::VariableDecl>(info.result()->name(), return_type, std::nullopt, node->location()),
-            node->location()));
+            std::make_shared<ast::VariableDecl>(info.result()->name(), return_type, std::nullopt, return_loc),
+            return_loc));
         block.add_sentence(node->block());
         block.accept(*this);
         auto result = variables_[current_scope_->keymap[RETURN_SPECIAL_VARNAME]];
@@ -622,13 +623,17 @@ std::string Interpreter::Variable::to_string() const {
 std::string Interpreter::VariableReference::to_string() const { return fmt::format("VariableReference(key: {})", key); }
 std::string Interpreter::FunctionReference::to_string() const { return fmt::format("FunctionReference(key: {})", key); }
 Interpreter::Value Interpreter::print_(ArgType args, KwArgType kwargs) {
-    for (auto arg : args) {
+    for (size_t i = 0; auto arg : args) {
         // VariableReferenceExpressionの都合上どんな変数でもVariableReferenceで覆われているので、剥がす
         // その中身がVariableReferenceでもそれは追わない
         if (std::holds_alternative<VariableReference>(arg)) {
             arg = variables_.at(std::get<VariableReference>(arg).key).value;
         }
         std::visit([](auto value) { fmt::print("{}", value); }, arg);
+        if (i < args.size() - 1) {
+            fmt::print(" ");
+        }
+        i++;
     }
     return Nil{};
 }

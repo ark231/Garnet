@@ -157,8 +157,6 @@ Garnet::location::SourceRegion conv_loc(const location& l){
 %nterm <std::shared_ptr<GN::ast::StringLiteral>> string_literal
 %nterm <std::shared_ptr<GN::ast::VariableDeclStatement>> variable_decl_statement
 %nterm <std::tuple<GN::ValRef,GN::ast::SourceTypeIdentifier>> type_info
-// %nterm <struct{GN::ValRef valref;GN::ast::SourceTypeIdentifier type;};> type_info
-// %nterm <GN::ValRefType> type_info
 %nterm <GN::ast::VariableInfo> var_decl 
 %nterm <std::vector<GN::ast::VariableInfo>> var_decl_list
 %nterm <std::vector<GN::ast::VariableInfo>> parameter_decl_list
@@ -220,6 +218,7 @@ var_decl:
   const "identifier" ":" type_info{ 
         auto [valref,type] = $4;
         $$ = GN::ast::VariableInfo({$2},{type},valref,$1 == GN::ConstMut::CONST); 
+        $$.set_location(conv_loc(@$));
       };
 
 var_decl_list:
@@ -236,8 +235,10 @@ parameter_decl_list:
 function_decl:
   "func" "identifier" "(" parameter_decl_list ")" "->" type_info {
         auto [valref,type] = $7;
-      $$ = std::make_shared<GN::ast::FunctionDecl>(
-            GN::ast::SourceFunctionIdentifier{$2},std::move($4),GN::ast::VariableInfo{{GN::RETURN_SPECIAL_VARNAME},type,valref}, conv_loc(@$)
+        GN::ast::VariableInfo return_info{{GN::RETURN_SPECIAL_VARNAME},type,valref};
+        return_info.set_location(conv_loc(@7));
+        $$ = std::make_shared<GN::ast::FunctionDecl>(
+            GN::ast::SourceFunctionIdentifier{$2},std::move($4),return_info, conv_loc(@$)
            );
     };
 
