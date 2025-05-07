@@ -339,10 +339,10 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
             if (not std::holds_alternative<VariableReference>(lhs)) {
                 throw TypeError("cannot assign to rvalue", location);
             }
-            auto& left = variables_[std::get<VariableReference>(lhs).key];
+            auto& left = variables_.at(std::get<VariableReference>(lhs).key);
             Value right = rhs;
             if (std::holds_alternative<VariableReference>(rhs)) {
-                right = variables_[std::get<VariableReference>(rhs).key].value;
+                right = variables_.at(std::get<VariableReference>(rhs).key).value;
             }
             std::visit(
                 [this, &location](auto& left, auto right) {
@@ -486,7 +486,7 @@ void Interpreter::visit(const ast::FunctionCall* node) {
         raw_callee);
 }
 void Interpreter::visit(const ast::CompilationUnit* node) {
-    Scope scope;
+    Scope scope(nullptr, &variables_);
     current_scope_ = &scope;
     global_scope_ = &scope;
     init_builtin_functions_();
@@ -505,7 +505,8 @@ void Interpreter::visit(const ast::FunctionDef* node) {
     auto info = node->info();
     register_function_(info.name().source_name(), [this, node, info](ArgType args, KwArgType kwargs) {
         auto previous_scope = current_scope_;
-        current_scope_ = global_scope_;
+        Scope arg_scope(global_scope_, &variables_);
+        current_scope_ = &arg_scope;
         ast::Block block;
         auto arg_iter = args.begin();
         for (const auto& arginfo : info.args()) {
@@ -522,7 +523,7 @@ void Interpreter::visit(const ast::FunctionDef* node) {
             auto var_decl =
                 std::make_shared<ast::VariableDecl>(name, arginfo.type().name(), std::nullopt, arginfo.location());
             var_decl->userdata = arg_value;
-            block.add_sentence(std::make_shared<ast::VariableDeclStatement>(var_decl, arginfo.location()));
+            ast::VariableDeclStatement(var_decl, arginfo.location()).accept(*this);
         }
         auto return_type = info.result()->type().name();
         using namespace ast::operators;
@@ -530,17 +531,17 @@ void Interpreter::visit(const ast::FunctionDef* node) {
             return_type = ast::SourceTypeIdentifier{"nil"};
         }
         auto return_loc = info.result()->location();
-        block.add_sentence(std::make_shared<ast::VariableDeclStatement>(
+        ast::VariableDeclStatement(
             std::make_shared<ast::VariableDecl>(info.result()->name(), return_type, std::nullopt, return_loc),
-            return_loc));
+            return_loc)
+            .accept(*this);
         block.add_sentence(node->block());
         block.accept(*this);
-        auto result = variables_[current_scope_->keymap[RETURN_SPECIAL_VARNAME]];
+        auto result = variables_.at(current_scope_->keymap.at(RETURN_SPECIAL_VARNAME));
         is_returned_ = false;
         current_scope_ = previous_scope;
         return result.value;
     });
-    ;
 }
 void Interpreter::visit(const ast::VariableDeclStatement* node) {
     for (const auto& child : node->children()) {
@@ -556,17 +557,13 @@ void Interpreter::visit(const ast::ReturnStatement* node) {
     is_returned_ = true;
 }
 void Interpreter::visit(const ast::Block* node) {
-    Scope scope;
-    scope.parent = current_scope_;
+    Scope scope(current_scope_, &variables_);
     current_scope_ = &scope;
     for (const auto& sentence : node->sentences()) {
         sentence->accept(*this);
         if (is_broken_ && is_returned_) {
             break;
         }
-    }
-    for (const auto& [name, key] : scope.keymap) {
-        variables_.erase(key);
     }
     current_scope_ = scope.parent;
 }
@@ -652,5 +649,10 @@ void Interpreter::register_function_(std::string name, Function func) {
     VariableKey var_key = key_generator_();
     variables_[var_key] = {.name = name, .value = FunctionReference{encode_function_key_(name)}};
     global_scope_->keymap[name] = var_key;
+}
+Interpreter::Scope::~Scope() {
+    for (const auto& [name, key] : keymap) {
+        varmap_->erase(key);
+    }
 }
 }  // namespace Garnet::interpreter

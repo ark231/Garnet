@@ -43,7 +43,7 @@ class Interpreter : public ast::Visitor {
     using Nil = std::monostate;
 
     Value expr_result_;
-    IndentLevel indent_ = 0_ind;
+    Value func_result_;
 
     struct Variable {
         std::string name;
@@ -57,10 +57,14 @@ class Interpreter : public ast::Visitor {
 
     struct Scope {
         Scope* parent = nullptr;
+        Scope(Scope* parent, VariableMap* varmap) : parent(parent), varmap_(varmap) {}
 
         std::unordered_map<std::string, VariableKey> keymap;
 
+        ~Scope();
+
        private:
+        VariableMap* varmap_;
     };
 
     Scope* current_scope_ = nullptr;
