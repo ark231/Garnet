@@ -4,12 +4,15 @@
 // #include <boost/uuid/uuid.hpp>
 #include <cstdint>
 #include <functional>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <variant>
 #include <vector>
 
+#include "concrete_source_identifiers.hpp"
 #include "format_support.hpp"
+#include "location.hpp"
 #include "visitor/visitor.hpp"
 namespace Garnet {
 namespace ast {
@@ -54,6 +57,9 @@ class Interpreter : public ast::Visitor {
 
         std::string to_string() const;
     };
+
+    void declare_variable_(ast::SourceVariableIdentifier name, ast::SourceTypeIdentifier type,
+                           std::optional<Value> value, location::SourceRegion location = {});
 
     using VariableMap = std::unordered_map<VariableKey, Variable>;
     VariableMap variables_;

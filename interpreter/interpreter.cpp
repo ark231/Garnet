@@ -19,6 +19,7 @@
 #include "error_nodes.hpp"
 #include "exceptions.hpp"
 #include "format.hpp"  // NOLINT(clang-diagnostic-unused-header)
+#include "location.hpp"
 namespace Garnet::interpreter {
 
 void Interpreter::visit(const ast::FunctionDecl* node) {
@@ -33,17 +34,28 @@ concept StaticConvertible = requires(From a, To b) {
 };
 
 void Interpreter::visit(const ast::VariableDecl* node) {
-    auto key = key_generator_();
-    if (variables_.contains(key)) {
+    std::optional<Value> init;
+    if (node->init().has_value()) {
+        node->init().value()->accept(*this);
+        Value value = expr_result_;
+        init = value;
+    } else if (node->userdata.has_value()) {
+        auto value = std::any_cast<Value>(node->userdata);
+        init = value;
+    }
+    declare_variable_(node->name(), node->type(), init);
+}
+void Interpreter::declare_variable_(ast::SourceVariableIdentifier name, ast::SourceTypeIdentifier type,
+                                    std::optional<Value> value, location::SourceRegion location) {
+    if (current_scope_->keymap.contains(name.source_name())) {
         throw InvalidRedeclarationError(
-            std::format("variable {} is already declared in this scope.", node->name().source_name()),
-            node->location());
+            std::format("variable {} is already declared in this scope.", name.source_name()), location);
     }
     Variable var;
-    var.name = node->name().source_name();
-    var.value = types_.at(encode_type_key_(node->type().source_name()))();
-    auto init_var = [&, this](Value value) {
-        auto location = node->location();
+    auto key = key_generator_();
+    var.name = name.source_name();
+    var.value = types_.at(encode_type_key_(type.source_name()))();
+    if (value.has_value()) {
         std::visit(
             [this, &location](auto& target, auto& source) mutable {
                 auto assign_only = [&location](auto& target, auto& source) {
@@ -67,15 +79,7 @@ void Interpreter::visit(const ast::VariableDecl* node) {
                     assign_only(target, source);
                 }
             },
-            var.value, value);
-    };
-    if (node->init().has_value()) {
-        node->init().value()->accept(*this);
-        Value value = expr_result_;
-        init_var(value);
-    } else if (node->userdata.has_value()) {
-        auto value = std::any_cast<Value>(node->userdata);
-        init_var(value);
+            var.value, *value);
     }
     variables_[key] = var;
     current_scope_->keymap[var.name] = key;
@@ -518,10 +522,7 @@ void Interpreter::visit(const ast::FunctionDef* node) {
             } else {
                 throw InvalidArgument("insufficient argument", node->location());
             }
-            auto var_decl =
-                std::make_shared<ast::VariableDecl>(name, arginfo.type().name(), std::nullopt, arginfo.location());
-            var_decl->userdata = arg_value;
-            ast::VariableDeclStatement(var_decl, arginfo.location()).accept(*this);
+            declare_variable_(name, arginfo.type().name(), arg_value, arginfo.location());
         }
         auto return_type = info.result()->type().name();
         using namespace ast::operators;
@@ -529,10 +530,7 @@ void Interpreter::visit(const ast::FunctionDef* node) {
             return_type = ast::SourceTypeIdentifier{"nil"};
         }
         auto return_loc = info.result()->location();
-        ast::VariableDeclStatement(
-            std::make_shared<ast::VariableDecl>(info.result()->name(), return_type, std::nullopt, return_loc),
-            return_loc)
-            .accept(*this);
+        declare_variable_(info.result()->name(), return_type, std::nullopt, return_loc);
         node->block()->accept(*this);
         auto result = variables_.at(current_scope_->keymap.at(RETURN_SPECIAL_VARNAME));
         is_returned_ = false;
