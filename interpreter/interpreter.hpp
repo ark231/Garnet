@@ -11,7 +11,8 @@
 #include <vector>
 
 #include "concrete_source_identifiers.hpp"
-#include "format_support.hpp"
+#include "flyweight.hpp"
+#include "format_support.hpp"  // NOLINT
 #include "location.hpp"
 #include "visitor/visitor.hpp"
 namespace Garnet {
@@ -51,8 +52,9 @@ class Interpreter : public ast::Visitor {
     Value expr_result_;
     Value func_result_;
 
+    using VariableNameType = SimpleFlyWeight::id_type;
     struct Variable {
-        std::string name;
+        VariableNameType name_id;
         Value value;
 
         std::string to_string() const;
@@ -68,7 +70,7 @@ class Interpreter : public ast::Visitor {
         Scope* parent = nullptr;
         Scope(Scope* parent, VariableMap* varmap) : parent(parent), varmap_(varmap) {}
 
-        std::unordered_map<std::string, VariableKey> keymap;
+        std::unordered_map<VariableNameType, VariableKey> keymap;
 
         ~Scope();
 
@@ -80,7 +82,7 @@ class Interpreter : public ast::Visitor {
     Scope* global_scope_ = nullptr;
 
     using ArgType = std::vector<Value>;
-    using KwArgType = std::unordered_map<std::string, Value>;
+    using KwArgType = std::unordered_map<VariableNameType, Value>;
     using Function = std::function<Value(ArgType, KwArgType)>;
 
     std::unordered_map<FunctionKey, Function> functions_;
@@ -104,7 +106,6 @@ class Interpreter : public ast::Visitor {
 
    public:
     Interpreter();
-    virtual void visit(const ast::FunctionDecl*) override;
     virtual void visit(const ast::VariableDecl*) override;
     virtual void visit(const ast::TypeDecl*) override;
     virtual void visit(const ast::ErrorNode*) override;

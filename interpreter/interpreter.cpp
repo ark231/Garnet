@@ -18,15 +18,10 @@
 #include "concrete_statements.hpp"
 #include "error_nodes.hpp"
 #include "exceptions.hpp"
+#include "flyweight.hpp"
 #include "format.hpp"  // NOLINT(clang-diagnostic-unused-header)
 #include "location.hpp"
 namespace Garnet::interpreter {
-
-void Interpreter::visit(const ast::FunctionDecl* node) {
-    for (const auto& child : node->children()) {
-        child->accept(*this);
-    }
-}
 
 template <typename From, typename To>
 concept StaticConvertible = requires(From a, To b) {
@@ -47,13 +42,13 @@ void Interpreter::visit(const ast::VariableDecl* node) {
 }
 void Interpreter::declare_variable_(ast::SourceVariableIdentifier name, ast::SourceTypeIdentifier type,
                                     std::optional<Value> value, location::SourceRegion location) {
-    if (current_scope_->keymap.contains(name.source_name())) {
+    if (current_scope_->keymap.contains(name.source_id())) {
         throw InvalidRedeclarationError(
             std::format("variable {} is already declared in this scope.", name.source_name()), location);
     }
     Variable var;
     auto key = key_generator_();
-    var.name = name.source_name();
+    var.name_id = name.source_id();
     var.value = types_.at(encode_type_key_(type.source_name()))();
     if (value.has_value()) {
         std::visit(
@@ -82,7 +77,7 @@ void Interpreter::declare_variable_(ast::SourceVariableIdentifier name, ast::Sou
             var.value, *value);
     }
     variables_[key] = var;
-    current_scope_->keymap[var.name] = key;
+    current_scope_->keymap[var.name_id] = key;
 }
 void Interpreter::visit(const ast::TypeDecl* node) {
     for (const auto& child : node->children()) {
@@ -451,7 +446,7 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
 }
 void Interpreter::visit(const ast::VariableReference* node) {
     Scope* scope = current_scope_;
-    auto name = node->name().source_name();
+    auto name = node->name().source_id();
     while (scope != nullptr) {
         if (scope->keymap.contains(name)) {
             // ASSIGN演算子の都合上値ではなく参照を返す
@@ -514,8 +509,8 @@ void Interpreter::visit(const ast::FunctionDef* node) {
         for (const auto& arginfo : info.args()) {
             Value arg_value;
             auto name = arginfo.name();
-            if (kwargs.contains(name.source_name())) {
-                arg_value = kwargs[name.source_name()];
+            if (kwargs.contains(name.source_id())) {
+                arg_value = kwargs[name.source_id()];
             } else if (arg_iter != args.end()) {
                 arg_value = *arg_iter;
                 ++arg_iter;
@@ -532,7 +527,7 @@ void Interpreter::visit(const ast::FunctionDef* node) {
         auto return_loc = info.result()->location();
         declare_variable_(info.result()->name(), return_type, std::nullopt, return_loc);
         node->block()->accept(*this);
-        auto result = variables_.at(current_scope_->keymap.at(RETURN_SPECIAL_VARNAME));
+        auto result = variables_.at(current_scope_->keymap.at(RETURN_SPECIAL_VARNAME_ID));
         is_returned_ = false;
         current_scope_ = previous_scope;
         return result.value;
@@ -610,7 +605,7 @@ Interpreter::Interpreter() {
 }
 void Interpreter::debug_print() const { fmt::println("variables: {}", variables_); }
 std::string Interpreter::Variable::to_string() const {
-    return fmt::format("Variable(name: {}, value: {})", name, value);
+    return fmt::format("Variable(name: {}, value: {})", name_id, value);
 }
 std::string Interpreter::VariableReference::to_string() const { return fmt::format("VariableReference(key: {})", key); }
 std::string Interpreter::FunctionReference::to_string() const { return fmt::format("FunctionReference(key: {})", key); }
@@ -642,8 +637,9 @@ void Interpreter::init_builtin_functions_() {
 void Interpreter::register_function_(std::string name, Function func) {
     functions_[encode_function_key_(name)] = func;
     VariableKey var_key = key_generator_();
-    variables_[var_key] = {.name = name, .value = FunctionReference{encode_function_key_(name)}};
-    global_scope_->keymap[name] = var_key;
+    variables_[var_key] = {.name_id = SimpleFlyWeight::instance().id(name),
+                           .value = FunctionReference{encode_function_key_(name)}};
+    global_scope_->keymap[SimpleFlyWeight::instance().id(name)] = var_key;
 }
 Interpreter::Scope::~Scope() {
     for (const auto& [name, key] : keymap) {

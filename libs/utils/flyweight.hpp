@@ -10,6 +10,9 @@ class SimpleFlyWeight {
     SimpleFlyWeight() = default;
     std::vector<std::string> pool_;
 
+    SimpleFlyWeight(SimpleFlyWeight&) = delete;
+    SimpleFlyWeight(SimpleFlyWeight&&) = delete;
+
    public:
     static SimpleFlyWeight& instance() {
         static SimpleFlyWeight a;
