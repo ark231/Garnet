@@ -49,7 +49,7 @@ void Interpreter::declare_variable_(ast::SourceVariableIdentifier name, ast::Sou
     Variable var;
     auto key = key_generator_();
     var.name_id = name.source_id();
-    var.value = types_.at(encode_type_key_(type.source_name()))();
+    var.value = types_.at(type.source_id())();
     if (value.has_value()) {
         std::visit(
             [this, &location](auto& target, auto& source) mutable {
@@ -501,7 +501,7 @@ void Interpreter::visit(const ast::CompilationUnit* node) {
 }
 void Interpreter::visit(const ast::FunctionDef* node) {
     auto info = node->info();
-    register_function_(info.name().source_name(), [this, node, info](ArgType args, KwArgType kwargs) {
+    register_function_(info.name().source_name(), [this, node, info](const ArgType& args, const KwArgType& kwargs) {
         auto previous_scope = current_scope_;
         Scope arg_scope(global_scope_, &variables_);
         current_scope_ = &arg_scope;
@@ -510,7 +510,7 @@ void Interpreter::visit(const ast::FunctionDef* node) {
             Value arg_value;
             auto name = arginfo.name();
             if (kwargs.contains(name.source_id())) {
-                arg_value = kwargs[name.source_id()];
+                arg_value = kwargs.at(name.source_id());
             } else if (arg_iter != args.end()) {
                 arg_value = *arg_iter;
                 ++arg_iter;
@@ -590,7 +590,9 @@ void Interpreter::visit(const ast::IfStatement* node) {
 Interpreter::FunctionKey Interpreter::encode_function_key_(const std::string& name) const {
     return SimpleFlyWeight::instance().id(name);
 }
-Interpreter::TypeKey Interpreter::encode_type_key_(std::string name) const { return name; }
+Interpreter::TypeKey Interpreter::encode_type_key_(std::string name) const {
+    return SimpleFlyWeight::instance().id(name);
+}
 Interpreter::Interpreter() {
     types_[encode_type_key_("u8")] = [] { return Value(static_cast<std::uint8_t>(0)); };
     types_[encode_type_key_("i8")] = [] { return Value(static_cast<std::int8_t>(0)); };

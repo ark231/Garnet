@@ -83,7 +83,7 @@ class Interpreter : public ast::Visitor {
 
     using ArgType = std::vector<Value>;
     using KwArgType = std::unordered_map<VariableNameType, Value>;
-    using Function = std::function<Value(ArgType, KwArgType)>;
+    using Function = std::function<Value(const ArgType&, const KwArgType&)>;
 
     std::unordered_map<FunctionKey, Function> functions_;
 
@@ -95,7 +95,7 @@ class Interpreter : public ast::Visitor {
 
     void init_builtin_functions_();
 
-    using TypeKey = std::string;
+    using TypeKey = SimpleFlyWeight::id_type;
     TypeKey encode_type_key_(std::string name) const;
     std::unordered_map<TypeKey, std::function<Value()>> types_;
 
