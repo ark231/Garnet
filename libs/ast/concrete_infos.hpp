@@ -34,6 +34,7 @@ class VariableInfo : public InfoBase {
 };
 class FunctionInfo : public InfoBase {
    public:
+    FunctionInfo();
     FunctionInfo(SourceFunctionIdentifier name, const std::vector<VariableInfo>& args,
                  std::optional<VariableInfo> result);
     virtual std::string to_string() const override;

@@ -31,7 +31,6 @@ class PrettyPrinter : public ast::Visitor {
     };
 
    public:
-    virtual void visit(const ast::FunctionDecl*) override;
     virtual void visit(const ast::VariableDecl*) override;
     virtual void visit(const ast::TypeDecl*) override;
     virtual void visit(const ast::ErrorNode*) override;

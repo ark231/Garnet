@@ -20,6 +20,7 @@ std::string FunctionInfo::to_string() const {
     return fmt::format("FunctionInfo<{}: [({}) → ({})]>", name_, args_,
                        result_.has_value() ? result_->to_string() : "void");
 }
+FunctionInfo::FunctionInfo() : FunctionInfo({"__Unspecified__"}, {}, std::nullopt) {}
 FunctionInfo::FunctionInfo(SourceFunctionIdentifier name, const std::vector<VariableInfo>& args,
                            std::optional<VariableInfo> result)
     : name_(name), args_(args), result_(result) {}

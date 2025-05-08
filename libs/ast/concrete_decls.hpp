@@ -10,21 +10,6 @@
 #include "expression.hpp"
 namespace Garnet::ast {
 class Sentence;
-class FunctionDecl : public DeclBase {
-   public:
-    FunctionDecl(location::SourceRegion location = {});
-    FunctionDecl(SourceFunctionIdentifier name, std::vector<VariableInfo> args, std::optional<VariableInfo> result,
-                 location::SourceRegion location = {});
-    virtual std::vector<std::shared_ptr<Base>> children() const override;
-    std::string mangled_name();
-    FunctionInfo info() const;
-    virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
-
-   protected:
-    SourceFunctionIdentifier name_;
-    std::vector<VariableInfo> args_;
-    std::optional<VariableInfo> result_;
-};
 class VariableDecl : public DeclBase {
    public:
     VariableDecl(SourceVariableIdentifier name, SourceTypeIdentifier type,

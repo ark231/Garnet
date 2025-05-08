@@ -146,7 +146,7 @@ Garnet::location::SourceRegion conv_loc(const location& l){
 %nterm <std::vector<std::shared_ptr<GN::ast::Expression>>> exp_list
 %nterm <std::vector<std::shared_ptr<GN::ast::Expression>>> parameter_list
 %nterm <std::shared_ptr<GN::ast::Statement>> stmt
-%nterm <std::shared_ptr<GN::ast::FunctionDecl>> function_decl
+%nterm <GN::ast::FunctionInfo> function_decl
 %nterm <std::shared_ptr<GN::ast::VariableDecl>> variable_decl
 %nterm <std::shared_ptr<GN::ast::VariableDecl>> variable_init
 %nterm <std::shared_ptr<GN::ast::Block>> block
@@ -176,7 +176,7 @@ Garnet::location::SourceRegion conv_loc(const location& l){
 %nterm <std::shared_ptr<GN::ast::Expression>> uncallable_exp
 
 
-%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt function_decl variable_decl variable_init binary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def function_call return_statement block loop_statement if_statement alone_if_statement break_statement callable_exp uncallable_exp string_literal
+%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt variable_decl variable_init binary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def function_call return_statement block loop_statement if_statement alone_if_statement break_statement callable_exp uncallable_exp string_literal
 %printer { 
     std::vector<const void*> ptrs;
     std::ranges::transform($$,std::back_inserter(ptrs),[](auto p){return fmt::ptr(p);});
@@ -237,14 +237,14 @@ function_decl:
         auto [valref,type] = $7;
         GN::ast::VariableInfo return_info{{GN::RETURN_SPECIAL_VARNAME},type,valref};
         return_info.set_location(conv_loc(@7));
-        $$ = std::make_shared<GN::ast::FunctionDecl>(
-            GN::ast::SourceFunctionIdentifier{$2},std::move($4),return_info, conv_loc(@$)
+        $$ = GN::ast::FunctionInfo(
+            GN::ast::SourceFunctionIdentifier{$2},std::move($4),return_info
            );
     };
 
 function_def:
   function_decl block             { 
-      $$ = std::make_shared<GN::ast::FunctionDef>($1->info(),$2,conv_loc(@$)); 
+      $$ = std::make_shared<GN::ast::FunctionDef>($1,$2,conv_loc(@$)); 
     }
 
 block:

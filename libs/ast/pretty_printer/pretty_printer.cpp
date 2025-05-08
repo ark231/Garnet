@@ -13,16 +13,6 @@
 #include "format.hpp"
 #include "format_utils.hpp"
 namespace Garnet::ast {
-void PrettyPrinter::visit(const ast::FunctionDecl* node) {
-    std::string result;
-    auto info = node->info();
-    println_with_indent_("FunctionDecl '{}' ({}) -> ({})", info.name(), fmt::join(info.args(), ","),
-                         info.result().has_value() ? info.result()->to_string() : "void");
-    for (const auto& child : node->children()) {
-        AutoIndent ind(indent_);
-        child->accept(*this);
-    }
-}
 void PrettyPrinter::visit(const ast::VariableDecl* node) {
     auto name = node->name();
     auto type = node->type();

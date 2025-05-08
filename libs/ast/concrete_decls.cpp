@@ -4,26 +4,9 @@
 #include <fmt/ranges.h>
 #include <fmt/std.h>
 
-#include <boost/lexical_cast.hpp>
-#include <boost/uuid/random_generator.hpp>
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_io.hpp>
-
 #include "../utils/format.hpp"
 #include "enums.hpp"
 namespace Garnet::ast {
-// boost::uuidはto_string()を持ってる
-FunctionDecl::FunctionDecl(location::SourceRegion location)
-    : DeclBase(location),
-      name_(fmt::format("_LF{}", boost::lexical_cast<std::string>(boost::uuids::random_generator()()))),
-      args_({}),
-      result_({{"__Auto"}, {{"__Auto"}}, ValRef::VALUE, false}) {}
-FunctionDecl::FunctionDecl(SourceFunctionIdentifier name, std::vector<VariableInfo> args,
-                           std::optional<VariableInfo> result, location::SourceRegion location)
-    : DeclBase(location), name_(name), args_(args), result_(result) {}
-std::vector<std::shared_ptr<Base>> FunctionDecl::children() const { return {}; }
-
-FunctionInfo FunctionDecl::info() const { return {name_, args_, result_}; }
 
 VariableDecl::VariableDecl(SourceVariableIdentifier name, SourceTypeIdentifier type,
                            std::optional<std::shared_ptr<Expression>> init, location::SourceRegion location)

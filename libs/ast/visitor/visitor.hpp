@@ -3,7 +3,6 @@
 
 namespace Garnet {
 namespace ast {
-class FunctionDecl;
 class VariableDecl;
 class TypeDecl;
 class ErrorNode;
@@ -32,7 +31,6 @@ class Visitor {
    public:
     virtual ~Visitor() = default;
 
-    virtual void visit(const ast::FunctionDecl*) = 0;
     virtual void visit(const ast::VariableDecl*) = 0;
     virtual void visit(const ast::TypeDecl*) = 0;
     virtual void visit(const ast::ErrorNode*) = 0;
