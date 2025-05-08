@@ -9,6 +9,7 @@
 #include <functional>
 #include <optional>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 #include <variant>
 #include <vector>
@@ -16,6 +17,7 @@
 #include "concrete_source_identifiers.hpp"
 #include "flyweight.hpp"
 #include "format_support.hpp"  // NOLINT
+#include "instance_pool.hpp"
 #include "location.hpp"
 #include "visitor/visitor.hpp"
 namespace Garnet {
@@ -74,9 +76,10 @@ class Interpreter : public ast::Visitor {
 
     struct Scope {
         Scope* parent = nullptr;
-        Scope(Scope* parent, VariableMap* varmap) : parent(parent), varmap_(varmap) {}
-
-        std::unordered_map<VariableNameType, VariableKey> keymap;
+        using KeyMapType = std::unordered_map<VariableNameType, VariableKey>;
+        KeyMapType* keymap;
+        Scope(Scope* parent, VariableMap* varmap)
+            : parent(parent), keymap(InstancePool<KeyMapType>::aquire()), varmap_(varmap) {}
 
         ~Scope();
 

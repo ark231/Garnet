@@ -20,6 +20,7 @@
 #include "exceptions.hpp"
 #include "flyweight.hpp"
 #include "format.hpp"  // NOLINT(clang-diagnostic-unused-header)
+#include "instance_pool.hpp"
 #include "location.hpp"
 namespace Garnet::interpreter {
 
@@ -42,7 +43,7 @@ void Interpreter::visit(const ast::VariableDecl* node) {
 }
 void Interpreter::declare_variable_(ast::SourceVariableIdentifier name, ast::SourceTypeIdentifier type,
                                     std::optional<Value> value, location::SourceRegion location) {
-    if (current_scope_->keymap.contains(name.source_id())) {
+    if (current_scope_->keymap->contains(name.source_id())) {
         throw InvalidRedeclarationError(
             std::format("variable {} is already declared in this scope.", name.source_name()), location);
     }
@@ -77,7 +78,7 @@ void Interpreter::declare_variable_(ast::SourceVariableIdentifier name, ast::Sou
             var.value, *value);
     }
     variables_[key] = var;
-    current_scope_->keymap[var.name_id] = key;
+    (*(current_scope_->keymap))[var.name_id] = key;
 }
 void Interpreter::visit(const ast::TypeDecl* node) {
     for (const auto& child : node->children()) {
@@ -448,9 +449,9 @@ void Interpreter::visit(const ast::VariableReference* node) {
     Scope* scope = current_scope_;
     auto name = node->name().source_id();
     while (scope != nullptr) {
-        if (scope->keymap.contains(name)) {
+        if (scope->keymap->contains(name)) {
             // ASSIGN演算子の都合上値ではなく参照を返す
-            expr_result_ = VariableReference(scope->keymap[name]);
+            expr_result_ = VariableReference((*(scope->keymap))[name]);
             return;
         }
         scope = scope->parent;
@@ -529,7 +530,7 @@ void Interpreter::visit(const ast::FunctionDef* node) {
         auto return_loc = info.result()->location();
         declare_variable_(info.result()->name(), return_type, std::nullopt, return_loc);
         node->block()->accept(*this);
-        auto result = variables_.at(current_scope_->keymap.at(RETURN_SPECIAL_VARNAME_ID));
+        auto result = variables_.at(current_scope_->keymap->at(RETURN_SPECIAL_VARNAME_ID));
         is_returned_ = false;
         current_scope_ = previous_scope;
         return result.value;
@@ -645,11 +646,13 @@ void Interpreter::register_function_(const std::string& name, Function func) {
     VariableKey var_key = key_generator_();
     variables_[var_key] = {.name_id = SimpleFlyWeight::instance().id(name),
                            .value = FunctionReference{encode_function_key_(name)}};
-    global_scope_->keymap[SimpleFlyWeight::instance().id(name)] = var_key;
+    (*(global_scope_->keymap))[SimpleFlyWeight::instance().id(name)] = var_key;
 }
 Interpreter::Scope::~Scope() {
-    for (const auto& [name, key] : keymap) {
+    for (const auto& [name, key] : *keymap) {
         varmap_->erase(key);
     }
+    keymap->clear();
+    InstancePool<KeyMapType>::return_instance(keymap);
 }
 }  // namespace Garnet::interpreter
