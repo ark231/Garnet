@@ -521,8 +521,10 @@ void Interpreter::visit(const ast::FunctionDef* node) {
         }
         auto return_type = info.result()->type().name();
         using namespace ast::operators;
-        if (return_type == ast::SourceTypeIdentifier{"void"}) {
-            return_type = ast::SourceTypeIdentifier{"nil"};
+        static const ast::SourceTypeIdentifier void_type{"void"};
+        static const ast::SourceTypeIdentifier nil_type{"NilType"};
+        if (return_type == void_type) {
+            return_type = nil_type;
         }
         auto return_loc = info.result()->location();
         declare_variable_(info.result()->name(), return_type, std::nullopt, return_loc);
@@ -605,7 +607,7 @@ Interpreter::Interpreter() {
     types_[encode_type_key_("f32")] = [] { return Value(static_cast<float>(0)); };
     types_[encode_type_key_("f64")] = [] { return Value(static_cast<double>(0)); };
     types_[encode_type_key_("str")] = [] { return Value(static_cast<std::string>("")); };
-    types_[encode_type_key_("nil")] = [] { return Value(static_cast<std::string>("")); };
+    types_[encode_type_key_("NilType")] = [] { return Value(static_cast<NilType>(NilType{})); };
 }
 void Interpreter::debug_print() const { fmt::println("variables: {}", variables_); }
 std::string Interpreter::Variable::to_string() const {
@@ -626,12 +628,12 @@ Interpreter::Value Interpreter::print_(ArgType args, KwArgType kwargs) {
         }
         i++;
     }
-    return Nil{};
+    return NilType{};
 }
 Interpreter::Value Interpreter::println_(ArgType args, KwArgType kwargs) {
     print_(args, kwargs);
     fmt::println("");
-    return Nil{};
+    return NilType{};
 }
 void Interpreter::init_builtin_functions_() {
     using namespace std::placeholders;

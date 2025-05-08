@@ -21,7 +21,7 @@ class SourceIdentifierBase {
 inline namespace operators {
 
 inline bool operator==(const SourceIdentifierBase& one, const SourceIdentifierBase& theother) {
-    return one.source_name() == theother.source_name();
+    return one.source_id() == theother.source_id();
 }
 }  // namespace operators
 

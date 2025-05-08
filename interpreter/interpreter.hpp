@@ -47,7 +47,9 @@ class Interpreter : public ast::Visitor {
     using Value = std::variant<std::monostate, std::uint8_t, std::int8_t, std::uint16_t, std::int16_t, std::uint32_t,
                                std::int32_t, std::int64_t, std::uint64_t, float, double, bool, std::string,
                                VariableReference, FunctionReference>;
-    using Nil = std::monostate;
+    struct NilType : public std::monostate {
+        using std::monostate::monostate;
+    };
 
     Value expr_result_;
     Value func_result_;
