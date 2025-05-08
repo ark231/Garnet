@@ -11,6 +11,8 @@ func main(var argc: i64 #* , var argv: vec *#)->i32{
     }else{
         println("false");
     }
+    # hogehoge=print("");
+    println(print(""));#現状nilを得る手段がvoid関数しかない
     fizzbuzz(31);
     return 0;
 }

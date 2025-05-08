@@ -2,6 +2,9 @@
 #define GARNET_INTERPRETER_INTERPRETER
 // #include <boost/uuid/random_generator.hpp>
 // #include <boost/uuid/uuid.hpp>
+#include <fmt/base.h>
+#include <fmt/format.h>
+
 #include <cstdint>
 #include <functional>
 #include <optional>
@@ -44,12 +47,13 @@ class Interpreter : public ast::Visitor {
         std::string to_string() const;
     };
 
-    using Value = std::variant<std::monostate, std::uint8_t, std::int8_t, std::uint16_t, std::int16_t, std::uint32_t,
-                               std::int32_t, std::int64_t, std::uint64_t, float, double, bool, std::string,
-                               VariableReference, FunctionReference>;
     struct NilType : public std::monostate {
         using std::monostate::monostate;
     };
+    friend fmt::formatter<NilType>;
+    using Value = std::variant<NilType, std::uint8_t, std::int8_t, std::uint16_t, std::int16_t, std::uint32_t,
+                               std::int32_t, std::int64_t, std::uint64_t, float, double, bool, std::string,
+                               VariableReference, FunctionReference>;
 
     Value expr_result_;
     Value func_result_;
@@ -135,4 +139,10 @@ class Interpreter : public ast::Visitor {
 
 }  // namespace interpreter
 }  // namespace Garnet
+template <>
+struct fmt::formatter<Garnet::interpreter::Interpreter::NilType> : public fmt::formatter<std::string_view> {
+    auto format(const Garnet::interpreter::Interpreter::NilType&, fmt::format_context& ctx) const {
+        return fmt::formatter<std::string_view>::format("nil", ctx);
+    }
+};
 #endif
