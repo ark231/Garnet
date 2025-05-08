@@ -34,8 +34,8 @@ class Interpreter : public ast::Visitor {
         std::string to_string() const;
     };
 
-    using FunctionKey = std::string;
-    FunctionKey encode_function_key_(std::string name) const;
+    using FunctionKey = SimpleFlyWeight::id_type;
+    FunctionKey encode_function_key_(const std::string& name) const;
     struct FunctionReference {
         FunctionKey key;
         explicit FunctionReference() = default;
@@ -87,7 +87,7 @@ class Interpreter : public ast::Visitor {
 
     std::unordered_map<FunctionKey, Function> functions_;
 
-    void register_function_(std::string name, Function func);
+    void register_function_(const std::string& name, Function func);
 
     /* builtin functions */
     Value print_(ArgType args, KwArgType kwargs);

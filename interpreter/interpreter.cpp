@@ -587,7 +587,9 @@ void Interpreter::visit(const ast::IfStatement* node) {
         }
     }
 }
-Interpreter::FunctionKey Interpreter::encode_function_key_(std::string name) const { return name; }
+Interpreter::FunctionKey Interpreter::encode_function_key_(const std::string& name) const {
+    return SimpleFlyWeight::instance().id(name);
+}
 Interpreter::TypeKey Interpreter::encode_type_key_(std::string name) const { return name; }
 Interpreter::Interpreter() {
     types_[encode_type_key_("u8")] = [] { return Value(static_cast<std::uint8_t>(0)); };
@@ -634,7 +636,7 @@ void Interpreter::init_builtin_functions_() {
     register_function_("print", std::bind(std::mem_fn(&Interpreter::print_), std::ref(*this), _1, _2));
     register_function_("println", std::bind(std::mem_fn(&Interpreter::println_), std::ref(*this), _1, _2));
 }
-void Interpreter::register_function_(std::string name, Function func) {
+void Interpreter::register_function_(const std::string& name, Function func) {
     functions_[encode_function_key_(name)] = func;
     VariableKey var_key = key_generator_();
     variables_[var_key] = {.name_id = SimpleFlyWeight::instance().id(name),
