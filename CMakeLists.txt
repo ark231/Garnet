@@ -5,7 +5,7 @@ project(
     VERSION 0.1
     LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(cmake/CPM.cmake)
@@ -77,8 +77,8 @@ target_link_libraries(
     ICU::uc
     fmt::fmt
     Boost::program_options
-    dl
-    backtrace
+    # dl backtrace
+    stdc++exp
     ast
     defs
     utils)

@@ -1,20 +1,20 @@
 #ifndef GARNET_INTERPRETER_EXCEPTIONS
 #define GARNET_INTERPRETER_EXCEPTIONS
-#include <boost/stacktrace.hpp>
+#include <stacktrace>
 #include <stdexcept>
 
 #include "location.hpp"
 namespace Garnet::interpreter {
 class InterpreterError : public std::runtime_error {
-    boost::stacktrace::stacktrace trace_;
+    std::stacktrace trace_;
     location::SourceRegion location_;
 
    public:
     InterpreterError(std::string message, location::SourceRegion location)
         : std::runtime_error(message), location_(location) {
-        trace_ = boost::stacktrace::stacktrace();
+        trace_ = std::stacktrace::current();
     }
-    boost::stacktrace::stacktrace trace() const { return trace_; }
+    std::stacktrace trace() const { return trace_; }
     location::SourceRegion location() const { return location_; }
     virtual ~InterpreterError() = default;
 };
