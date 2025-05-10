@@ -4,13 +4,13 @@
 #include <vector>
 
 #include "base.hpp"
-#include "sentence.hpp"
+#include "statement.hpp"
 namespace Garnet::ast {
-class Block : public Sentence {
+class Block : public Statement {
    public:
     Block() = default;
     Block(std::vector<std::shared_ptr<Sentence>>&& sentences, location::SourceRegion location = {})
-        : Sentence(location), sentences_(sentences) {}
+        : Statement(location), sentences_(sentences) {}
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
 

@@ -288,7 +288,6 @@ sentences:
 
 sentence:
   stmt                     { $$ = std::dynamic_pointer_cast<GN::ast::Sentence>($1); }
-| block                    { $$ = std::dynamic_pointer_cast<GN::ast::Sentence>($1); }
 | exp ";"                  { $$ = std::dynamic_pointer_cast<GN::ast::Sentence>($1); }
 | error ";"                { 
       yyclearin; 
@@ -431,6 +430,7 @@ stmt:
 | loop_statement          { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
 | if_statement            { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
 | break_statement         { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
+| block                   { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
 
 loop_statement:
   "loop" block            { $$ = std::make_shared<GN::ast::LoopStatement>($2,conv_loc(@$)); }
