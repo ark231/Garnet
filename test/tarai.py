@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
+i = 0
+
+
 def tarai(x, y, z):
+    global i
+    i += 1
     if x <= y:
         return y
     else:
@@ -7,3 +12,4 @@ def tarai(x, y, z):
 
 
 print(tarai(11, 5, 0))
+print(i)

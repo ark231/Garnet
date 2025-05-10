@@ -445,7 +445,82 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
             break;
     }
 }
-void Interpreter::visit(const ast::UnaryOperator* node) {}
+void Interpreter::visit(const ast::UnaryOperator* node) {
+    node->operand()->accept(*this);
+
+    auto operand = expr_result_;
+
+    while (std::holds_alternative<VariableReference>(operand)) {
+        operand = variables_[std::get<VariableReference>(operand).key].value;
+    }
+
+    auto location = node->location();
+    switch (node->op()) {
+        using enum ast::UnaryOperator::OperatorType;
+        using namespace std::placeholders;
+        case PLUS:
+            std::visit(
+                [this, &location](auto operand) {
+                    using OperandType = decltype(operand);
+                    using Operand = std::numeric_limits<OperandType>;
+                    if constexpr (std::is_convertible_v<OperandType, VariableReference>) {
+                        throw TypeError(fmt::format("cannot apply unary PLUS operator to {}", typeid(OperandType)),
+                                        location);
+                    } else if constexpr (Operand::is_specialized) {
+                        this->expr_result_ = static_cast<OperandType>(+operand);
+                    } else {
+                        throw TypeError(fmt::format("cannot apply unary PLUS operator to {}", typeid(OperandType)),
+                                        location);
+                    }
+                },
+                operand);
+            break;
+        case MINUS:
+            std::visit(
+                [this, &location](auto operand) {
+                    using OperandType = decltype(operand);
+                    using Operand = std::numeric_limits<OperandType>;
+                    if constexpr (std::is_convertible_v<OperandType, VariableReference>) {
+                        throw TypeError(fmt::format("cannot apply unary PLUS operator to {}", typeid(OperandType)),
+                                        location);
+                    } else if constexpr (Operand::is_specialized) {
+                        this->expr_result_ = static_cast<OperandType>(-operand);
+                    } else {
+                        throw TypeError(fmt::format("cannot apply unary MINUS operator to {}", typeid(OperandType)),
+                                        location);
+                    }
+                },
+                operand);
+            break;
+        case BOOL_NOT:
+            std::visit(
+                [this, &location](auto operand) {
+                    using OperandType = decltype(operand);
+                    if constexpr (std::is_same_v<std::remove_cvref_t<OperandType>, bool>) {
+                        this->expr_result_ = static_cast<bool>(not operand);
+                    } else {
+                        throw TypeError(fmt::format("cannot apply BOOL_NOT operator to {}", typeid(OperandType)),
+                                        location);
+                    }
+                },
+                operand);
+            break;
+        case BIT_NOT:
+            std::visit(
+                [this, &location](auto operand) {
+                    using OperandType = decltype(operand);
+                    using Operand = std::numeric_limits<OperandType>;
+                    if constexpr (Operand::is_specialized && Operand::is_integer) {
+                        this->expr_result_ = static_cast<OperandType>(~operand);
+                    } else {
+                        throw TypeError(fmt::format("cannot apply BIT_NOT operator to {}", typeid(OperandType)),
+                                        location);
+                    }
+                },
+                operand);
+            break;
+    }
+}
 void Interpreter::visit(const ast::VariableReference* node) {
     Scope* scope = current_scope_;
     auto name = node->name().source_id();
@@ -555,7 +630,7 @@ void Interpreter::visit(const ast::Block* node) {
     current_scope_ = &scope;
     for (const auto& sentence : node->sentences()) {
         sentence->accept(*this);
-        if (is_broken_ && is_returned_) {
+        if (is_broken_ || is_returned_) {
             break;
         }
     }
