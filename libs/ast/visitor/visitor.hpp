@@ -28,6 +28,7 @@ class Block;
 class LoopStatement;
 class BreakStatement;
 class IfStatement;
+class AssertStatement;
 class Visitor {
    public:
     virtual ~Visitor() = default;
@@ -54,6 +55,7 @@ class Visitor {
     virtual void visit(const ast::LoopStatement*) = 0;
     virtual void visit(const ast::BreakStatement*) = 0;
     virtual void visit(const ast::IfStatement*) = 0;
+    virtual void visit(const ast::AssertStatement*) = 0;
 };
 }  // namespace ast
 };  // namespace Garnet

@@ -153,6 +153,7 @@ Garnet::location::SourceRegion conv_loc(const location& l){
     FOR                      "for"
     BREAK                    "break"
     CONTINUE                 "continue"
+    ASSERT                   "assert"
 ;
 
 %token <std::string>         IDENTIFIER  "identifier"
@@ -196,12 +197,13 @@ Garnet::location::SourceRegion conv_loc(const location& l){
 %nterm <GN::ast::IfStatement::CondBlock> elif
 %nterm <GN::ast::IfStatement::CondBlock> else
 %nterm <std::shared_ptr<GN::ast::BreakStatement>> break_statement
+%nterm <std::shared_ptr<GN::ast::AssertStatement>> assert_statement
 %nterm <GN::ValRef> omittable_ref
 %nterm <std::shared_ptr<GN::ast::Expression>> callable_exp
 %nterm <std::shared_ptr<GN::ast::Expression>> uncallable_exp
 
 
-%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt variable_decl variable_init binary_operator unary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def function_call return_statement block loop_statement if_statement alone_if_statement break_statement callable_exp uncallable_exp string_literal
+%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt variable_decl variable_init binary_operator unary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def function_call return_statement block loop_statement if_statement alone_if_statement break_statement assert_statement callable_exp uncallable_exp string_literal
 %printer { 
     std::vector<const void*> ptrs;
     std::ranges::transform($$,std::back_inserter(ptrs),[](auto p){return fmt::ptr(p);});
@@ -431,12 +433,17 @@ stmt:
 | if_statement            { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
 | break_statement         { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
 | block                   { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
+| assert_statement        { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
 
 loop_statement:
   "loop" block            { $$ = std::make_shared<GN::ast::LoopStatement>($2,conv_loc(@$)); }
 
 break_statement:
   "break" ";"             { $$ = std::make_shared<GN::ast::BreakStatement>(conv_loc(@$)); }
+
+assert_statement:
+  "assert" exp ";"              { $$ = std::make_shared<GN::ast::AssertStatement>($2,std::nullopt,conv_loc(@$)); }
+| "assert" exp "," exp ";"      { $$ = std::make_shared<GN::ast::AssertStatement>($2,$4,conv_loc(@$)); }
 
 if_statement:
   alone_if_statement            { $$ = $1; }

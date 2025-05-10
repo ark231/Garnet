@@ -8,4 +8,5 @@ std::vector<std::shared_ptr<Base>> ReturnStatement::children() const { return {r
 std::vector<std::shared_ptr<Base>> LoopStatement::children() const { return {block_}; }
 std::vector<std::shared_ptr<Base>> BreakStatement::children() const { return {}; }
 std::vector<std::shared_ptr<Base>> IfStatement::children() const { return {}; }
+std::vector<std::shared_ptr<Base>> AssertStatement::children() const { return {cond_}; }
 }  // namespace Garnet::ast

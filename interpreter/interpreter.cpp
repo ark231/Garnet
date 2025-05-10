@@ -532,7 +532,8 @@ void Interpreter::visit(const ast::VariableReference* node) {
         }
         scope = scope->parent;
     }
-    throw NameError(fmt::format("variable {} is not defined", name), node->location());
+    throw NameError(fmt::format("variable '{}' is not defined", SimpleFlyWeight::instance().value(name)),
+                    node->location());
 }
 void Interpreter::visit(const ast::SignedIntegerLiteral* node) { expr_result_ = node->value(); }
 void Interpreter::visit(const ast::UnsignedIntegerLiteral* node) { expr_result_ = node->value(); }
@@ -665,6 +666,24 @@ void Interpreter::visit(const ast::IfStatement* node) {
             break;
         }
     }
+}
+void Interpreter::visit(const ast::AssertStatement* node) {
+    node->cond()->accept(*this);
+    auto cond_loc = node->cond()->location();
+    std::visit(
+        [this, cond_loc, node](auto cond) {
+            if constexpr (not std::is_same_v<std::remove_cvref_t<decltype(cond)>, bool>) {
+                throw TypeError(fmt::format("{} is not bool", typeid(cond)), cond_loc);
+            } else if (not cond) {
+                if (node->msg().has_value()) {
+                    node->msg().value()->accept(*this);
+                    throw AssertionError(fmt::format("{}", expr_result_), cond_loc);
+                } else {
+                    throw AssertionError("", cond_loc);
+                }
+            }
+        },
+        expr_result_);
 }
 Interpreter::FunctionKey Interpreter::encode_function_key_(const std::string& name) const {
     return SimpleFlyWeight::instance().id(name);

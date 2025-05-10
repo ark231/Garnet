@@ -54,5 +54,9 @@ class InvalidArgument : public CriticalExcecutionError {
    public:
     using CriticalExcecutionError::CriticalExcecutionError;
 };
+class AssertionError : public CriticalExcecutionError {
+   public:
+    using CriticalExcecutionError::CriticalExcecutionError;
+};
 }  // namespace Garnet::interpreter
 #endif

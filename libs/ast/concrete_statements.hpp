@@ -67,5 +67,20 @@ class BreakStatement : public Statement {
     virtual std::vector<std::shared_ptr<Base>> children() const override;
     virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
 };
+class AssertStatement : public Statement {
+   public:
+    AssertStatement(std::shared_ptr<Expression> cond, std::optional<std::shared_ptr<Expression>> msg,
+                    location::SourceRegion location = {})
+        : Statement(location), cond_(cond), msg_(msg) {}
+    virtual std::vector<std::shared_ptr<Base>> children() const override;
+    virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
+
+    std::shared_ptr<Expression> cond() const { return cond_; }
+    std::optional<std::shared_ptr<Expression>> msg() const { return msg_; }
+
+   private:
+    std::shared_ptr<Expression> cond_;
+    std::optional<std::shared_ptr<Expression>> msg_;
+};
 }  // namespace Garnet::ast
 #endif

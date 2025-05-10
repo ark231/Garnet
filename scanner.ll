@@ -218,6 +218,7 @@ string    \"([^\"]|\\\")*\"
 "for"        return Garnet::yy::Parser::make_FOR                      (loc);
 "break"      return Garnet::yy::Parser::make_BREAK                    (loc);
 "continue"   return Garnet::yy::Parser::make_CONTINUE                 (loc);
+"assert"     return Garnet::yy::Parser::make_ASSERT                   (loc);
 
 {float}      return make_FLOAT (yytext, loc);
 {int}        return make_INTEGER (yytext, loc);

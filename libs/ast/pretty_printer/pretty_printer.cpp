@@ -156,6 +156,28 @@ void PrettyPrinter::visit(const ast::IfStatement* node) {
         }
     }
 }
+void PrettyPrinter::visit(const ast::AssertStatement* node) {
+    println_with_indent_("AssertStatement");
+    {
+        AutoIndent ind(indent_);
+        println_with_indent_("cond:");
+        {
+            AutoIndent ind(indent_);
+            node->cond()->accept(*this);
+            force_line_beginning_();
+        }
+        println_with_indent_("msg:");
+        {
+            AutoIndent ind(indent_);
+            if (node->msg().has_value()) {
+                node->msg().value()->accept(*this);
+            } else {
+                println_with_indent_("not specified");
+            }
+            force_line_beginning_();
+        }
+    }
+}
 void PrettyPrinter::force_line_beginning_() {
     if (not at_line_beginning_) {
         fmt::println("");
