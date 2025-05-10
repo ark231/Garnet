@@ -177,6 +177,7 @@ string    \"([^\"]|\\\")*\"
 "-="         return Garnet::yy::Parser::make_MINUS_ASSIGN             (loc);
 "*="         return Garnet::yy::Parser::make_MUL_ASSIGN               (loc);
 "/="         return Garnet::yy::Parser::make_DIV_ASSIGN               (loc);
+"%="         return Garnet::yy::Parser::make_MOD_ASSIGN               (loc);
 "//="        return Garnet::yy::Parser::make_IDIV_ASSIGN              (loc);
 "//"         return Garnet::yy::Parser::make_DOUBLE_SLASH             (loc);
 "and"        return Garnet::yy::Parser::make_BOOL_AND                 (loc);

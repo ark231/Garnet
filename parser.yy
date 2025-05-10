@@ -109,6 +109,7 @@ Garnet::location::SourceRegion conv_loc(const location& l){
     MINUS_ASSIGN             "-="
     MUL_ASSIGN               "*="
     DIV_ASSIGN               "/="
+    MOD_ASSIGN               "%="
     IDIV_ASSIGN              "dslash_eq"
     SLASH                    "/"
     DOUBLE_SLASH             "dslash"
@@ -318,7 +319,7 @@ variable_reference:
   omittable_ref "identifier" { $$ = std::make_shared<GN::ast::VariableReference>(GN::ast::SourceVariableIdentifier($2),$1,conv_loc(@$)); };
 
 %left "<" ">" "<=" ">=" "==";
-%left "=";
+%left "=" "+=" "-=" "*=" "/=" "%=";
 %left "+" "-";
 %left "*" "/" "%";
 %left UPLUS UMINUS "not" "!" "bit_not" "~";
@@ -335,6 +336,31 @@ binary_operator:
 | exp "<=" exp       { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::LESS_EQUAL,$1,$3,conv_loc(@$)); }
 | exp ">=" exp       { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::GREATER_EQUAL,$1,$3,conv_loc(@$)); }
 | exp "==" exp       { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::EQUAL,$1,$3,conv_loc(@$)); }
+| exp "+=" exp       { 
+                        using GN::ast::BinaryOperator; using enum BinaryOperator::OperatorType;
+                        auto right = std::make_shared<BinaryOperator>(ADD,$1,$3,conv_loc(@$));
+                        $$ = std::make_shared<BinaryOperator>(ASSIGN,$1,right,conv_loc(@$)); 
+                     }
+| exp "-=" exp       { 
+                        using GN::ast::BinaryOperator; using enum BinaryOperator::OperatorType;
+                        auto right = std::make_shared<BinaryOperator>(SUB,$1,$3,conv_loc(@$));
+                        $$ = std::make_shared<BinaryOperator>(ASSIGN,$1,right,conv_loc(@$)); 
+                     }
+| exp "*=" exp       { 
+                        using GN::ast::BinaryOperator; using enum BinaryOperator::OperatorType;
+                        auto right = std::make_shared<BinaryOperator>(MUL,$1,$3,conv_loc(@$));
+                        $$ = std::make_shared<BinaryOperator>(ASSIGN,$1,right,conv_loc(@$)); 
+                     }
+| exp "/=" exp       { 
+                        using GN::ast::BinaryOperator; using enum BinaryOperator::OperatorType;
+                        auto right = std::make_shared<BinaryOperator>(DIV,$1,$3,conv_loc(@$));
+                        $$ = std::make_shared<BinaryOperator>(ASSIGN,$1,right,conv_loc(@$)); 
+                     }
+| exp "%=" exp       { 
+                        using GN::ast::BinaryOperator; using enum BinaryOperator::OperatorType;
+                        auto right = std::make_shared<BinaryOperator>(MOD,$1,$3,conv_loc(@$));
+                        $$ = std::make_shared<BinaryOperator>(ASSIGN,$1,right,conv_loc(@$)); 
+                     }
 ;
 
 unary_operator:

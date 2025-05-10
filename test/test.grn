@@ -65,7 +65,7 @@ func fizzbuzz(let n:i64)->void{
                     println(i);
                 }
             }
-            i=i+1;
+            i+=1;
         }
     }
 }
