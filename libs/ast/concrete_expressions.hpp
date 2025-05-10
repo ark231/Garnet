@@ -24,6 +24,11 @@ class BinaryOperator : public Expression {
         LESS_EQUAL,
         GREATER_EQUAL,
         EQUAL,
+        BOOL_AND,
+        BIT_AND,
+        BOOL_OR,
+        BIT_OR,
+        BIT_XOR,
     };
     BinaryOperator(OperatorType op, std::shared_ptr<Expression> left, std::shared_ptr<Expression> right,
                    location::SourceRegion location = {})
@@ -38,6 +43,25 @@ class BinaryOperator : public Expression {
     OperatorType op_;
     std::shared_ptr<Expression> left_;
     std::shared_ptr<Expression> right_;
+};
+class UnaryOperator : public Expression {
+   public:
+    enum class OperatorType {
+        BOOL_NOT,
+        BIT_NOT,
+        PLUS,
+        MINUS,
+    };
+    UnaryOperator(OperatorType op, std::shared_ptr<Expression> operand, location::SourceRegion location = {})
+        : Expression(location), op_(op), operand_(operand) {}
+    virtual std::vector<std::shared_ptr<Base>> children() const override;
+    OperatorType op() const { return op_; }
+    const std::shared_ptr<Expression> operand() const { return operand_; }
+    virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
+
+   private:
+    OperatorType op_;
+    std::shared_ptr<Expression> operand_;
 };
 class VariableReference : public Expression {
    public:

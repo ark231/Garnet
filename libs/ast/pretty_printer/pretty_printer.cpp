@@ -48,6 +48,14 @@ void PrettyPrinter::visit(const ast::BinaryOperator* node) {
         force_line_beginning_();
     }
 }
+void PrettyPrinter::visit(const ast::UnaryOperator* node) {
+    println_with_indent_("UnaryOperator {}", node->op());
+    {
+        AutoIndent ind(indent_);
+        node->operand()->accept(*this);
+        force_line_beginning_();
+    }
+}
 void PrettyPrinter::visit(const ast::VariableReference* node) {
     print_with_indent_("VariableReference<{} {}>", node->name(), node->valref());
 }

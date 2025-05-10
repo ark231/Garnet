@@ -39,7 +39,7 @@ func fizzbuzz(let n:i64)->void{
     {
         var i:i64 = 0;
         loop{
-            if(i>=n){
+            if(not i < n){
                 break;
             }
             {

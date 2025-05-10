@@ -122,6 +122,7 @@ class Interpreter : public ast::Visitor {
     virtual void visit(const ast::ErrorExpression*) override;
     virtual void visit(const ast::ErrorStatement*) override;
     virtual void visit(const ast::BinaryOperator*) override;
+    virtual void visit(const ast::UnaryOperator*) override;
     virtual void visit(const ast::VariableReference*) override;
     virtual void visit(const ast::SignedIntegerLiteral*) override;
     virtual void visit(const ast::UnsignedIntegerLiteral*) override;

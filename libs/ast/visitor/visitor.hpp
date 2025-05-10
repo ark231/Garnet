@@ -10,6 +10,7 @@ class ErrorSentence;
 class ErrorExpression;
 class ErrorStatement;
 class BinaryOperator;
+class UnaryOperator;
 class VariableReference;
 class SignedIntegerLiteral;
 class UnsignedIntegerLiteral;
@@ -38,6 +39,7 @@ class Visitor {
     virtual void visit(const ast::ErrorExpression*) = 0;
     virtual void visit(const ast::ErrorStatement*) = 0;
     virtual void visit(const ast::BinaryOperator*) = 0;
+    virtual void visit(const ast::UnaryOperator*) = 0;
     virtual void visit(const ast::VariableReference*) = 0;
     virtual void visit(const ast::SignedIntegerLiteral*) = 0;
     virtual void visit(const ast::UnsignedIntegerLiteral*) = 0;

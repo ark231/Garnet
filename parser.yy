@@ -104,7 +104,30 @@ Garnet::location::SourceRegion conv_loc(const location& l){
     EQUAL                    "=="
     ASTERISK                 "*"
     PERCENT                  "%"
+    EXPONENTIATION           "^"
+    PLUS_ASSIGN              "+="
+    MINUS_ASSIGN             "-="
+    MUL_ASSIGN               "*="
+    DIV_ASSIGN               "/="
+    IDIV_ASSIGN              "dslash_eq"
     SLASH                    "/"
+    DOUBLE_SLASH             "dslash"
+    BOOL_AND                 "and"
+    BOOL_AND_SIM             "&&"
+    BIT_AND_SIM              "&"
+    BIT_AND                  "bit_and"
+    BOOL_OR                  "or"
+    BOOL_OR_SIM              "||"
+    BIT_OR_SIM               "|"
+    BIT_OR                   "bit_or"
+    BOOL_NOT                 "not"
+    BOOL_NOT_SIM             "!"
+    BIT_NOT_SIM              "~"
+    BIT_NOT                  "bit_not"
+    // BOOL_XOR                 "xor"
+    // BOOL_XOR_SIM             ""
+    // BIT_XOR_SIM              ""
+    BIT_XOR                  "xor"
     LPAREN                   "("
     RPAREN                   ")"
     PERIOD                   "."
@@ -152,6 +175,7 @@ Garnet::location::SourceRegion conv_loc(const location& l){
 %nterm <std::shared_ptr<GN::ast::Block>> block
 %nterm <std::vector<std::shared_ptr<GN::ast::Sentence>>> sentences
 %nterm <std::shared_ptr<GN::ast::BinaryOperator>> binary_operator
+%nterm <std::shared_ptr<GN::ast::UnaryOperator>> unary_operator
 %nterm <std::shared_ptr<GN::ast::FloatingPointLiteral>> floating_point_literal
 %nterm <std::shared_ptr<GN::ast::SignedIntegerLiteral>> signed_integer_literal
 %nterm <std::shared_ptr<GN::ast::StringLiteral>> string_literal
@@ -176,7 +200,7 @@ Garnet::location::SourceRegion conv_loc(const location& l){
 %nterm <std::shared_ptr<GN::ast::Expression>> uncallable_exp
 
 
-%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt variable_decl variable_init binary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def function_call return_statement block loop_statement if_statement alone_if_statement break_statement callable_exp uncallable_exp string_literal
+%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt variable_decl variable_init binary_operator unary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def function_call return_statement block loop_statement if_statement alone_if_statement break_statement callable_exp uncallable_exp string_literal
 %printer { 
     std::vector<const void*> ptrs;
     std::ranges::transform($$,std::back_inserter(ptrs),[](auto p){return fmt::ptr(p);});
@@ -297,6 +321,7 @@ variable_reference:
 %left "=";
 %left "+" "-";
 %left "*" "/" "%";
+%left UPLUS UMINUS "not" "!" "bit_not" "~";
 
 binary_operator:
   exp "+" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::ADD,$1,$3,conv_loc(@$)); }
@@ -307,9 +332,18 @@ binary_operator:
 | exp "=" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::ASSIGN,$1,$3,conv_loc(@$)); }
 | exp "<" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::LESS,$1,$3,conv_loc(@$)); }
 | exp ">" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::GREATER,$1,$3,conv_loc(@$)); }
-| exp "<=" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::LESS_EQUAL,$1,$3,conv_loc(@$)); }
-| exp ">=" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::GREATER_EQUAL,$1,$3,conv_loc(@$)); }
-| exp "==" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::EQUAL,$1,$3,conv_loc(@$)); }
+| exp "<=" exp       { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::LESS_EQUAL,$1,$3,conv_loc(@$)); }
+| exp ">=" exp       { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::GREATER_EQUAL,$1,$3,conv_loc(@$)); }
+| exp "==" exp       { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::EQUAL,$1,$3,conv_loc(@$)); }
+;
+
+unary_operator:
+  "+" exp            { $$ = std::make_shared<GN::ast::UnaryOperator>(GN::ast::UnaryOperator::OperatorType::PLUS, $2, conv_loc(@$)); }
+| "-" exp            { $$ = std::make_shared<GN::ast::UnaryOperator>(GN::ast::UnaryOperator::OperatorType::MINUS, $2, conv_loc(@$)); }
+| "not" exp          { $$ = std::make_shared<GN::ast::UnaryOperator>(GN::ast::UnaryOperator::OperatorType::BOOL_NOT, $2, conv_loc(@$)); }
+| "!" exp            { $$ = std::make_shared<GN::ast::UnaryOperator>(GN::ast::UnaryOperator::OperatorType::BOOL_NOT, $2, conv_loc(@$)); }
+| "bit_not" exp      { $$ = std::make_shared<GN::ast::UnaryOperator>(GN::ast::UnaryOperator::OperatorType::BIT_NOT, $2, conv_loc(@$)); }
+| "~" exp            { $$ = std::make_shared<GN::ast::UnaryOperator>(GN::ast::UnaryOperator::OperatorType::BIT_NOT, $2, conv_loc(@$)); }
 ;
 
 floating_point_literal:
@@ -347,6 +381,7 @@ uncallable_exp:
 | signed_integer_literal { $$ = std::dynamic_pointer_cast<GN::ast::Expression>($1); }
 | string_literal         { $$ = std::dynamic_pointer_cast<GN::ast::Expression>($1); }
 | binary_operator        { $$ = std::dynamic_pointer_cast<GN::ast::Expression>($1); }
+| unary_operator         { $$ = std::dynamic_pointer_cast<GN::ast::Expression>($1); }
 | "(" uncallable_exp ")"            { $$ = $2; }
 | "(" error ")"          { 
       yyclearin;

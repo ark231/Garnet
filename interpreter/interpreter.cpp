@@ -445,6 +445,7 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
             break;
     }
 }
+void Interpreter::visit(const ast::UnaryOperator* node) {}
 void Interpreter::visit(const ast::VariableReference* node) {
     Scope* scope = current_scope_;
     auto name = node->name().source_id();
