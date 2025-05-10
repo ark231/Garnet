@@ -136,11 +136,9 @@ id_punc   [_]
 digit     [0-9]
 id        {non_digit}({non_digit}|{digit}|{id_punc})*
 int_pos   {digit}+
-int_neg   -{int_pos}
-int       {int_pos}|{int_neg}
+int       {int_pos}
 float_pos  {digit}+\.{digit}+
-float_neg  -{float_pos}
-float     {float_pos}|{float_neg}
+float     {float_pos}
 blank     [ \t\r]
 refval    [$&]
 string    \"([^\"]|\\\")*\"
