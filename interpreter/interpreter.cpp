@@ -539,6 +539,8 @@ void Interpreter::visit(const ast::SignedIntegerLiteral* node) { expr_result_ = 
 void Interpreter::visit(const ast::UnsignedIntegerLiteral* node) { expr_result_ = node->value(); }
 void Interpreter::visit(const ast::FloatingPointLiteral* node) { expr_result_ = node->value(); }
 void Interpreter::visit(const ast::StringLiteral* node) { expr_result_ = node->value(); }
+void Interpreter::visit(const ast::BooleanLiteral* node) { expr_result_ = node->value(); }
+void Interpreter::visit(const ast::NilLiteral* node) { expr_result_ = NilType{}; }
 void Interpreter::visit(const ast::FunctionCall* node) {
     node->callee()->accept(*this);
     auto raw_callee = expr_result_;

@@ -118,6 +118,24 @@ class StringLiteral : public Expression {
    private:
     std::string value_;
 };
+class BooleanLiteral : public Expression {
+   public:
+    BooleanLiteral(bool value, location::SourceRegion location = {}) : Expression(location), value_(value) {}
+    virtual std::vector<std::shared_ptr<Base>> children() const override;
+    bool value() const { return value_; }
+    virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
+
+   private:
+    bool value_;
+};
+class NilLiteral : public Expression {
+   public:
+    NilLiteral(location::SourceRegion location = {}) : Expression(location) {}
+    virtual std::vector<std::shared_ptr<Base>> children() const override;
+    virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
+
+   private:
+};
 class FunctionCall : public Expression {
    public:
     FunctionCall(std::shared_ptr<Expression> callee, std::vector<std::shared_ptr<Expression>>&& args,

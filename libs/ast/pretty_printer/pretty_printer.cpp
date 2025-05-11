@@ -178,6 +178,8 @@ void PrettyPrinter::visit(const ast::AssertStatement* node) {
         }
     }
 }
+void PrettyPrinter::visit(const ast::BooleanLiteral* node) { print_with_indent_("BooleanLiteral<{}>", node->value()); }
+void PrettyPrinter::visit(const ast::NilLiteral* node) { print_with_indent_("NilLiteral<nil>"); }
 void PrettyPrinter::force_line_beginning_() {
     if (not at_line_beginning_) {
         fmt::println("");
