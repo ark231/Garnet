@@ -172,6 +172,7 @@ string    \"([^\"]|\\\")*\"
 "<="         return Garnet::yy::Parser::make_LESSTHAN_EQUAL           (loc);
 ">="         return Garnet::yy::Parser::make_GREATERTHAN_EQUAL        (loc);
 "=="         return Garnet::yy::Parser::make_EQUAL                    (loc);
+"!="         return Garnet::yy::Parser::make_NOT_EQUAL                (loc);
 "^"          return Garnet::yy::Parser::make_EXPONENTIATION           (loc);
 "+="         return Garnet::yy::Parser::make_PLUS_ASSIGN              (loc);
 "-="         return Garnet::yy::Parser::make_MINUS_ASSIGN             (loc);
@@ -193,6 +194,8 @@ string    \"([^\"]|\\\")*\"
 "~"          return Garnet::yy::Parser::make_BIT_NOT_SIM              (loc);
 "bit_not"    return Garnet::yy::Parser::make_BIT_NOT                  (loc);
 "xor"        return Garnet::yy::Parser::make_BIT_XOR                  (loc);
+"<<"         return Garnet::yy::Parser::make_LEFT_SHIFT               (loc);
+">>"         return Garnet::yy::Parser::make_RIGHT_SHIFT              (loc);
 "("          return Garnet::yy::Parser::make_LPAREN                   (loc);
 ")"          return Garnet::yy::Parser::make_RPAREN                   (loc);
 "="          return Garnet::yy::Parser::make_ASSIGN                   (loc);

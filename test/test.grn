@@ -31,6 +31,11 @@ func main(var argc: i64 #* , var argv: vec *#)->i32{
     assert not false;
     println(3.14- -3.14);
     # assert 1 == 2, "then, everything is the same";
+    assert 1 << 2 == 4;
+    assert 65535 & 255 == 255;
+    assert true && true;
+    assert (true || false) == (false || true) == true;
+    assert ((65535 xor 255) | 255) == 65535;
     hello_world();
     return 0;
 }

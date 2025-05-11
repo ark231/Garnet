@@ -103,6 +103,7 @@ Garnet::location::SourceRegion conv_loc(const location& l){
     LESSTHAN_EQUAL           "<="
     GREATERTHAN_EQUAL        ">="
     EQUAL                    "=="
+    NOT_EQUAL                "!="
     ASTERISK                 "*"
     PERCENT                  "%"
     EXPONENTIATION           "^"
@@ -130,6 +131,8 @@ Garnet::location::SourceRegion conv_loc(const location& l){
     // BOOL_XOR_SIM             ""
     // BIT_XOR_SIM              ""
     BIT_XOR                  "xor"
+    LEFT_SHIFT               "<<"
+    RIGHT_SHIFT              ">>"
     LPAREN                   "("
     RPAREN                   ")"
     PERIOD                   "."
@@ -336,10 +339,12 @@ omittable_ref:
 variable_reference:
   omittable_ref "identifier" { $$ = std::make_shared<GN::ast::VariableReference>(GN::ast::SourceVariableIdentifier($2),$1,conv_loc(@$)); };
 
-%left "<" ">" "<=" ">=" "==";
+%left "and" "&&" "or" "||";
+%left "<" ">" "<=" ">=" "==" "!=";
 %left "=" "+=" "-=" "*=" "/=" "%=";
 %left "+" "-";
 %left "*" "/" "%";
+%left "<<" ">>" "bit_and" "&" "bit_or" "|" "xor";
 %left UPLUS UMINUS "not" "!" "bit_not" "~";
 
 binary_operator:
@@ -354,6 +359,18 @@ binary_operator:
 | exp "<=" exp       { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::LESS_EQUAL,$1,$3,conv_loc(@$)); }
 | exp ">=" exp       { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::GREATER_EQUAL,$1,$3,conv_loc(@$)); }
 | exp "==" exp       { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::EQUAL,$1,$3,conv_loc(@$)); }
+| exp "!=" exp       { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::NOT_EQUAL,$1,$3,conv_loc(@$)); }
+| exp "&&" exp       { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::BOOL_AND,$1,$3,conv_loc(@$)); }
+| exp "and" exp      { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::BOOL_AND,$1,$3,conv_loc(@$)); }
+| exp "&" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::BIT_AND,$1,$3,conv_loc(@$)); }
+| exp "bit_and" exp  { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::BIT_AND,$1,$3,conv_loc(@$)); }
+| exp "||" exp       { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::BOOL_OR,$1,$3,conv_loc(@$)); }
+| exp "or" exp       { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::BOOL_OR,$1,$3,conv_loc(@$)); }
+| exp "|" exp        { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::BIT_OR,$1,$3,conv_loc(@$)); }
+| exp "bit_or" exp   { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::BIT_OR,$1,$3,conv_loc(@$)); }
+| exp "xor" exp      { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::BIT_XOR,$1,$3,conv_loc(@$)); }
+| exp "<<" exp       { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::LEFT_SHIFT,$1,$3,conv_loc(@$)); }
+| exp ">>" exp       { $$ = std::make_shared<GN::ast::BinaryOperator>(GN::ast::BinaryOperator::OperatorType::RIGHT_SHIFT,$1,$3,conv_loc(@$)); }
 | exp "+=" exp       { 
                         using GN::ast::BinaryOperator; using enum BinaryOperator::OperatorType;
                         auto right = std::make_shared<BinaryOperator>(ADD,$1,$3,conv_loc(@$));

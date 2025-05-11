@@ -29,6 +29,9 @@ class BinaryOperator : public Expression {
         BOOL_OR,
         BIT_OR,
         BIT_XOR,
+        NOT_EQUAL,
+        LEFT_SHIFT,
+        RIGHT_SHIFT,
     };
     BinaryOperator(OperatorType op, std::shared_ptr<Expression> left, std::shared_ptr<Expression> right,
                    location::SourceRegion location = {})
