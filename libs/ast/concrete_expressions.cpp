@@ -10,5 +10,7 @@ std::vector<std::shared_ptr<Base>> SignedIntegerLiteral::children() const { retu
 std::vector<std::shared_ptr<Base>> UnsignedIntegerLiteral::children() const { return {}; }
 std::vector<std::shared_ptr<Base>> FloatingPointLiteral::children() const { return {}; }
 std::vector<std::shared_ptr<Base>> StringLiteral::children() const { return {}; }
+std::vector<std::shared_ptr<Base>> BooleanLiteral::children() const { return {}; }
+std::vector<std::shared_ptr<Base>> NilLiteral::children() const { return {}; }
 std::vector<std::shared_ptr<Base>> FunctionCall::children() const { return {}; }
 }  // namespace Garnet::ast

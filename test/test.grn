@@ -35,7 +35,8 @@ func hello_world()->void{
 }
 
 func fizzbuzz(let n:i64)->void{
-    #* for(var i:i64 = 0;i<n;i+=1){
+    println("for version");
+    for(var i:i64 = 0;i<n;i+=1){
         if(i%15==0){
             println("fizzbuzz");
         }elif(i%3 == 0){
@@ -45,8 +46,9 @@ func fizzbuzz(let n:i64)->void{
         }else{
             println(i);
         }
-    } *#
+    }
 
+    println("desugared for version");
     {
         var i:i64 = 0;
         loop{

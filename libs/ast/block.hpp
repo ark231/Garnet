@@ -9,6 +9,7 @@ namespace Garnet::ast {
 class Block : public Statement {
    public:
     Block() = default;
+    Block(location::SourceRegion location = {}) : Statement(location) {}
     Block(std::vector<std::shared_ptr<Sentence>>&& sentences, location::SourceRegion location = {})
         : Statement(location), sentences_(sentences) {}
     virtual std::vector<std::shared_ptr<Base>> children() const override;
