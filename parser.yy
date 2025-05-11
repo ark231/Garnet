@@ -155,6 +155,9 @@ Garnet::location::SourceRegion conv_loc(const location& l){
     BREAK                    "break"
     CONTINUE                 "continue"
     ASSERT                   "assert"
+    TRUE                     "true"
+    FALSE                    "false"
+    NIL                      "nil"
 ;
 
 %token <std::string>         IDENTIFIER  "identifier"
@@ -182,6 +185,8 @@ Garnet::location::SourceRegion conv_loc(const location& l){
 %nterm <std::shared_ptr<GN::ast::FloatingPointLiteral>> floating_point_literal
 %nterm <std::shared_ptr<GN::ast::SignedIntegerLiteral>> signed_integer_literal
 %nterm <std::shared_ptr<GN::ast::StringLiteral>> string_literal
+%nterm <std::shared_ptr<GN::ast::BooleanLiteral>> boolean_literal
+%nterm <std::shared_ptr<GN::ast::NilLiteral>> nil_literal
 %nterm <std::shared_ptr<GN::ast::VariableDeclStatement>> variable_decl_statement
 %nterm <std::tuple<GN::ValRef,GN::ast::SourceTypeIdentifier>> type_info
 %nterm <GN::ast::VariableInfo> var_decl 
@@ -208,7 +213,7 @@ Garnet::location::SourceRegion conv_loc(const location& l){
 
 
 
-%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt variable_decl variable_init binary_operator unary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def function_call return_statement block loop_statement if_statement alone_if_statement break_statement assert_statement callable_exp uncallable_exp string_literal for_statement
+%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt variable_decl variable_init binary_operator unary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def function_call return_statement block loop_statement if_statement alone_if_statement break_statement assert_statement callable_exp uncallable_exp string_literal boolean_literal nil_literal for_statement
 %printer { 
     std::vector<const void*> ptrs;
     std::ranges::transform($$,std::back_inserter(ptrs),[](auto p){return fmt::ptr(p);});
@@ -394,6 +399,13 @@ signed_integer_literal:
 string_literal:
   "string"           { $$ = std::make_shared<GN::ast::StringLiteral>($1,conv_loc(@$)); };
 
+boolean_literal:
+  "true"             { $$ = std::make_shared<GN::ast::BooleanLiteral>(true,conv_loc(@$)); };
+| "false"            { $$ = std::make_shared<GN::ast::BooleanLiteral>(false,conv_loc(@$)); };
+
+nil_literal:
+  "nil"              { $$ = std::make_shared<GN::ast::NilLiteral>(conv_loc(@$)); };
+
 exp_list:
   exp                { $$ = {$1}; }
 | exp_list "," exp   { 
@@ -421,7 +433,9 @@ uncallable_exp:
 | string_literal         { $$ = std::dynamic_pointer_cast<GN::ast::Expression>($1); }
 | binary_operator        { $$ = std::dynamic_pointer_cast<GN::ast::Expression>($1); }
 | unary_operator         { $$ = std::dynamic_pointer_cast<GN::ast::Expression>($1); }
-| "(" uncallable_exp ")"            { $$ = $2; }
+| boolean_literal        { $$ = std::dynamic_pointer_cast<GN::ast::Expression>($1); }
+| nil_literal            { $$ = std::dynamic_pointer_cast<GN::ast::Expression>($1); }
+| "(" uncallable_exp ")" { $$ = $2; }
 | "(" error ")"          { 
       yyclearin;
       $$ = std::dynamic_pointer_cast<GN::ast::Expression>(std::make_shared<GN::ast::ErrorExpression>(conv_loc(@$)));

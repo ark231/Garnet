@@ -1,0 +1,41 @@
+func fizzbuzz(let n:i64)->void{
+    println("for version");
+    for(var i:i64 = 0;i<n;i+=1){
+        if(i%15==0){
+            println("fizzbuzz");
+        }elif(i%3 == 0){
+            println("fizz");
+        }elif(i%5 == 0){
+            println("buzz");
+        }else{
+            println(i);
+        }
+    }
+
+    println("desugared for version");
+    {
+        var i:i64 = 0;
+        loop{
+            if(not (i < n)){
+                break;
+            }
+            {
+                if(i%15==0){
+                    println("fizzbuzz");
+                }elif(i%3 == 0){
+                    println("fizz");
+                }elif(i%5 == 0){
+                    println("buzz");
+                }else{
+                    println(i);
+                }
+            }
+            i+=1;
+        }
+    }
+}
+
+func main(let argc:i64)->i64{
+    fizzbuzz(31);
+    return 0;
+}
