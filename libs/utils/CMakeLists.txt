@@ -5,6 +5,9 @@ project(
     VERSION 0.1
     LANGUAGES CXX)
 
+include(${CMAKE_SOURCE_DIR}/cmake/CPM.cmake)
+CPMAddPackage("gh:fmtlib/fmt#11.2.0")
+
 add_library(
     utils STATIC
     # cmake-format: off
@@ -19,3 +22,4 @@ target_include_directories(utils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_options(utils PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra> $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra >
                                      $<$<CXX_COMPILER_ID:MSVC>:/W4>)
 target_compile_features(utils PUBLIC cxx_std_20)
+target_link_libraries(utils PUBLIC fmt::fmt)
