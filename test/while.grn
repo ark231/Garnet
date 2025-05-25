@@ -1,0 +1,35 @@
+func main(var argc:u64) ->void{
+    var i:i64 = 0;
+
+    while(i<0){
+        println(i);
+        i += 1;
+    }
+
+    println("out", i);
+
+    while(i<10){
+        println(i);
+        i += 1;
+    }
+
+    println("out", i);
+
+    i=0;
+
+    do{
+        println(i);
+        i += 1;
+    }while(i<0)
+
+    println("out", i);
+
+    i=0;
+
+    do{
+        println(i);
+        i += 1;
+    }while(i<10)
+
+    println("out", i);
+}

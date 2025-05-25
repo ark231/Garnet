@@ -161,6 +161,7 @@ Garnet::location::SourceRegion conv_loc(const location& l){
     TRUE                     "true"
     FALSE                    "false"
     NIL                      "nil"
+    DO                       "do"
 ;
 
 %token <std::string>         IDENTIFIER  "identifier"
@@ -211,12 +212,14 @@ Garnet::location::SourceRegion conv_loc(const location& l){
 %nterm <std::shared_ptr<GN::ast::Expression>> callable_exp
 %nterm <std::shared_ptr<GN::ast::Expression>> uncallable_exp
 %nterm <std::shared_ptr<GN::ast::Statement>> for_statement
+%nterm <std::shared_ptr<GN::ast::Statement>> while_statement
+%nterm <std::shared_ptr<GN::ast::Statement>> do_while_statement
 %nterm <std::optional<std::shared_ptr<GN::ast::VariableDecl>>> omittable_variable_init
 %nterm <std::optional<std::shared_ptr<GN::ast::Expression>>> omittable_exp
 
 
 
-%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt variable_decl variable_init binary_operator unary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def function_call return_statement block loop_statement if_statement alone_if_statement break_statement assert_statement callable_exp uncallable_exp string_literal boolean_literal nil_literal for_statement
+%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt variable_decl variable_init binary_operator unary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def function_call return_statement block loop_statement if_statement alone_if_statement break_statement assert_statement callable_exp uncallable_exp string_literal boolean_literal nil_literal for_statement while_statement do_while_statement
 %printer { 
     std::vector<const void*> ptrs;
     std::ranges::transform($$,std::back_inserter(ptrs),[](auto p){return fmt::ptr(p);});
@@ -478,6 +481,8 @@ stmt:
 | block                   { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
 | assert_statement        { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
 | for_statement           { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
+| while_statement         { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
+| do_while_statement      { $$ = std::dynamic_pointer_cast<GN::ast::Statement>($1); }
 
 loop_statement:
   "loop" block            { $$ = std::make_shared<GN::ast::LoopStatement>($2,conv_loc(@$)); }
@@ -558,7 +563,51 @@ for_statement:
      }
      result->add_sentence(loop_stmt);
      $$ = result;
-                                                      }
+  }
+
+while_statement:
+  "while" "("exp ")" block {
+     using namespace GN::ast;
+     auto result = std::make_shared<Block>(conv_loc(@$));
+
+     auto loop_block = std::make_shared<Block>(conv_loc(@$));
+
+     auto break_stmt = std::make_shared<BreakStatement>(conv_loc(@3));
+     auto if_block = std::make_shared<Block>(std::vector<std::shared_ptr<Sentence>>{break_stmt}, conv_loc(@3));
+     std::shared_ptr<Expression> cond;
+     cond = std::make_shared<UnaryOperator>(UnaryOperator::OperatorType::BOOL_NOT, $3, conv_loc(@3));
+     auto if_stmt = std::make_shared<IfStatement>(std::vector{IfStatement::CondBlock{.cond=cond,.block=if_block}},conv_loc(@3));
+
+     auto block = $5;
+
+     loop_block->add_sentences({if_stmt,block});
+     auto loop_stmt = std::make_shared<LoopStatement>(loop_block,conv_loc(@$));
+
+     result->add_sentence(loop_stmt);
+     $$ = result;
+  }
+
+do_while_statement:
+  "do" block "while" "(" exp ")" {
+     using namespace GN::ast;
+     auto result = std::make_shared<Block>(conv_loc(@$));
+
+     auto loop_block = std::make_shared<Block>(conv_loc(@$));
+
+     auto break_stmt = std::make_shared<BreakStatement>(conv_loc(@5));
+     auto if_block = std::make_shared<Block>(std::vector<std::shared_ptr<Sentence>>{break_stmt}, conv_loc(@5));
+     std::shared_ptr<Expression> cond;
+     cond = std::make_shared<UnaryOperator>(UnaryOperator::OperatorType::BOOL_NOT, $5, conv_loc(@5));
+     auto if_stmt = std::make_shared<IfStatement>(std::vector{IfStatement::CondBlock{.cond=cond,.block=if_block}},conv_loc(@5));
+
+     auto block = $2;
+
+     loop_block->add_sentences({block,if_stmt});
+     auto loop_stmt = std::make_shared<LoopStatement>(loop_block,conv_loc(@$));
+
+     result->add_sentence(loop_stmt);
+     $$ = result;
+  }
 
 %%
 
