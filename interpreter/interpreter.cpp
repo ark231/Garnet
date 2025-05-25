@@ -117,6 +117,13 @@ template <typename T, typename U>
 concept NotEqualComparable = requires(T a, U b) {
     { a != b } -> std::convertible_to<bool>;
 };
+template <typename T, typename U>
+concept SignednessMatch =
+    (std::signed_integral<T> && std::signed_integral<U>) || (std::unsigned_integral<T> && std::unsigned_integral<U>);
+template <typename T, typename U>
+concept BothFloat = (std::is_floating_point_v<T> && std::is_floating_point_v<U>);
+template <typename T, typename U>
+concept StrictComparable = BothFloat<T, U> || SignednessMatch<T, U>;
 }  // namespace
 void Interpreter::visit(const ast::BinaryOperator* node) {
     node->left()->accept(*this);
@@ -363,21 +370,22 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                 left.value, right);
         } break;
         case LESS:
-            std::visit(std::bind(
-                           deref_and_apply,
-                           [this, &location](auto left, auto right) {
-                               using LeftType = decltype(left);
-                               using RightType = decltype(right);
-                               if constexpr (LessComparable<LeftType, RightType>) {
-                                   this->expr_result_ = left < right;
-                               } else {
-                                   throw TypeError(fmt::format("cannot apply LESS operator to {} and {}",
-                                                               typeid(LeftType), typeid(RightType)),
-                                                   location);
-                               }
-                           },
-                           _1, _2),
-                       lhs, rhs);
+            std::visit(
+                std::bind(
+                    deref_and_apply,
+                    [this, &location](auto left, auto right) {
+                        using LeftType = decltype(left);
+                        using RightType = decltype(right);
+                        if constexpr (LessComparable<LeftType, RightType> && StrictComparable<LeftType, RightType>) {
+                            this->expr_result_ = left < right;
+                        } else {
+                            throw TypeError(fmt::format("cannot apply LESS operator to {} and {}", typeid(LeftType),
+                                                        typeid(RightType)),
+                                            location);
+                        }
+                    },
+                    _1, _2),
+                lhs, rhs);
             break;
         case LESS_EQUAL:
             std::visit(std::bind(
@@ -385,7 +393,8 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                            [this, &location](auto left, auto right) {
                                using LeftType = decltype(left);
                                using RightType = decltype(right);
-                               if constexpr (LessEqualComparable<LeftType, RightType>) {
+                               if constexpr (LessEqualComparable<LeftType, RightType> &&
+                                             StrictComparable<LeftType, RightType>) {
                                    this->expr_result_ = left <= right;
                                } else {
                                    throw TypeError(fmt::format("cannot apply LESS_EQUAL operator to {} and {}",
@@ -397,21 +406,22 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                        lhs, rhs);
             break;
         case GREATER:
-            std::visit(std::bind(
-                           deref_and_apply,
-                           [this, &location](auto left, auto right) {
-                               using LeftType = decltype(left);
-                               using RightType = decltype(right);
-                               if constexpr (GreaterComparable<LeftType, RightType>) {
-                                   this->expr_result_ = left > right;
-                               } else {
-                                   throw TypeError(fmt::format("cannot apply GREATER operator to {} and {}",
-                                                               typeid(LeftType), typeid(RightType)),
-                                                   location);
-                               }
-                           },
-                           _1, _2),
-                       lhs, rhs);
+            std::visit(
+                std::bind(
+                    deref_and_apply,
+                    [this, &location](auto left, auto right) {
+                        using LeftType = decltype(left);
+                        using RightType = decltype(right);
+                        if constexpr (GreaterComparable<LeftType, RightType> && StrictComparable<LeftType, RightType>) {
+                            this->expr_result_ = left > right;
+                        } else {
+                            throw TypeError(fmt::format("cannot apply GREATER operator to {} and {}", typeid(LeftType),
+                                                        typeid(RightType)),
+                                            location);
+                        }
+                    },
+                    _1, _2),
+                lhs, rhs);
             break;
         case GREATER_EQUAL:
             std::visit(std::bind(
@@ -419,7 +429,8 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                            [this, &location](auto left, auto right) {
                                using LeftType = decltype(left);
                                using RightType = decltype(right);
-                               if constexpr (GreaterEqualComparable<LeftType, RightType>) {
+                               if constexpr (GreaterEqualComparable<LeftType, RightType> &&
+                                             StrictComparable<LeftType, RightType>) {
                                    this->expr_result_ = left >= right;
                                } else {
                                    throw TypeError(fmt::format("cannot apply GREATER_EQUAL operator to {} and {}",
@@ -431,21 +442,22 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                        lhs, rhs);
             break;
         case EQUAL:
-            std::visit(std::bind(
-                           deref_and_apply,
-                           [this, &location](auto left, auto right) {
-                               using LeftType = decltype(left);
-                               using RightType = decltype(right);
-                               if constexpr (EqualComparable<LeftType, RightType>) {
-                                   this->expr_result_ = left == right;
-                               } else {
-                                   throw TypeError(fmt::format("cannot apply EQUAL operator to {} and {}",
-                                                               typeid(LeftType), typeid(RightType)),
-                                                   location);
-                               }
-                           },
-                           _1, _2),
-                       lhs, rhs);
+            std::visit(
+                std::bind(
+                    deref_and_apply,
+                    [this, &location](auto left, auto right) {
+                        using LeftType = decltype(left);
+                        using RightType = decltype(right);
+                        if constexpr (EqualComparable<LeftType, RightType> && StrictComparable<LeftType, RightType>) {
+                            this->expr_result_ = left == right;
+                        } else {
+                            throw TypeError(fmt::format("cannot apply EQUAL operator to {} and {}", typeid(LeftType),
+                                                        typeid(RightType)),
+                                            location);
+                        }
+                    },
+                    _1, _2),
+                lhs, rhs);
             break;
         case NOT_EQUAL:
             std::visit(std::bind(
@@ -453,9 +465,11 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
                            [this, &location](auto left, auto right) {
                                using LeftType = decltype(left);
                                using RightType = decltype(right);
-                               if constexpr (NotEqualComparable<LeftType, RightType>) {
+                               if constexpr (NotEqualComparable<LeftType, RightType> &&
+                                             StrictComparable<LeftType, RightType>) {
                                    this->expr_result_ = left != right;
-                               } else if constexpr (EqualComparable<LeftType, RightType>) {
+                               } else if constexpr (EqualComparable<LeftType, RightType> &&
+                                                    StrictComparable<LeftType, RightType>) {
                                    this->expr_result_ = not(left == right);
                                } else {
                                    throw TypeError(fmt::format("cannot apply NOT_EQUAL operator to {} and {}",
@@ -469,7 +483,7 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
         case BOOL_AND:
             std::visit(std::bind(
                            deref_and_apply,
-                           [this,node, &location](auto left, auto right) {
+                           [this, node, &location](auto left, auto right) {
                                using LeftType = std::remove_cvref_t<decltype(left)>;
                                using RightType = std::remove_cvref_t<decltype(right)>;
                                if constexpr (std::is_same_v<LeftType, bool> && std::is_same_v<RightType, bool>) {
@@ -486,7 +500,7 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
         case BIT_AND:
             std::visit(std::bind(
                            deref_and_apply,
-                           [this,node, &location](auto left, auto right) {
+                           [this, node, &location](auto left, auto right) {
                                using LeftType = std::remove_cvref_t<decltype(left)>;
                                using RightType = std::remove_cvref_t<decltype(right)>;
                                using Left = std::numeric_limits<LeftType>;
@@ -510,7 +524,7 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
         case BOOL_OR:
             std::visit(std::bind(
                            deref_and_apply,
-                           [this,node, &location](auto left, auto right) {
+                           [this, node, &location](auto left, auto right) {
                                using LeftType = std::remove_cvref_t<decltype(left)>;
                                using RightType = std::remove_cvref_t<decltype(right)>;
                                if constexpr (std::is_same_v<LeftType, bool> && std::is_same_v<RightType, bool>) {
@@ -527,7 +541,7 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
         case BIT_OR:
             std::visit(std::bind(
                            deref_and_apply,
-                           [this,node, &location](auto left, auto right) {
+                           [this, node, &location](auto left, auto right) {
                                using LeftType = std::remove_cvref_t<decltype(left)>;
                                using RightType = std::remove_cvref_t<decltype(right)>;
                                using Left = std::numeric_limits<LeftType>;
@@ -551,7 +565,7 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
         case BIT_XOR:
             std::visit(std::bind(
                            deref_and_apply,
-                           [this,node, &location](auto left, auto right) {
+                           [this, node, &location](auto left, auto right) {
                                using LeftType = std::remove_cvref_t<decltype(left)>;
                                using RightType = std::remove_cvref_t<decltype(right)>;
                                using Left = std::numeric_limits<LeftType>;
@@ -575,7 +589,7 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
         case LEFT_SHIFT:
             std::visit(std::bind(
                            deref_and_apply,
-                           [this,node, &location](auto left, auto right) {
+                           [this, node, &location](auto left, auto right) {
                                using LeftType = std::remove_cvref_t<decltype(left)>;
                                using RightType = std::remove_cvref_t<decltype(right)>;
                                if constexpr (std::is_integral_v<LeftType> && std::is_integral_v<RightType>) {
@@ -592,7 +606,7 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
         case RIGHT_SHIFT:
             std::visit(std::bind(
                            deref_and_apply,
-                           [this,node, &location](auto left, auto right) {
+                           [this, node, &location](auto left, auto right) {
                                using LeftType = std::remove_cvref_t<decltype(left)>;
                                using RightType = std::remove_cvref_t<decltype(right)>;
                                if constexpr (std::is_integral_v<LeftType> && std::is_integral_v<RightType>) {
@@ -674,7 +688,11 @@ void Interpreter::visit(const ast::UnaryOperator* node) {
                     using OperandType = decltype(operand);
                     using Operand = std::numeric_limits<OperandType>;
                     if constexpr (Operand::is_specialized && Operand::is_integer) {
-                        this->expr_result_ = static_cast<OperandType>(~operand);
+                        if constexpr (not std::is_same_v<std::remove_cvref_t<OperandType>, bool>) {
+                            this->expr_result_ = static_cast<OperandType>(~operand);
+                        } else {
+                            this->expr_result_ = !operand;
+                        }
                     } else {
                         throw TypeError(fmt::format("cannot apply BIT_NOT operator to {}", typeid(OperandType)),
                                         location);
@@ -703,7 +721,7 @@ void Interpreter::visit(const ast::UnsignedIntegerLiteral* node) { expr_result_ 
 void Interpreter::visit(const ast::FloatingPointLiteral* node) { expr_result_ = node->value(); }
 void Interpreter::visit(const ast::StringLiteral* node) { expr_result_ = node->value(); }
 void Interpreter::visit(const ast::BooleanLiteral* node) { expr_result_ = node->value(); }
-void Interpreter::visit(const ast::NilLiteral* node) { expr_result_ = NilType{}; }
+void Interpreter::visit(const ast::NilLiteral*) { expr_result_ = NilType{}; }
 void Interpreter::visit(const ast::FunctionCall* node) {
     node->callee()->accept(*this);
     auto raw_callee = expr_result_;
@@ -716,9 +734,8 @@ void Interpreter::visit(const ast::FunctionCall* node) {
                 throw TypeError(fmt::format("{} cannot be called", typeid(callee)), node->location());
             } else {
                 ArgType args;
-                for (const auto arg : node->args()) {
+                for (const auto& arg : node->args()) {
                     arg->accept(*this);
-                    auto& raw = *arg;
                     args.push_back(expr_result_);
                 }
                 expr_result_ = functions_[callee.key](args, {});
@@ -808,7 +825,7 @@ void Interpreter::visit(const ast::LoopStatement* node) {
     }
     is_broken_ = false;
 }
-void Interpreter::visit(const ast::BreakStatement* node) { is_broken_ = true; }
+void Interpreter::visit(const ast::BreakStatement*) { is_broken_ = true; }
 void Interpreter::visit(const ast::IfStatement* node) {
     for (auto [raw_cond, block] : node->cond_blocks()) {
         if (raw_cond.use_count() == 0) {
@@ -877,6 +894,7 @@ std::string Interpreter::Variable::to_string() const {
 std::string Interpreter::VariableReference::to_string() const { return fmt::format("VariableReference(key: {})", key); }
 std::string Interpreter::FunctionReference::to_string() const { return fmt::format("FunctionReference(key: {})", key); }
 Interpreter::Value Interpreter::print_(ArgType args, KwArgType kwargs) {
+    (void)kwargs;
     for (size_t i = 0; auto arg : args) {
         // VariableReferenceExpressionの都合上どんな変数でもVariableReferenceで覆われているので、剥がす
         // その中身がVariableReferenceでもそれは追わない

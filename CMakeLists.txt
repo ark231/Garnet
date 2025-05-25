@@ -117,6 +117,9 @@ target_link_libraries(
 
 target_link_libraries(Garnet interpreter)
 
+target_compile_options(interpreter PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra> $<$<CXX_COMPILER_ID:GNU>:-Wall
+                                           -Wextra > $<$<CXX_COMPILER_ID:MSVC>:/W4>)
+
 # # for debugging message(STATUS "*** dump start cmake variables ***") get_cmake_property(_variableNames VARIABLES)
 # foreach(_variableName ${_variableNames}) message(STATUS "${_variableName}=${${_variableName}}") endforeach()
 # message(STATUS "*** dump end ***")
