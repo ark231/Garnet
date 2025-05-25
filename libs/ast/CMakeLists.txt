@@ -5,12 +5,14 @@ project(
     VERSION 0.1
     LANGUAGES CXX)
 
-#cmake_policy(SET CMP0167 NEW)
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 NEW)
+endif()
 find_package(Boost REQUIRED)
 find_package(magic_enum REQUIRED)
 
 include(${CMAKE_SOURCE_DIR}/cmake/CPM.cmake)
-CPMAddPackage("gh:fmtlib/fmt#11.2.0")
+cpmaddpackage("gh:fmtlib/fmt#11.2.0")
 
 add_library(
     ast STATIC

@@ -10,19 +10,22 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(cmake/CPM.cmake)
 cpmaddpackage(NAME magic_enum GITHUB_REPOSITORY Neargye/magic_enum GIT_TAG v0.9.5)
-CPMAddPackage("gh:fmtlib/fmt#11.2.0")
+cpmaddpackage("gh:fmtlib/fmt#11.2.0")
 
 find_package(FLEX REQUIRED)
 find_package(BISON REQUIRED)
-#find_library(reflex_lib reflex REQUIRED)
-find_package(Reflex REQUIRED)
+# find_library(reflex_lib reflex REQUIRED) find_package(Reflex REQUIRED)
+cpmaddpackage("gh:Genivia/RE-flex@5.5.0")
 find_package(
     ICU
     COMPONENTS uc
     REQUIRED)
-#find_package(fmt REQUIRED)
+# find_package(fmt REQUIRED)
 
-#cmake_policy(SET CMP0167 NEW)
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 NEW)
+endif()
+
 find_package(
     Boost 1.83
     COMPONENTS program_options
@@ -34,7 +37,8 @@ make_directory(${CMAKE_CURRENT_BINARY_DIR}/reflex)
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/reflex/scanner.cpp
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/scanner.ll
-    COMMAND reflex ARGS -o ${CMAKE_CURRENT_BINARY_DIR}/reflex/scanner.cpp
+    DEPENDS Reflex
+    COMMAND Reflex ARGS -o ${CMAKE_CURRENT_BINARY_DIR}/reflex/scanner.cpp
             --header-file=${CMAKE_CURRENT_BINARY_DIR}/reflex/scanner.hpp ${CMAKE_CURRENT_SOURCE_DIR}/scanner.ll)
 add_custom_target(Scanner SOURCES ${CMAKE_CURRENT_BINARY_DIR}/reflex/scanner.cpp)
 set(FLEX_Scanner_OUTPUTS ${CMAKE_CURRENT_BINARY_DIR}/reflex/scanner.cpp)
@@ -75,12 +79,16 @@ target_include_directories(Garnet PUBLIC ${magic_enum_SOURCE_DIR}/include)
 add_dependencies(Garnet Scanner)
 target_link_libraries(
     Garnet
-    Reflex::ReflexLib
+    ReflexLib
     ICU::uc
     fmt::fmt
     Boost::program_options
-    stdc++exp
+    $<$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,14.0>>:
     stdc++_libbacktrace
+    >
+    $<$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,14.0>>:
+    stdc++exp
+    >
     ast
     defs
     utils)
@@ -94,7 +102,18 @@ target_compile_definitions(Garnet PRIVATE BOOST_STACKTRACE_USE_ADDR2LINE BOOST_S
 target_compile_options(Garnet PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra> $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra
                                       > $<$<CXX_COMPILER_ID:MSVC>:/W4>)
 add_library(interpreter interpreter/interpreter.cpp)
-target_link_libraries(interpreter ast defs utils fmt::fmt stdc++_libbacktrace)
+target_link_libraries(
+    interpreter
+    ast
+    defs
+    utils
+    fmt::fmt
+    $<$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,14.0>>:
+    stdc++_libbacktrace
+    >
+    $<$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,14.0>>:
+    stdc++exp
+    >)
 
 target_link_libraries(Garnet interpreter)
 
