@@ -26,7 +26,7 @@ func main(var argc: i64 #* , var argv: vec *#)->i32{
     println(-3.14);
     assert (+-3.14) == (-3.14);
     assert (-+3.14) == (-3.14);
-    assert (-3.14+3.14) == 0;
+    assert (-3.14+3.14) == 0.0;
     assert true;
     assert not false;
     println(3.14- -3.14);
