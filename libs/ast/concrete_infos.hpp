@@ -48,6 +48,18 @@ class FunctionInfo : public InfoBase {
     std::vector<VariableInfo> args_;
     std::optional<VariableInfo> result_;
 };
+class StructInfo : public InfoBase {
+   public:
+    StructInfo();
+    StructInfo(SourceTypeIdentifier name, const std::vector<VariableInfo>& members);
+    virtual std::string to_string() const override;
+    SourceTypeIdentifier name() const { return name_; }
+    std::vector<VariableInfo> members() const { return members_; }
+
+   private:
+    SourceTypeIdentifier name_;
+    std::vector<VariableInfo> members_;
+};
 
 }  // namespace Garnet::ast
 #endif

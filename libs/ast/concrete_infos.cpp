@@ -24,4 +24,8 @@ FunctionInfo::FunctionInfo() : FunctionInfo({"__Unspecified__"}, {}, std::nullop
 FunctionInfo::FunctionInfo(SourceFunctionIdentifier name, const std::vector<VariableInfo>& args,
                            std::optional<VariableInfo> result)
     : name_(name), args_(args), result_(result) {}
+StructInfo::StructInfo() : StructInfo({"__Unspecified__"}, {}) {}
+StructInfo::StructInfo(SourceTypeIdentifier name, const std::vector<VariableInfo>& members)
+    : name_(name), members_(members) {}
+std::string StructInfo::to_string() const { return fmt::format("StructInfo<>"); }
 }  // namespace Garnet::ast

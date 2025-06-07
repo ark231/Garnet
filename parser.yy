@@ -162,6 +162,8 @@ Garnet::location::SourceRegion conv_loc(const location& l){
     FALSE                    "false"
     NIL                      "nil"
     DO                       "do"
+    STRUCT                   "struct"
+    MAKE                     "make"
 ;
 
 %token <std::string>         IDENTIFIER  "identifier"
@@ -216,10 +218,13 @@ Garnet::location::SourceRegion conv_loc(const location& l){
 %nterm <std::shared_ptr<GN::ast::Statement>> do_while_statement
 %nterm <std::optional<std::shared_ptr<GN::ast::VariableDecl>>> omittable_variable_init
 %nterm <std::optional<std::shared_ptr<GN::ast::Expression>>> omittable_exp
+%nterm <std::shared_ptr<GN::ast::StructDef>> struct_def
+%nterm <std::vector<GN::ast::VariableInfo>> variable_decls
+%nterm <GN::ast::VariableInfo> var_decl_sentence
 
 
 
-%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt variable_decl variable_init binary_operator unary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def function_call return_statement block loop_statement if_statement alone_if_statement break_statement assert_statement callable_exp uncallable_exp string_literal boolean_literal nil_literal for_statement while_statement do_while_statement
+%printer { fmt::print(yyo,"{}",fmt::ptr($$)); } variable_reference unit sentence decl exp stmt variable_decl variable_init binary_operator unary_operator floating_point_literal signed_integer_literal variable_decl_statement decl_or_def function_def function_call return_statement block loop_statement if_statement alone_if_statement break_statement assert_statement callable_exp uncallable_exp string_literal boolean_literal nil_literal for_statement while_statement do_while_statement struct_def 
 %printer { 
     std::vector<const void*> ptrs;
     std::ranges::transform($$,std::back_inserter(ptrs),[](auto p){return fmt::ptr(p);});
@@ -248,11 +253,12 @@ Garnet::location::SourceRegion conv_loc(const location& l){
 
 unit:
   decl_or_def                     { drv.result_->add_child($1); }
-| unit decl_or_def                { drv.result_->add_child($2); };
+| unit decl_or_def                { drv.result_->add_child($2); }
 
 decl_or_def:
   decl ";"                 { $$ = std::dynamic_pointer_cast<GN::ast::Base>($1); }
 | function_def             { $$ = std::dynamic_pointer_cast<GN::ast::Base>($1);}
+| struct_def             { $$ = std::dynamic_pointer_cast<GN::ast::Base>($1);}
 | error ";"                { 
       yyclearin; 
       $$ = std::dynamic_pointer_cast<GN::ast::Base>(std::make_shared<GN::ast::ErrorNode>(conv_loc(@$)));
@@ -338,6 +344,18 @@ omittable_ref:
   %empty             { $$ = GN::ValRef::VALUE; }
 | "ref"              { $$ = GN::ValRef::REFERENCE; }
 
+var_decl_sentence:
+  var_decl ";"       { $$ = $1; }
+
+variable_decls:
+  %empty                           { $$ = {}; }
+| variable_decls var_decl_sentence { 
+    $$ = std::move($1);
+    $$.push_back($2);
+  }
+
+struct_def:
+  "struct" "identifier" "{" variable_decls "}"   { $$ = std::make_shared<GN::ast::StructDef>(GN::ast::StructInfo{{$2}, std::move($4)}, conv_loc(@$)); }
 
 variable_reference:
   omittable_ref "identifier" { $$ = std::make_shared<GN::ast::VariableReference>(GN::ast::SourceVariableIdentifier($2),$1,conv_loc(@$)); };

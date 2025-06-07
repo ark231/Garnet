@@ -11,4 +11,5 @@
 
 namespace Garnet::ast {
 std::vector<std::shared_ptr<Base>> FunctionDef::children() const { return {std::static_pointer_cast<Base>(block_)}; }
+std::vector<std::shared_ptr<Base>> StructDef::children() const { return {}; }
 }  // namespace Garnet::ast

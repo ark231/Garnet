@@ -867,6 +867,9 @@ void Interpreter::visit(const ast::AssertStatement* node) {
         },
         expr_result_);
 }
+void Interpreter::visit(const ast::StructDef* node) {
+    throw UnImplementedError("excetution of StructDef is not implemented", node->location());
+}
 Interpreter::FunctionKey Interpreter::encode_function_key_(const std::string& name) const {
     return SimpleFlyWeight::instance().id(name);
 }

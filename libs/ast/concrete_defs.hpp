@@ -21,5 +21,15 @@ class FunctionDef : public DefBase {
     FunctionInfo info_;
     std::shared_ptr<Block> block_;
 };
+class StructDef : public DefBase {
+   public:
+    StructDef(StructInfo info, location::SourceRegion location = {}) : DefBase(location), info_(info) {}
+    virtual std::vector<std::shared_ptr<Base>> children() const override;
+    const StructInfo& info() const { return info_; }
+    virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
+
+   private:
+    StructInfo info_;
+};
 }  // namespace Garnet::ast
 #endif

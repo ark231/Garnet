@@ -31,6 +31,7 @@ class IfStatement;
 class AssertStatement;
 class BooleanLiteral;
 class NilLiteral;
+class StructDef;
 class Visitor {
    public:
     virtual ~Visitor() = default;
@@ -60,6 +61,7 @@ class Visitor {
     virtual void visit(const ast::AssertStatement*) = 0;
     virtual void visit(const ast::BooleanLiteral*) = 0;
     virtual void visit(const ast::NilLiteral*) = 0;
+    virtual void visit(const ast::StructDef*) = 0;
 };
 }  // namespace ast
 };  // namespace Garnet

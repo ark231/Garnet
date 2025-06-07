@@ -1,0 +1,13 @@
+struct TestStruct{
+    var hoge:i32;
+    var fuga:f32;
+    var piyo:str;
+}
+
+func main(let argc: i64)->int {
+    var test :TestStruct = make TestStruct(1, 3.14, "hoge");
+    println(test.hoge);
+    println(test.fuga);
+    println(test.piyo);
+    return 0;
+}

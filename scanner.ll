@@ -226,6 +226,8 @@ string    \"([^\"]|\\\")*\"
 "false"      return Garnet::yy::Parser::make_FALSE                    (loc);
 "nil"        return Garnet::yy::Parser::make_NIL                      (loc);
 "do"         return Garnet::yy::Parser::make_DO                       (loc);
+"struct"     return Garnet::yy::Parser::make_STRUCT                   (loc);
+"make"       return Garnet::yy::Parser::make_MAKE                     (loc);
 
 {float}      return make_FLOAT (yytext, loc);
 {int}        return make_INTEGER (yytext, loc);
