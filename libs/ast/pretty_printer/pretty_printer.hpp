@@ -57,6 +57,7 @@ class PrettyPrinter : public ast::Visitor {
     virtual void visit(const ast::BooleanLiteral*) override;
     virtual void visit(const ast::NilLiteral*) override;
     virtual void visit(const ast::StructDef*) override;
+    virtual void visit(const ast::MemberAccess*) override;
 };
 
 }  // namespace Garnet::ast

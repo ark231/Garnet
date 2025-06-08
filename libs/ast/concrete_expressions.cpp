@@ -13,4 +13,5 @@ std::vector<std::shared_ptr<Base>> StringLiteral::children() const { return {}; 
 std::vector<std::shared_ptr<Base>> BooleanLiteral::children() const { return {}; }
 std::vector<std::shared_ptr<Base>> NilLiteral::children() const { return {}; }
 std::vector<std::shared_ptr<Base>> FunctionCall::children() const { return {}; }
+std::vector<std::shared_ptr<Base>> MemberAccess::children() const { return {}; }
 }  // namespace Garnet::ast

@@ -193,6 +193,18 @@ void PrettyPrinter::visit(const ast::StructDef* node) {
         }
     }
 }
+void PrettyPrinter::visit(const ast::MemberAccess* node) {
+    println_with_indent_("MemberAccess");
+    {
+        AutoIndent ind(indent_);
+        println_with_indent_("accessed_expr:");
+        {
+            AutoIndent ind(indent_);
+            node->accessed_expr()->accept(*this);
+        }
+        println_with_indent_("member_name: {}", node->member_name().to_string());
+    }
+}
 void PrettyPrinter::force_line_beginning_() {
     if (not at_line_beginning_) {
         fmt::println("");

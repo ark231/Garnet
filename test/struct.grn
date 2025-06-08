@@ -9,5 +9,26 @@ func main(let argc: i64)->int {
     println(test.hoge);
     println(test.fuga);
     println(test.piyo);
+    ref_test(ref test);
     return 0;
+}
+
+func ref_test(var hoge: ref TestStruct)->void{
+    var fuga: TestStruct = clone hoge;
+    var piyo: ref TestStruct = hoge;
+    println(hoge.hoge);
+    println(fuga.hoge);
+    println(piyo.hoge);
+    fuga.hoge = 5;
+    println(hoge.hoge);
+    println(fuga.hoge);
+    println(piyo.hoge);
+    hoge.hoge = 10;
+    println(hoge.hoge);
+    println(fuga.hoge);
+    println(piyo.hoge);
+    piyo.hoge = 10;
+    println(hoge.hoge);
+    println(fuga.hoge);
+    println(piyo.hoge);
 }

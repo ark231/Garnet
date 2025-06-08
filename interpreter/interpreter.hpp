@@ -141,6 +141,7 @@ class Interpreter : public ast::Visitor {
     virtual void visit(const ast::BooleanLiteral*) override;
     virtual void visit(const ast::NilLiteral*) override;
     virtual void visit(const ast::StructDef*) override;
+    virtual void visit(const ast::MemberAccess*) override;
 
     void debug_print() const;
 };

@@ -153,5 +153,20 @@ class FunctionCall : public Expression {
     std::shared_ptr<Expression> callee_;
     std::vector<std::shared_ptr<Expression>> args_;
 };
+class MemberAccess : public Expression {
+   public:
+    MemberAccess(std::shared_ptr<Expression> accessed_expr, SourceVariableIdentifier member_name,
+                 location::SourceRegion location = {})
+        : Expression(location), accessed_expr_(accessed_expr), member_name_(member_name) {}
+
+    std::shared_ptr<Expression> accessed_expr() const { return accessed_expr_; }
+    SourceVariableIdentifier member_name() const { return member_name_; }
+    virtual std::vector<std::shared_ptr<Base>> children() const override;
+    virtual void accept(Visitor& visitor) const override { visitor.visit(this); }
+
+   private:
+    std::shared_ptr<Expression> accessed_expr_;
+    SourceVariableIdentifier member_name_;
+};
 }  // namespace Garnet::ast
 #endif
