@@ -113,6 +113,46 @@ class Interpreter : public ast::Visitor {
     bool is_broken_ = false;
     bool is_returned_ = false;
 
+    auto deref_and_apply_(auto func, auto& lhs, auto& rhs) {
+        using LeftType = decltype(lhs);
+        using RightType = decltype(rhs);
+        using namespace std::placeholders;
+        if constexpr (std::is_convertible_v<LeftType, VariableReference> &&
+                      std::is_convertible_v<RightType, VariableReference>) {
+            std::visit(func, variables_[lhs.key].value, variables_[rhs.key].value);
+        } else if constexpr (std::is_convertible_v<LeftType, VariableReference>) {
+            std::visit(std::bind(func, _1, std::ref(rhs)), variables_[lhs.key].value);
+        } else if constexpr (std::is_convertible_v<RightType, VariableReference>) {
+            std::visit([&lhs, func](auto& rhs) { func(lhs, rhs); }, variables_[rhs.key].value);
+        } else {
+            func(lhs, rhs);
+        }
+    }
+
+    auto deref_and_apply_func_() {
+        return [this](auto&&... args) { deref_and_apply_(args...); };
+    }
+
+    void apply_ADD_(const Value& lhs, const Value& rhs, location::SourceRegion& location);
+    void apply_SUB_(const Value& lhs, const Value& rhs, location::SourceRegion& location);
+    void apply_MUL_(const Value& lhs, const Value& rhs, location::SourceRegion& location);
+    void apply_DIV_(const Value& lhs, const Value& rhs, location::SourceRegion& location);
+    void apply_MOD_(const Value& lhs, const Value& rhs, location::SourceRegion& location);
+    void apply_ASSIGN_(const Value& lhs, const Value& rhs, location::SourceRegion& location);
+    void apply_LESS_(const Value& lhs, const Value& rhs, location::SourceRegion& location);
+    void apply_GREATER_(const Value& lhs, const Value& rhs, location::SourceRegion& location);
+    void apply_LESS_EQUAL_(const Value& lhs, const Value& rhs, location::SourceRegion& location);
+    void apply_GREATER_EQUAL_(const Value& lhs, const Value& rhs, location::SourceRegion& location);
+    void apply_EQUAL_(const Value& lhs, const Value& rhs, location::SourceRegion& location);
+    void apply_BOOL_AND_(const Value& lhs, const Value& rhs, location::SourceRegion& location);
+    void apply_BIT_AND_(const Value& lhs, const Value& rhs, location::SourceRegion& location);
+    void apply_BOOL_OR_(const Value& lhs, const Value& rhs, location::SourceRegion& location);
+    void apply_BIT_OR_(const Value& lhs, const Value& rhs, location::SourceRegion& location);
+    void apply_BIT_XOR_(const Value& lhs, const Value& rhs, location::SourceRegion& location);
+    void apply_NOT_EQUAL_(const Value& lhs, const Value& rhs, location::SourceRegion& location);
+    void apply_LEFT_SHIFT_(const Value& lhs, const Value& rhs, location::SourceRegion& location);
+    void apply_RIGHT_SHIFT_(const Value& lhs, const Value& rhs, location::SourceRegion& location);
+
    public:
     Interpreter();
     virtual void visit(const ast::VariableDecl*) override;

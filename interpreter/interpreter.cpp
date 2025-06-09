@@ -133,492 +133,66 @@ void Interpreter::visit(const ast::BinaryOperator* node) {
     node->right()->accept(*this);
 
     auto rhs = expr_result_;
-    auto deref_and_apply = [this](auto func, auto& lhs, auto& rhs) {
-        using LeftType = decltype(lhs);
-        using RightType = decltype(rhs);
-        using namespace std::placeholders;
-        if constexpr (std::is_convertible_v<LeftType, VariableReference> &&
-                      std::is_convertible_v<RightType, VariableReference>) {
-            std::visit(func, variables_[lhs.key].value, variables_[rhs.key].value);
-        } else if constexpr (std::is_convertible_v<LeftType, VariableReference>) {
-            std::visit(std::bind(func, _1, std::ref(rhs)), variables_[lhs.key].value);
-        } else if constexpr (std::is_convertible_v<RightType, VariableReference>) {
-            std::visit([&lhs, func](auto& rhs) { func(lhs, rhs); }, variables_[rhs.key].value);
-        } else {
-            func(lhs, rhs);
-        }
-    };
     auto location = node->location();
     switch (node->op()) {
         using enum ast::BinaryOperator::OperatorType;
         using namespace std::placeholders;
         case ADD:
-            std::visit(
-                std::bind(
-                    deref_and_apply,
-                    [this, &location](auto left, auto right) {
-                        using LeftType = decltype(left);
-                        using RightType = decltype(right);
-                        using Left = std::numeric_limits<LeftType>;
-                        using Right = std::numeric_limits<RightType>;
-                        if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
-                                      std::is_convertible_v<RightType, VariableReference>) {
-                            throw TypeError(fmt::format("cannot apply ADD operator to {} and {}", typeid(LeftType),
-                                                        typeid(RightType)),
-                                            location);
-                        } else if constexpr (Left::is_specialized && Right::is_specialized) {
-                            if constexpr (Left::is_integer && (not Right::is_integer)) {
-                                this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) + right);
-                            } else if constexpr ((not Left::is_integer) && Right::is_integer) {
-                                this->expr_result_ = static_cast<LeftType>(left + static_cast<LeftType>(right));
-                            } else {
-                                if constexpr (Left::digits >= Right::digits) {
-                                    this->expr_result_ = static_cast<LeftType>(left + static_cast<LeftType>(right));
-                                } else {
-                                    this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) + right);
-                                }
-                            }
-                        } else if constexpr (std::is_convertible_v<LeftType, std::string> &&
-                                             std::is_convertible_v<RightType, std::string>) {
-                            this->expr_result_ = left + right;
-                        } else {
-                            throw TypeError(fmt::format("cannot apply ADD operator to {} and {}", typeid(LeftType),
-                                                        typeid(RightType)),
-                                            location);
-                        }
-                    },
-                    _1, _2),
-                lhs, rhs);
+            apply_ADD_(lhs, rhs, location);
             break;
         case SUB:
-            std::visit(
-                std::bind(
-                    deref_and_apply,
-                    [this, &location](auto left, auto right) {
-                        using LeftType = decltype(left);
-                        using RightType = decltype(right);
-                        using Left = std::numeric_limits<LeftType>;
-                        using Right = std::numeric_limits<RightType>;
-                        if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
-                                      std::is_convertible_v<RightType, VariableReference>) {
-                            throw TypeError(fmt::format("cannot apply SUB operator to {} and {}", typeid(LeftType),
-                                                        typeid(RightType)),
-                                            location);
-                        } else if constexpr (Left::is_specialized && Right::is_specialized) {
-                            if constexpr (Left::is_integer && (not Right::is_integer)) {
-                                this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) - right);
-                            } else if constexpr ((not Left::is_integer) && Right::is_integer) {
-                                this->expr_result_ = static_cast<LeftType>(left - static_cast<LeftType>(right));
-                            } else {
-                                if constexpr (Left::digits >= Right::digits) {
-                                    this->expr_result_ = static_cast<LeftType>(left - static_cast<LeftType>(right));
-                                } else {
-                                    this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) - right);
-                                }
-                            }
-                        } else {
-                            throw TypeError(fmt::format("cannot apply SUB operator to {} and {}", typeid(LeftType),
-                                                        typeid(RightType)),
-                                            location);
-                        }
-                    },
-                    _1, _2),
-                lhs, rhs);
+            apply_SUB_(lhs, rhs, location);
             break;
         case MUL:
-            std::visit(
-                std::bind(
-                    deref_and_apply,
-                    [this, &location](auto left, auto right) {
-                        using LeftType = decltype(left);
-                        using RightType = decltype(right);
-                        using Left = std::numeric_limits<LeftType>;
-                        using Right = std::numeric_limits<RightType>;
-                        if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
-                                      std::is_convertible_v<RightType, VariableReference>) {
-                            throw TypeError(fmt::format("cannot apply MUL operator to {} and {}", typeid(LeftType),
-                                                        typeid(RightType)),
-                                            location);
-                        } else if constexpr (Left::is_specialized && Right::is_specialized) {
-                            if constexpr (Left::is_integer && (not Right::is_integer)) {
-                                this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) * right);
-                            } else if constexpr ((not Left::is_integer) && Right::is_integer) {
-                                this->expr_result_ = static_cast<LeftType>(left * static_cast<LeftType>(right));
-                            } else {
-                                if constexpr (Left::digits >= Right::digits) {
-                                    this->expr_result_ = static_cast<LeftType>(left * static_cast<LeftType>(right));
-                                } else {
-                                    this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) * right);
-                                }
-                            }
-                        } else {
-                            throw TypeError(fmt::format("cannot apply MUL operator to {} and {}", typeid(LeftType),
-                                                        typeid(RightType)),
-                                            location);
-                        }
-                    },
-                    _1, _2),
-                lhs, rhs);
+            apply_MUL_(lhs, rhs, location);
             break;
         case DIV:
-            std::visit(
-                std::bind(
-                    deref_and_apply,
-                    [this, &location](auto left, auto right) {
-                        using LeftType = decltype(left);
-                        using RightType = decltype(right);
-                        using Left = std::numeric_limits<LeftType>;
-                        using Right = std::numeric_limits<RightType>;
-                        if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
-                                      std::is_convertible_v<RightType, VariableReference>) {
-                            throw TypeError(fmt::format("cannot apply DIV operator to {} and {}", typeid(LeftType),
-
-                                                        typeid(RightType)),
-                                            location);
-                        } else if constexpr (Left::is_specialized && Right::is_specialized) {
-                            if constexpr (Left::is_integer && Right::is_integer) {
-                                this->expr_result_ =
-                                    static_cast<double>(static_cast<double>(left) / static_cast<double>(right));
-                            } else if constexpr (Left::is_integer && (not Right::is_integer)) {
-                                this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) / right);
-                            } else if constexpr ((not Left::is_integer) && Right::is_integer) {
-                                this->expr_result_ = static_cast<LeftType>(left / static_cast<LeftType>(right));
-                            } else {
-                                if constexpr (Left::digits >= Right::digits) {
-                                    this->expr_result_ = static_cast<LeftType>(left / static_cast<LeftType>(right));
-                                } else {
-                                    this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) / right);
-                                }
-                            }
-                        } else {
-                            throw TypeError(fmt::format("cannot apply DIV operator to {} and {}", typeid(LeftType),
-                                                        typeid(RightType)),
-                                            location);
-                        }
-                    },
-                    _1, _2),
-                lhs, rhs);
+            apply_DIV_(lhs, rhs, location);
             break;
         case MOD:
-            std::visit(
-                std::bind(
-                    deref_and_apply,
-                    [this, &location](auto left, auto right) {
-                        using LeftType = decltype(left);
-                        using RightType = decltype(right);
-                        using Left = std::numeric_limits<LeftType>;
-                        using Right = std::numeric_limits<RightType>;
-                        if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
-                                      std::is_convertible_v<RightType, VariableReference>) {
-                            throw TypeError(fmt::format("cannot apply MOD operator to {} and {}", typeid(LeftType),
-                                                        typeid(RightType)),
-                                            location);
-                        } else if constexpr (Left::is_specialized && Right::is_specialized) {
-                            if constexpr (Left::is_integer && (not Right::is_integer)) {
-                                this->expr_result_ =
-                                    static_cast<RightType>(std::fmod(static_cast<RightType>(left), right));
-                            } else if constexpr ((not Left::is_integer) && Right::is_integer) {
-                                this->expr_result_ =
-                                    static_cast<LeftType>(std::fmod(left, static_cast<LeftType>(right)));
-                            } else if constexpr (Left::is_integer && Right::is_integer) {
-                                if constexpr (Left::digits >= Right::digits) {
-                                    this->expr_result_ = static_cast<LeftType>(left % static_cast<LeftType>(right));
-                                } else {
-                                    this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) % right);
-                                }
-                            } else {
-                                if constexpr (Left::digits >= Right::digits) {
-                                    this->expr_result_ =
-                                        static_cast<LeftType>(std::fmod(left, static_cast<LeftType>(right)));
-                                } else {
-                                    this->expr_result_ =
-                                        static_cast<RightType>(std::fmod(static_cast<RightType>(left), right));
-                                }
-                            }
-                        } else {
-                            throw TypeError(fmt::format("cannot apply MOD operator to {} and {}", typeid(LeftType),
-                                                        typeid(RightType)),
-                                            location);
-                        }
-                    },
-                    _1, _2),
-                lhs, rhs);
+            apply_MOD_(lhs, rhs, location);
             break;
-        case ASSIGN: {
-            // 左辺は必ず参照でなくてはならないので、deref_and_applyは使えない
-            if (not std::holds_alternative<VariableReference>(lhs)) {
-                throw TypeError("cannot assign to rvalue", location);
-            }
-            auto& left = variables_.at(std::get<VariableReference>(lhs).key);
-            Value right = rhs;
-            if (std::holds_alternative<VariableReference>(rhs)) {
-                right = variables_.at(std::get<VariableReference>(rhs).key).value;
-            }
-            std::visit(
-                [this, &location](auto& left, auto right) {
-                    using LeftType = decltype(left);
-                    using RightType = decltype(right);
-                    if constexpr (not StaticConvertible<std::remove_cvref_t<RightType>,
-                                                        std::remove_cvref_t<LeftType>>) {
-                        throw TypeError(fmt::format("cannot ASSIGN a value with type {} into a variable with type {}",
-                                                    typeid(RightType), typeid(LeftType)),
-                                        location);
-                    } else {
-                        left = static_cast<std::remove_cvref_t<LeftType>>(right);
-                    }
-                },
-                left.value, right);
-        } break;
+        case ASSIGN:
+            apply_ASSIGN_(lhs, rhs, location);
+            break;
         case LESS:
-            std::visit(
-                std::bind(
-                    deref_and_apply,
-                    [this, &location](auto left, auto right) {
-                        using LeftType = decltype(left);
-                        using RightType = decltype(right);
-                        if constexpr (LessComparable<LeftType, RightType> && StrictComparable<LeftType, RightType>) {
-                            this->expr_result_ = left < right;
-                        } else {
-                            throw TypeError(fmt::format("cannot apply LESS operator to {} and {}", typeid(LeftType),
-                                                        typeid(RightType)),
-                                            location);
-                        }
-                    },
-                    _1, _2),
-                lhs, rhs);
+            apply_LESS_(lhs, rhs, location);
             break;
         case LESS_EQUAL:
-            std::visit(std::bind(
-                           deref_and_apply,
-                           [this, &location](auto left, auto right) {
-                               using LeftType = decltype(left);
-                               using RightType = decltype(right);
-                               if constexpr (LessEqualComparable<LeftType, RightType> &&
-                                             StrictComparable<LeftType, RightType>) {
-                                   this->expr_result_ = left <= right;
-                               } else {
-                                   throw TypeError(fmt::format("cannot apply LESS_EQUAL operator to {} and {}",
-                                                               typeid(LeftType), typeid(RightType)),
-                                                   location);
-                               }
-                           },
-                           _1, _2),
-                       lhs, rhs);
+            apply_LESS_EQUAL_(lhs, rhs, location);
             break;
         case GREATER:
-            std::visit(
-                std::bind(
-                    deref_and_apply,
-                    [this, &location](auto left, auto right) {
-                        using LeftType = decltype(left);
-                        using RightType = decltype(right);
-                        if constexpr (GreaterComparable<LeftType, RightType> && StrictComparable<LeftType, RightType>) {
-                            this->expr_result_ = left > right;
-                        } else {
-                            throw TypeError(fmt::format("cannot apply GREATER operator to {} and {}", typeid(LeftType),
-                                                        typeid(RightType)),
-                                            location);
-                        }
-                    },
-                    _1, _2),
-                lhs, rhs);
+            apply_GREATER_(lhs, rhs, location);
             break;
         case GREATER_EQUAL:
-            std::visit(std::bind(
-                           deref_and_apply,
-                           [this, &location](auto left, auto right) {
-                               using LeftType = decltype(left);
-                               using RightType = decltype(right);
-                               if constexpr (GreaterEqualComparable<LeftType, RightType> &&
-                                             StrictComparable<LeftType, RightType>) {
-                                   this->expr_result_ = left >= right;
-                               } else {
-                                   throw TypeError(fmt::format("cannot apply GREATER_EQUAL operator to {} and {}",
-                                                               typeid(LeftType), typeid(RightType)),
-                                                   location);
-                               }
-                           },
-                           _1, _2),
-                       lhs, rhs);
+            apply_GREATER_EQUAL_(lhs, rhs, location);
             break;
         case EQUAL:
-            std::visit(
-                std::bind(
-                    deref_and_apply,
-                    [this, &location](auto left, auto right) {
-                        using LeftType = decltype(left);
-                        using RightType = decltype(right);
-                        if constexpr (EqualComparable<LeftType, RightType> && StrictComparable<LeftType, RightType>) {
-                            this->expr_result_ = left == right;
-                        } else {
-                            throw TypeError(fmt::format("cannot apply EQUAL operator to {} and {}", typeid(LeftType),
-                                                        typeid(RightType)),
-                                            location);
-                        }
-                    },
-                    _1, _2),
-                lhs, rhs);
+            apply_EQUAL_(lhs, rhs, location);
             break;
         case NOT_EQUAL:
-            std::visit(std::bind(
-                           deref_and_apply,
-                           [this, &location](auto left, auto right) {
-                               using LeftType = decltype(left);
-                               using RightType = decltype(right);
-                               if constexpr (NotEqualComparable<LeftType, RightType> &&
-                                             StrictComparable<LeftType, RightType>) {
-                                   this->expr_result_ = left != right;
-                               } else if constexpr (EqualComparable<LeftType, RightType> &&
-                                                    StrictComparable<LeftType, RightType>) {
-                                   this->expr_result_ = not(left == right);
-                               } else {
-                                   throw TypeError(fmt::format("cannot apply NOT_EQUAL operator to {} and {}",
-                                                               typeid(LeftType), typeid(RightType)),
-                                                   location);
-                               }
-                           },
-                           _1, _2),
-                       lhs, rhs);
+            apply_NOT_EQUAL_(lhs, rhs, location);
             break;
         case BOOL_AND:
-            std::visit(std::bind(
-                           deref_and_apply,
-                           [this, node, &location](auto left, auto right) {
-                               using LeftType = std::remove_cvref_t<decltype(left)>;
-                               using RightType = std::remove_cvref_t<decltype(right)>;
-                               if constexpr (std::is_same_v<LeftType, bool> && std::is_same_v<RightType, bool>) {
-                                   this->expr_result_ = left && right;
-                               } else {
-                                   throw TypeError(fmt::format("cannot apply {} operator to {} and {}", node->op(),
-                                                               typeid(LeftType), typeid(RightType)),
-                                                   location);
-                               }
-                           },
-                           _1, _2),
-                       lhs, rhs);
+            apply_BOOL_AND_(lhs, rhs, location);
             break;
         case BIT_AND:
-            std::visit(std::bind(
-                           deref_and_apply,
-                           [this, node, &location](auto left, auto right) {
-                               using LeftType = std::remove_cvref_t<decltype(left)>;
-                               using RightType = std::remove_cvref_t<decltype(right)>;
-                               using Left = std::numeric_limits<LeftType>;
-                               using Right = std::numeric_limits<RightType>;
-                               if constexpr (std::is_integral_v<LeftType> && std::is_integral_v<RightType>) {
-                                   if constexpr (Left::digits > Right::digits) {
-                                       this->expr_result_ = static_cast<LeftType>(left & static_cast<LeftType>(right));
-                                   } else {
-                                       this->expr_result_ =
-                                           static_cast<RightType>(static_cast<RightType>(left) & right);
-                                   }
-                               } else {
-                                   throw TypeError(fmt::format("cannot apply {} operator to {} and {}", node->op(),
-                                                               typeid(LeftType), typeid(RightType)),
-                                                   location);
-                               }
-                           },
-                           _1, _2),
-                       lhs, rhs);
+            apply_BIT_AND_(lhs, rhs, location);
             break;
         case BOOL_OR:
-            std::visit(std::bind(
-                           deref_and_apply,
-                           [this, node, &location](auto left, auto right) {
-                               using LeftType = std::remove_cvref_t<decltype(left)>;
-                               using RightType = std::remove_cvref_t<decltype(right)>;
-                               if constexpr (std::is_same_v<LeftType, bool> && std::is_same_v<RightType, bool>) {
-                                   this->expr_result_ = left || right;
-                               } else {
-                                   throw TypeError(fmt::format("cannot apply {} operator to {} and {}", node->op(),
-                                                               typeid(LeftType), typeid(RightType)),
-                                                   location);
-                               }
-                           },
-                           _1, _2),
-                       lhs, rhs);
+            apply_BOOL_OR_(lhs, rhs, location);
             break;
         case BIT_OR:
-            std::visit(std::bind(
-                           deref_and_apply,
-                           [this, node, &location](auto left, auto right) {
-                               using LeftType = std::remove_cvref_t<decltype(left)>;
-                               using RightType = std::remove_cvref_t<decltype(right)>;
-                               using Left = std::numeric_limits<LeftType>;
-                               using Right = std::numeric_limits<RightType>;
-                               if constexpr (std::is_integral_v<LeftType> && std::is_integral_v<RightType>) {
-                                   if constexpr (Left::digits > Right::digits) {
-                                       this->expr_result_ = static_cast<LeftType>(left | static_cast<LeftType>(right));
-                                   } else {
-                                       this->expr_result_ =
-                                           static_cast<RightType>(static_cast<RightType>(left) | right);
-                                   }
-                               } else {
-                                   throw TypeError(fmt::format("cannot apply {} operator to {} and {}", node->op(),
-                                                               typeid(LeftType), typeid(RightType)),
-                                                   location);
-                               }
-                           },
-                           _1, _2),
-                       lhs, rhs);
+            apply_BIT_OR_(lhs, rhs, location);
             break;
         case BIT_XOR:
-            std::visit(std::bind(
-                           deref_and_apply,
-                           [this, node, &location](auto left, auto right) {
-                               using LeftType = std::remove_cvref_t<decltype(left)>;
-                               using RightType = std::remove_cvref_t<decltype(right)>;
-                               using Left = std::numeric_limits<LeftType>;
-                               using Right = std::numeric_limits<RightType>;
-                               if constexpr (std::is_integral_v<LeftType> && std::is_integral_v<RightType>) {
-                                   if constexpr (Left::digits > Right::digits) {
-                                       this->expr_result_ = static_cast<LeftType>(left ^ static_cast<LeftType>(right));
-                                   } else {
-                                       this->expr_result_ =
-                                           static_cast<RightType>(static_cast<RightType>(left) ^ right);
-                                   }
-                               } else {
-                                   throw TypeError(fmt::format("cannot apply {} operator to {} and {}", node->op(),
-                                                               typeid(LeftType), typeid(RightType)),
-                                                   location);
-                               }
-                           },
-                           _1, _2),
-                       lhs, rhs);
+            apply_BIT_XOR_(lhs, rhs, location);
             break;
         case LEFT_SHIFT:
-            std::visit(std::bind(
-                           deref_and_apply,
-                           [this, node, &location](auto left, auto right) {
-                               using LeftType = std::remove_cvref_t<decltype(left)>;
-                               using RightType = std::remove_cvref_t<decltype(right)>;
-                               if constexpr (std::is_integral_v<LeftType> && std::is_integral_v<RightType>) {
-                                   this->expr_result_ = static_cast<LeftType>(left << right);
-                               } else {
-                                   throw TypeError(fmt::format("cannot apply {} operator to {} and {}", node->op(),
-                                                               typeid(LeftType), typeid(RightType)),
-                                                   location);
-                               }
-                           },
-                           _1, _2),
-                       lhs, rhs);
+            apply_LEFT_SHIFT_(lhs, rhs, location);
             break;
         case RIGHT_SHIFT:
-            std::visit(std::bind(
-                           deref_and_apply,
-                           [this, node, &location](auto left, auto right) {
-                               using LeftType = std::remove_cvref_t<decltype(left)>;
-                               using RightType = std::remove_cvref_t<decltype(right)>;
-                               if constexpr (std::is_integral_v<LeftType> && std::is_integral_v<RightType>) {
-                                   this->expr_result_ = static_cast<LeftType>(left >> right);
-                               } else {
-                                   throw TypeError(fmt::format("cannot apply {} operator to {} and {}", node->op(),
-                                                               typeid(LeftType), typeid(RightType)),
-                                                   location);
-                               }
-                           },
-                           _1, _2),
-                       lhs, rhs);
+            apply_RIGHT_SHIFT_(lhs, rhs, location);
             break;
     }
 }
@@ -938,5 +512,476 @@ Interpreter::Scope::~Scope() {
     }
     keymap->clear();
     InstancePool<KeyMapType>::return_instance(keymap);
+}
+void Interpreter::apply_ADD_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
+    using namespace std::placeholders;
+    std::visit(std::bind(
+                   deref_and_apply_func_(),
+                   [this, &location](auto left, auto right) {
+                       using LeftType = decltype(left);
+                       using RightType = decltype(right);
+                       using Left = std::numeric_limits<LeftType>;
+                       using Right = std::numeric_limits<RightType>;
+                       if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
+                                     std::is_convertible_v<RightType, VariableReference>) {
+                           throw TypeError(fmt::format("cannot apply ADD operator to {} and {}", typeid(LeftType),
+                                                       typeid(RightType)),
+                                           location);
+                       } else if constexpr (Left::is_specialized && Right::is_specialized) {
+                           if constexpr (Left::is_integer && (not Right::is_integer)) {
+                               this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) + right);
+                           } else if constexpr ((not Left::is_integer) && Right::is_integer) {
+                               this->expr_result_ = static_cast<LeftType>(left + static_cast<LeftType>(right));
+                           } else {
+                               if constexpr (Left::digits >= Right::digits) {
+                                   this->expr_result_ = static_cast<LeftType>(left + static_cast<LeftType>(right));
+                               } else {
+                                   this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) + right);
+                               }
+                           }
+                       } else if constexpr (std::is_convertible_v<LeftType, std::string> &&
+                                            std::is_convertible_v<RightType, std::string>) {
+                           this->expr_result_ = left + right;
+                       } else {
+                           throw TypeError(fmt::format("cannot apply ADD operator to {} and {}", typeid(LeftType),
+                                                       typeid(RightType)),
+                                           location);
+                       }
+                   },
+                   _1, _2),
+               lhs, rhs);
+}
+void Interpreter::apply_SUB_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
+    using namespace std::placeholders;
+    std::visit(std::bind(
+                   deref_and_apply_func_(),
+                   [this, &location](auto left, auto right) {
+                       using LeftType = decltype(left);
+                       using RightType = decltype(right);
+                       using Left = std::numeric_limits<LeftType>;
+                       using Right = std::numeric_limits<RightType>;
+                       if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
+                                     std::is_convertible_v<RightType, VariableReference>) {
+                           throw TypeError(fmt::format("cannot apply SUB operator to {} and {}", typeid(LeftType),
+                                                       typeid(RightType)),
+                                           location);
+                       } else if constexpr (Left::is_specialized && Right::is_specialized) {
+                           if constexpr (Left::is_integer && (not Right::is_integer)) {
+                               this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) - right);
+                           } else if constexpr ((not Left::is_integer) && Right::is_integer) {
+                               this->expr_result_ = static_cast<LeftType>(left - static_cast<LeftType>(right));
+                           } else {
+                               if constexpr (Left::digits >= Right::digits) {
+                                   this->expr_result_ = static_cast<LeftType>(left - static_cast<LeftType>(right));
+                               } else {
+                                   this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) - right);
+                               }
+                           }
+                       } else {
+                           throw TypeError(fmt::format("cannot apply SUB operator to {} and {}", typeid(LeftType),
+                                                       typeid(RightType)),
+                                           location);
+                       }
+                   },
+                   _1, _2),
+               lhs, rhs);
+}
+void Interpreter::apply_MUL_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
+    using namespace std::placeholders;
+    std::visit(std::bind(
+                   deref_and_apply_func_(),
+                   [this, &location](auto left, auto right) {
+                       using LeftType = decltype(left);
+                       using RightType = decltype(right);
+                       using Left = std::numeric_limits<LeftType>;
+                       using Right = std::numeric_limits<RightType>;
+                       if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
+                                     std::is_convertible_v<RightType, VariableReference>) {
+                           throw TypeError(fmt::format("cannot apply MUL operator to {} and {}", typeid(LeftType),
+                                                       typeid(RightType)),
+                                           location);
+                       } else if constexpr (Left::is_specialized && Right::is_specialized) {
+                           if constexpr (Left::is_integer && (not Right::is_integer)) {
+                               this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) * right);
+                           } else if constexpr ((not Left::is_integer) && Right::is_integer) {
+                               this->expr_result_ = static_cast<LeftType>(left * static_cast<LeftType>(right));
+                           } else {
+                               if constexpr (Left::digits >= Right::digits) {
+                                   this->expr_result_ = static_cast<LeftType>(left * static_cast<LeftType>(right));
+                               } else {
+                                   this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) * right);
+                               }
+                           }
+                       } else {
+                           throw TypeError(fmt::format("cannot apply MUL operator to {} and {}", typeid(LeftType),
+                                                       typeid(RightType)),
+                                           location);
+                       }
+                   },
+                   _1, _2),
+               lhs, rhs);
+}
+void Interpreter::apply_DIV_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
+    using namespace std::placeholders;
+    std::visit(std::bind(
+                   deref_and_apply_func_(),
+                   [this, &location](auto left, auto right) {
+                       using LeftType = decltype(left);
+                       using RightType = decltype(right);
+                       using Left = std::numeric_limits<LeftType>;
+                       using Right = std::numeric_limits<RightType>;
+                       if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
+                                     std::is_convertible_v<RightType, VariableReference>) {
+                           throw TypeError(fmt::format("cannot apply DIV operator to {} and {}", typeid(LeftType),
+
+                                                       typeid(RightType)),
+                                           location);
+                       } else if constexpr (Left::is_specialized && Right::is_specialized) {
+                           if constexpr (Left::is_integer && Right::is_integer) {
+                               this->expr_result_ =
+                                   static_cast<double>(static_cast<double>(left) / static_cast<double>(right));
+                           } else if constexpr (Left::is_integer && (not Right::is_integer)) {
+                               this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) / right);
+                           } else if constexpr ((not Left::is_integer) && Right::is_integer) {
+                               this->expr_result_ = static_cast<LeftType>(left / static_cast<LeftType>(right));
+                           } else {
+                               if constexpr (Left::digits >= Right::digits) {
+                                   this->expr_result_ = static_cast<LeftType>(left / static_cast<LeftType>(right));
+                               } else {
+                                   this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) / right);
+                               }
+                           }
+                       } else {
+                           throw TypeError(fmt::format("cannot apply DIV operator to {} and {}", typeid(LeftType),
+                                                       typeid(RightType)),
+                                           location);
+                       }
+                   },
+                   _1, _2),
+               lhs, rhs);
+}
+void Interpreter::apply_MOD_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
+    using namespace std::placeholders;
+    std::visit(
+        std::bind(
+            deref_and_apply_func_(),
+            [this, &location](auto left, auto right) {
+                using LeftType = decltype(left);
+                using RightType = decltype(right);
+                using Left = std::numeric_limits<LeftType>;
+                using Right = std::numeric_limits<RightType>;
+                if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
+                              std::is_convertible_v<RightType, VariableReference>) {
+                    throw TypeError(
+                        fmt::format("cannot apply MOD operator to {} and {}", typeid(LeftType), typeid(RightType)),
+                        location);
+                } else if constexpr (Left::is_specialized && Right::is_specialized) {
+                    if constexpr (Left::is_integer && (not Right::is_integer)) {
+                        this->expr_result_ = static_cast<RightType>(std::fmod(static_cast<RightType>(left), right));
+                    } else if constexpr ((not Left::is_integer) && Right::is_integer) {
+                        this->expr_result_ = static_cast<LeftType>(std::fmod(left, static_cast<LeftType>(right)));
+                    } else if constexpr (Left::is_integer && Right::is_integer) {
+                        if constexpr (Left::digits >= Right::digits) {
+                            this->expr_result_ = static_cast<LeftType>(left % static_cast<LeftType>(right));
+                        } else {
+                            this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) % right);
+                        }
+                    } else {
+                        if constexpr (Left::digits >= Right::digits) {
+                            this->expr_result_ = static_cast<LeftType>(std::fmod(left, static_cast<LeftType>(right)));
+                        } else {
+                            this->expr_result_ = static_cast<RightType>(std::fmod(static_cast<RightType>(left), right));
+                        }
+                    }
+                } else {
+                    throw TypeError(
+                        fmt::format("cannot apply MOD operator to {} and {}", typeid(LeftType), typeid(RightType)),
+                        location);
+                }
+            },
+            _1, _2),
+        lhs, rhs);
+}
+void Interpreter::apply_ASSIGN_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
+    using namespace std::placeholders;
+    // 左辺は必ず参照でなくてはならないので、deref_and_applyは使えない
+    if (not std::holds_alternative<VariableReference>(lhs)) {
+        throw TypeError("cannot assign to rvalue", location);
+    }
+    auto& left = variables_.at(std::get<VariableReference>(lhs).key);
+    Value right = rhs;
+    if (std::holds_alternative<VariableReference>(rhs)) {
+        right = variables_.at(std::get<VariableReference>(rhs).key).value;
+    }
+    std::visit(
+        [this, &location](auto& left, auto right) {
+            using LeftType = decltype(left);
+            using RightType = decltype(right);
+            if constexpr (not StaticConvertible<std::remove_cvref_t<RightType>, std::remove_cvref_t<LeftType>>) {
+                throw TypeError(fmt::format("cannot ASSIGN a value with type {} into a variable with type {}",
+                                            typeid(RightType), typeid(LeftType)),
+                                location);
+            } else {
+                left = static_cast<std::remove_cvref_t<LeftType>>(right);
+            }
+        },
+        left.value, right);
+}
+void Interpreter::apply_LESS_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
+    using namespace std::placeholders;
+    std::visit(std::bind(
+                   deref_and_apply_func_(),
+                   [this, &location](auto left, auto right) {
+                       using LeftType = decltype(left);
+                       using RightType = decltype(right);
+                       if constexpr (LessComparable<LeftType, RightType> && StrictComparable<LeftType, RightType>) {
+                           this->expr_result_ = left < right;
+                       } else {
+                           throw TypeError(fmt::format("cannot apply LESS operator to {} and {}", typeid(LeftType),
+                                                       typeid(RightType)),
+                                           location);
+                       }
+                   },
+                   _1, _2),
+               lhs, rhs);
+}
+void Interpreter::apply_GREATER_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
+    using namespace std::placeholders;
+    std::visit(std::bind(
+                   deref_and_apply_func_(),
+                   [this, &location](auto left, auto right) {
+                       using LeftType = decltype(left);
+                       using RightType = decltype(right);
+                       if constexpr (GreaterComparable<LeftType, RightType> && StrictComparable<LeftType, RightType>) {
+                           this->expr_result_ = left > right;
+                       } else {
+                           throw TypeError(fmt::format("cannot apply GREATER operator to {} and {}", typeid(LeftType),
+                                                       typeid(RightType)),
+                                           location);
+                       }
+                   },
+                   _1, _2),
+               lhs, rhs);
+}
+void Interpreter::apply_LESS_EQUAL_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
+    using namespace std::placeholders;
+    std::visit(
+        std::bind(
+            deref_and_apply_func_(),
+            [this, &location](auto left, auto right) {
+                using LeftType = decltype(left);
+                using RightType = decltype(right);
+                if constexpr (LessEqualComparable<LeftType, RightType> && StrictComparable<LeftType, RightType>) {
+                    this->expr_result_ = left <= right;
+                } else {
+                    throw TypeError(fmt::format("cannot apply LESS_EQUAL operator to {} and {}", typeid(LeftType),
+                                                typeid(RightType)),
+                                    location);
+                }
+            },
+            _1, _2),
+        lhs, rhs);
+}
+void Interpreter::apply_GREATER_EQUAL_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
+    using namespace std::placeholders;
+    std::visit(
+        std::bind(
+            deref_and_apply_func_(),
+            [this, &location](auto left, auto right) {
+                using LeftType = decltype(left);
+                using RightType = decltype(right);
+                if constexpr (GreaterEqualComparable<LeftType, RightType> && StrictComparable<LeftType, RightType>) {
+                    this->expr_result_ = left >= right;
+                } else {
+                    throw TypeError(fmt::format("cannot apply GREATER_EQUAL operator to {} and {}", typeid(LeftType),
+                                                typeid(RightType)),
+                                    location);
+                }
+            },
+            _1, _2),
+        lhs, rhs);
+}
+void Interpreter::apply_EQUAL_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
+    using namespace std::placeholders;
+    std::visit(std::bind(
+                   deref_and_apply_func_(),
+                   [this, &location](auto left, auto right) {
+                       using LeftType = decltype(left);
+                       using RightType = decltype(right);
+                       if constexpr (EqualComparable<LeftType, RightType> && StrictComparable<LeftType, RightType>) {
+                           this->expr_result_ = left == right;
+                       } else {
+                           throw TypeError(fmt::format("cannot apply EQUAL operator to {} and {}", typeid(LeftType),
+                                                       typeid(RightType)),
+                                           location);
+                       }
+                   },
+                   _1, _2),
+               lhs, rhs);
+}
+void Interpreter::apply_NOT_EQUAL_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
+    using namespace std::placeholders;
+    std::visit(
+        std::bind(
+            deref_and_apply_func_(),
+            [this, &location](auto left, auto right) {
+                using LeftType = decltype(left);
+                using RightType = decltype(right);
+                if constexpr (NotEqualComparable<LeftType, RightType> && StrictComparable<LeftType, RightType>) {
+                    this->expr_result_ = left != right;
+                } else if constexpr (EqualComparable<LeftType, RightType> && StrictComparable<LeftType, RightType>) {
+                    this->expr_result_ = not(left == right);
+                } else {
+                    throw TypeError(fmt::format("cannot apply NOT_EQUAL operator to {} and {}", typeid(LeftType),
+                                                typeid(RightType)),
+                                    location);
+                }
+            },
+            _1, _2),
+        lhs, rhs);
+}
+void Interpreter::apply_BOOL_AND_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
+    using namespace std::placeholders;
+    std::visit(std::bind(
+                   deref_and_apply_func_(),
+                   [this, &location](auto left, auto right) {
+                       using LeftType = std::remove_cvref_t<decltype(left)>;
+                       using RightType = std::remove_cvref_t<decltype(right)>;
+                       if constexpr (std::is_same_v<LeftType, bool> && std::is_same_v<RightType, bool>) {
+                           this->expr_result_ = left && right;
+                       } else {
+                           throw TypeError(fmt::format("cannot apply BOOL_AND operator to {} and {}", typeid(LeftType),
+                                                       typeid(RightType)),
+                                           location);
+                       }
+                   },
+                   _1, _2),
+               lhs, rhs);
+}
+void Interpreter::apply_BIT_AND_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
+    using namespace std::placeholders;
+    std::visit(std::bind(
+                   deref_and_apply_func_(),
+                   [this, &location](auto left, auto right) {
+                       using LeftType = std::remove_cvref_t<decltype(left)>;
+                       using RightType = std::remove_cvref_t<decltype(right)>;
+                       using Left = std::numeric_limits<LeftType>;
+                       using Right = std::numeric_limits<RightType>;
+                       if constexpr (std::is_integral_v<LeftType> && std::is_integral_v<RightType>) {
+                           if constexpr (Left::digits > Right::digits) {
+                               this->expr_result_ = static_cast<LeftType>(left & static_cast<LeftType>(right));
+                           } else {
+                               this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) & right);
+                           }
+                       } else {
+                           throw TypeError(fmt::format("cannot apply BIT_AND operator to {} and {}", typeid(LeftType),
+                                                       typeid(RightType)),
+                                           location);
+                       }
+                   },
+                   _1, _2),
+               lhs, rhs);
+}
+void Interpreter::apply_BOOL_OR_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
+    using namespace std::placeholders;
+    std::visit(std::bind(
+                   deref_and_apply_func_(),
+                   [this, &location](auto left, auto right) {
+                       using LeftType = std::remove_cvref_t<decltype(left)>;
+                       using RightType = std::remove_cvref_t<decltype(right)>;
+                       if constexpr (std::is_same_v<LeftType, bool> && std::is_same_v<RightType, bool>) {
+                           this->expr_result_ = left || right;
+                       } else {
+                           throw TypeError(fmt::format("cannot apply BOOL_OR operator to {} and {}", typeid(LeftType),
+                                                       typeid(RightType)),
+                                           location);
+                       }
+                   },
+                   _1, _2),
+               lhs, rhs);
+}
+void Interpreter::apply_BIT_OR_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
+    using namespace std::placeholders;
+    std::visit(std::bind(
+                   deref_and_apply_func_(),
+                   [this, &location](auto left, auto right) {
+                       using LeftType = std::remove_cvref_t<decltype(left)>;
+                       using RightType = std::remove_cvref_t<decltype(right)>;
+                       using Left = std::numeric_limits<LeftType>;
+                       using Right = std::numeric_limits<RightType>;
+                       if constexpr (std::is_integral_v<LeftType> && std::is_integral_v<RightType>) {
+                           if constexpr (Left::digits > Right::digits) {
+                               this->expr_result_ = static_cast<LeftType>(left | static_cast<LeftType>(right));
+                           } else {
+                               this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) | right);
+                           }
+                       } else {
+                           throw TypeError(fmt::format("cannot apply BIT_OR operator to {} and {}", typeid(LeftType),
+                                                       typeid(RightType)),
+                                           location);
+                       }
+                   },
+                   _1, _2),
+               lhs, rhs);
+}
+void Interpreter::apply_BIT_XOR_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
+    using namespace std::placeholders;
+    std::visit(std::bind(
+                   deref_and_apply_func_(),
+                   [this, &location](auto left, auto right) {
+                       using LeftType = std::remove_cvref_t<decltype(left)>;
+                       using RightType = std::remove_cvref_t<decltype(right)>;
+                       using Left = std::numeric_limits<LeftType>;
+                       using Right = std::numeric_limits<RightType>;
+                       if constexpr (std::is_integral_v<LeftType> && std::is_integral_v<RightType>) {
+                           if constexpr (Left::digits > Right::digits) {
+                               this->expr_result_ = static_cast<LeftType>(left ^ static_cast<LeftType>(right));
+                           } else {
+                               this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) ^ right);
+                           }
+                       } else {
+                           throw TypeError(fmt::format("cannot apply BIT_XOR operator to {} and {}", typeid(LeftType),
+                                                       typeid(RightType)),
+                                           location);
+                       }
+                   },
+                   _1, _2),
+               lhs, rhs);
+}
+void Interpreter::apply_LEFT_SHIFT_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
+    using namespace std::placeholders;
+    std::visit(std::bind(
+                   deref_and_apply_func_(),
+                   [this, &location](auto left, auto right) {
+                       using LeftType = std::remove_cvref_t<decltype(left)>;
+                       using RightType = std::remove_cvref_t<decltype(right)>;
+                       if constexpr (std::is_integral_v<LeftType> && std::is_integral_v<RightType>) {
+                           this->expr_result_ = static_cast<LeftType>(left << right);
+                       } else {
+                           throw TypeError(fmt::format("cannot apply LEFT_SHIFT operator to {} and {}",
+                                                       typeid(LeftType), typeid(RightType)),
+                                           location);
+                       }
+                   },
+                   _1, _2),
+               lhs, rhs);
+}
+void Interpreter::apply_RIGHT_SHIFT_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
+    using namespace std::placeholders;
+    std::visit(std::bind(
+                   deref_and_apply_func_(),
+                   [this, &location](auto left, auto right) {
+                       using LeftType = std::remove_cvref_t<decltype(left)>;
+                       using RightType = std::remove_cvref_t<decltype(right)>;
+                       if constexpr (std::is_integral_v<LeftType> && std::is_integral_v<RightType>) {
+                           this->expr_result_ = static_cast<LeftType>(left >> right);
+                       } else {
+                           throw TypeError(fmt::format("cannot apply RIGHT_SHIFT operator to {} and {}",
+                                                       typeid(LeftType), typeid(RightType)),
+                                           location);
+                       }
+                   },
+                   _1, _2),
+               lhs, rhs);
 }
 }  // namespace Garnet::interpreter
