@@ -26,6 +26,7 @@ class Expression;
 }
 namespace interpreter {
 class Interpreter : public ast::Visitor {
+   public:
     // using VariableKey = boost::uuids::uuid;
     // boost::uuids::random_generator key_generator_;
     using VariableKey = std::uint64_t;
@@ -57,6 +58,7 @@ class Interpreter : public ast::Visitor {
                                std::int32_t, std::int64_t, std::uint64_t, float, double, bool, std::string,
                                VariableReference, FunctionReference>;
 
+   private:
     Value expr_result_;
     Value func_result_;
 
@@ -133,6 +135,9 @@ class Interpreter : public ast::Visitor {
         return [this](auto&&... args) { deref_and_apply_(args...); };
     }
 
+const Value& deref_(const Interpreter::Value& val) ;
+const std::type_info& get_type_info(const Interpreter::Value& val) const ;
+
     void apply_ADD_(const Value& lhs, const Value& rhs, location::SourceRegion& location);
     void apply_SUB_(const Value& lhs, const Value& rhs, location::SourceRegion& location);
     void apply_MUL_(const Value& lhs, const Value& rhs, location::SourceRegion& location);
@@ -152,6 +157,17 @@ class Interpreter : public ast::Visitor {
     void apply_NOT_EQUAL_(const Value& lhs, const Value& rhs, location::SourceRegion& location);
     void apply_LEFT_SHIFT_(const Value& lhs, const Value& rhs, location::SourceRegion& location);
     void apply_RIGHT_SHIFT_(const Value& lhs, const Value& rhs, location::SourceRegion& location);
+    
+    // private:
+// 全ての二項演算の実行パイプライン
+template<typename Operation>
+void execute_binary_operation_(
+    const Value& lhs, 
+    const Value& rhs, 
+    Operation op, 
+    const char* op_name, // エラーメッセージ用
+    const location::SourceRegion& location
+); 
 
    public:
     Interpreter();

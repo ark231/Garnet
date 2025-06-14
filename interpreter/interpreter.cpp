@@ -513,44 +513,258 @@ Interpreter::Scope::~Scope() {
     keymap->clear();
     InstancePool<KeyMapType>::return_instance(keymap);
 }
-void Interpreter::apply_ADD_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
-    using namespace std::placeholders;
-    std::visit(std::bind(
-                   deref_and_apply_func_(),
-                   [this, &location](auto left, auto right) {
-                       using LeftType = decltype(left);
-                       using RightType = decltype(right);
-                       using Left = std::numeric_limits<LeftType>;
-                       using Right = std::numeric_limits<RightType>;
-                       if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
-                                     std::is_convertible_v<RightType, VariableReference>) {
-                           throw TypeError(fmt::format("cannot apply ADD operator to {} and {}", typeid(LeftType),
-                                                       typeid(RightType)),
-                                           location);
-                       } else if constexpr (Left::is_specialized && Right::is_specialized) {
-                           if constexpr (Left::is_integer && (not Right::is_integer)) {
-                               this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) + right);
-                           } else if constexpr ((not Left::is_integer) && Right::is_integer) {
-                               this->expr_result_ = static_cast<LeftType>(left + static_cast<LeftType>(right));
-                           } else {
-                               if constexpr (Left::digits >= Right::digits) {
-                                   this->expr_result_ = static_cast<LeftType>(left + static_cast<LeftType>(right));
-                               } else {
-                                   this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) + right);
-                               }
-                           }
-                       } else if constexpr (std::is_convertible_v<LeftType, std::string> &&
-                                            std::is_convertible_v<RightType, std::string>) {
-                           this->expr_result_ = left + right;
-                       } else {
-                           throw TypeError(fmt::format("cannot apply ADD operator to {} and {}", typeid(LeftType),
-                                                       typeid(RightType)),
-                                           location);
-                       }
-                   },
-                   _1, _2),
-               lhs, rhs);
+
+// 計算結果やOperandの値を保持するためのvariant
+using ResultVariant = std::variant<std::uint64_t, std::int64_t, double, std::string>;
+
+// 元のValueの型情報をタグとして保持するenum
+enum class TypeTag { Nil, U8, I8, U16, I16, U32, I32, U64, I64, F32, F64, Bool, String, Other };
+
+// 演算に必要な情報をまとめた中間表現オブジェクト
+struct Operand {
+    TypeTag original_tag = TypeTag::Other;
+    ResultVariant value;
+};
+
+// --- ヘルパー関数群 (ボトムアップに定義) ---
+
+// [ヘルパー 1] Valueを中間表現Operandに変換する
+Operand to_operand(const Interpreter::Value& val) {
+    Operand op;
+    std::visit(
+        [&op](auto v) {
+            using T = std::remove_cvref_t<decltype(v)>;
+            // 元の型タグを設定
+            if constexpr (std::is_same_v<T, std::uint8_t>)
+                op.original_tag = TypeTag::U8;
+            else if constexpr (std::is_same_v<T, std::int8_t>)
+                op.original_tag = TypeTag::I8;
+            else if constexpr (std::is_same_v<T, std::uint16_t>)
+                op.original_tag = TypeTag::U16;
+            else if constexpr (std::is_same_v<T, std::int16_t>)
+                op.original_tag = TypeTag::I16;
+            else if constexpr (std::is_same_v<T, std::uint32_t>)
+                op.original_tag = TypeTag::U32;
+            else if constexpr (std::is_same_v<T, std::int32_t>)
+                op.original_tag = TypeTag::I32;
+            else if constexpr (std::is_same_v<T, std::uint64_t>)
+                op.original_tag = TypeTag::U64;
+            else if constexpr (std::is_same_v<T, std::int64_t>)
+                op.original_tag = TypeTag::I64;
+            else if constexpr (std::is_same_v<T, float>)
+                op.original_tag = TypeTag::F32;
+            else if constexpr (std::is_same_v<T, double>)
+                op.original_tag = TypeTag::F64;
+            else if constexpr (std::is_same_v<T, std::string>)
+                op.original_tag = TypeTag::String;
+
+            // カテゴリに合った型でvariantに値を格納
+            if constexpr (std::is_unsigned_v<T> && std::is_integral_v<T>) {
+                op.value = static_cast<std::uint64_t>(v);
+            } else if constexpr (std::is_signed_v<T> && std::is_integral_v<T>) {
+                op.value = static_cast<std::int64_t>(v);
+            } else if constexpr (std::is_floating_point_v<T>) {
+                op.value = static_cast<double>(v);
+            } else if constexpr (std::is_same_v<T, std::string>) {
+                op.value = v;
+            }
+        },
+        val);
+    return op;
 }
+
+// [ヘルパー 2] 型タグを判定・評価するための関数群
+bool is_unsigned_int(TypeTag tag) {
+    return tag == TypeTag::U8 || tag == TypeTag::U16 || tag == TypeTag::U32 || tag == TypeTag::U64;
+}
+bool is_signed_int(TypeTag tag) {
+    return tag == TypeTag::I8 || tag == TypeTag::I16 || tag == TypeTag::I32 || tag == TypeTag::I64;
+}
+bool is_int(TypeTag tag) { return is_unsigned_int(tag) || is_signed_int(tag); }
+int get_rank(TypeTag tag) {
+    switch (tag) {
+        case TypeTag::I8:
+        case TypeTag::U8:
+            return 1;
+        case TypeTag::I16:
+        case TypeTag::U16:
+            return 2;
+        case TypeTag::I32:
+        case TypeTag::U32:
+            return 3;
+        case TypeTag::F32:
+            return 4;
+        case TypeTag::I64:
+        case TypeTag::U64:
+            return 5;
+        case TypeTag::F64:
+            return 6;
+        default:
+            return 0;
+    }
+}
+
+// [ヘルパー 3] 計算結果のvariantから暫定的な型タグを導出
+TypeTag get_preliminary_tag_from_result(const ResultVariant& result_val) {
+    return std::visit(
+        [](auto val) -> TypeTag {
+            using T = std::remove_cvref_t<decltype(val)>;
+            if constexpr (std::is_same_v<T, std::uint64_t>) return TypeTag::U64;
+            if constexpr (std::is_same_v<T, std::int64_t>) return TypeTag::I64;
+            if constexpr (std::is_same_v<T, double>) return TypeTag::F64;
+            if constexpr (std::is_same_v<T, std::string>) return TypeTag::String;
+            return TypeTag::Other;
+        },
+        result_val);
+}
+
+// [ヘルパー 4] 3つの型タグからプロモーションルールに基づき最終的な型タグを決定
+TypeTag derive_final_tag(TypeTag leftTag, TypeTag rightTag, TypeTag preliminary_result_tag) {
+    if (is_unsigned_int(leftTag) && is_unsigned_int(rightTag) && is_unsigned_int(preliminary_result_tag)) {
+        return (get_rank(leftTag) >= get_rank(rightTag)) ? leftTag : rightTag;
+    } else if ((is_signed_int(leftTag) || is_signed_int(rightTag)) && is_int(preliminary_result_tag)) {
+        int l_rank = get_rank(leftTag);
+        int r_rank = get_rank(rightTag);
+        if (l_rank > r_rank) return leftTag;
+        if (r_rank > l_rank) return rightTag;
+        return is_signed_int(leftTag) ? leftTag : rightTag;
+    } else {
+        return preliminary_result_tag;
+    }
+}
+
+// [ヘルパー 5] 最終的な型タグと計算結果からValueオブジェクトを生成
+Interpreter::Value make_value_from_result(TypeTag final_tag, const ResultVariant& result_val) {
+    auto caster = [&](auto numeric_val) -> Interpreter::Value {
+        using Value = Interpreter::Value;
+        if constexpr (std::is_same_v<decltype(numeric_val), std::string>) {
+            if (final_tag != TypeTag::String) {
+                throw TypeError("cannot convert string to non-string type", location::SourceRegion{});
+            }
+            return Value{std::get<std::string>(result_val)};
+        } else {
+            switch (final_tag) {
+                case TypeTag::U8:
+                    return Value{static_cast<std::uint8_t>(numeric_val)};
+                case TypeTag::I8:
+                    return Value{static_cast<std::int8_t>(numeric_val)};
+                case TypeTag::U16:
+                    return Value{static_cast<std::uint16_t>(numeric_val)};
+                case TypeTag::I16:
+                    return Value{static_cast<std::int16_t>(numeric_val)};
+                case TypeTag::U32:
+                    return Value{static_cast<std::uint32_t>(numeric_val)};
+                case TypeTag::I32:
+                    return Value{static_cast<std::int32_t>(numeric_val)};
+                case TypeTag::U64:
+                    return Value{static_cast<std::uint64_t>(numeric_val)};
+                case TypeTag::I64:
+                    return Value{static_cast<std::int64_t>(numeric_val)};
+                case TypeTag::F32:
+                    return Value{static_cast<float>(numeric_val)};
+                case TypeTag::F64:
+                    return Value{static_cast<double>(numeric_val)};
+                case TypeTag::String:
+                    return Value{std::get<std::string>(result_val)};
+                default:
+                    return {};
+            }
+        }
+    };
+    if (final_tag == TypeTag::String) return caster(0);
+    return std::visit(caster, result_val);
+}
+
+// --- 演算実行のオーケストレーター ---
+
+// 任意の二項演算を処理する、汎用的なテンプレート関数
+template <typename Operation>
+Interpreter::Value calculate_operands(const Operand& lhs, const Operand& rhs, Operation op) {
+    return std::visit(
+        [&](auto l_val, auto r_val) -> Interpreter::Value {
+            // ステップ1: 渡された関数オブジェクト `op` で計算を実行
+            ResultVariant result_val = op(l_val, r_val);
+            if (result_val.index() == 0 && !std::holds_alternative<std::uint64_t>(result_val)) {
+                return {};
+            }
+
+            // ステップ2: 暫定的な結果型の導出
+            TypeTag preliminary_tag = get_preliminary_tag_from_result(result_val);
+
+            // ステップ3: 最終的な結果型の決定
+            TypeTag final_tag = derive_final_tag(lhs.original_tag, rhs.original_tag, preliminary_tag);
+
+            // ステップ4: Valueオブジェクトの最終生成
+            return make_value_from_result(final_tag, result_val);
+        },
+        lhs.value, rhs.value);
+}
+
+// --- Interpreterクラスのメソッド実装 ---
+
+const Interpreter::Value& Interpreter::deref_(const Interpreter::Value& val) {
+    if (std::holds_alternative<VariableReference>(val)) {
+        const auto& ref = std::get<VariableReference>(val);
+        return variables_.at(ref.key).value;
+    }
+    return val;
+}
+
+const std::type_info& Interpreter::get_type_info(const Interpreter::Value& val) const {
+    return std::visit(
+        [](const auto& v) -> const std::type_info& {
+            using T = std::remove_cvref_t<decltype(v)>;
+            return typeid(T);
+        },
+        val);
+}
+
+// private:
+// 全ての二項演算の実行パイプライン
+template <typename Operation>
+void Interpreter::execute_binary_operation_(const Value& lhs, const Value& rhs, Operation op,
+                                            const char* op_name,  // エラーメッセージ用
+                                            const location::SourceRegion& location) {
+    // パイプライン 1: 変数参照の解決
+    const Value& left_val = deref_(lhs);
+    const Value& right_val = deref_(rhs);
+
+    // パイプライン 2: 中間表現への変換
+    Operand lhs_op = to_operand(left_val);
+    Operand rhs_op = to_operand(right_val);
+
+    // パイプライン 3: 演算の実行と型決定
+    try {
+        Value result = calculate_operands(lhs_op, rhs_op, op);
+        this->expr_result_ = result;
+    } catch (const std::exception& e) {
+        throw TypeError(fmt::format("cannot apply {} operator to {} and {}: {}", op_name, get_type_info(left_val),
+                                    get_type_info(right_val), e.what()),
+                        location);
+    }
+}
+
+void Interpreter::apply_ADD_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
+    // 足し算の計算ロジックをラムダとして定義
+    auto add_op = [](auto l_val, auto r_val) -> ResultVariant {
+        if constexpr (std::is_same_v<decltype(l_val), std::string> && std::is_same_v<decltype(r_val), std::string>) {
+            return l_val + r_val;
+        } else if constexpr (std::is_arithmetic_v<decltype(l_val)> && std::is_arithmetic_v<decltype(r_val)>) {
+            if constexpr (std::is_same_v<decltype(l_val), double> || std::is_same_v<decltype(r_val), double>)
+                return static_cast<double>(l_val) + static_cast<double>(r_val);
+            else if constexpr (std::is_same_v<decltype(l_val), std::uint64_t> &&
+                               std::is_same_v<decltype(r_val), std::uint64_t>)
+                return l_val + r_val;
+            else
+                return static_cast<std::int64_t>(l_val) + static_cast<std::int64_t>(r_val);
+        }
+        return {};
+    };
+
+    // 新設した共通パイプラインに、足し算ロジックを渡して実行
+    execute_binary_operation_(lhs, rhs, add_op, "ADD", location);
+}
+
 void Interpreter::apply_SUB_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
     using namespace std::placeholders;
     std::visit(std::bind(
