@@ -982,147 +982,87 @@ void Interpreter::apply_NOT_EQUAL_(const Value& lhs, const Value& rhs, location:
     execute_binary_operation_(lhs, rhs, op, "NOT_EQUAL", location);
 }
 void Interpreter::apply_BOOL_AND_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
-    using namespace std::placeholders;
-    std::visit(std::bind(
-                   deref_and_apply_func_(),
-                   [this, &location](auto left, auto right) {
-                       using LeftType = std::remove_cvref_t<decltype(left)>;
-                       using RightType = std::remove_cvref_t<decltype(right)>;
-                       if constexpr (std::is_same_v<LeftType, bool> && std::is_same_v<RightType, bool>) {
-                           this->expr_result_ = left && right;
-                       } else {
-                           throw TypeError(fmt::format("cannot apply BOOL_AND operator to {} and {}", typeid(LeftType),
-                                                       typeid(RightType)),
-                                           location);
-                       }
-                   },
-                   _1, _2),
-               lhs, rhs);
+    auto op = [](auto l_val, auto r_val) -> ResultVariant {
+        using Left = std::remove_cvref_t<decltype(l_val)>;
+        using Right = std::remove_cvref_t<decltype(r_val)>;
+        if constexpr (std::is_same_v<Left, bool> && std::is_same_v<Right, bool>) {
+            return l_val && r_val;
+        }
+        throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
+    };
+
+    execute_binary_operation_(lhs, rhs, op, "ADD", location);
 }
 void Interpreter::apply_BIT_AND_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
-    using namespace std::placeholders;
-    std::visit(std::bind(
-                   deref_and_apply_func_(),
-                   [this, &location](auto left, auto right) {
-                       using LeftType = std::remove_cvref_t<decltype(left)>;
-                       using RightType = std::remove_cvref_t<decltype(right)>;
-                       using Left = std::numeric_limits<LeftType>;
-                       using Right = std::numeric_limits<RightType>;
-                       if constexpr (std::is_integral_v<LeftType> && std::is_integral_v<RightType>) {
-                           if constexpr (Left::digits > Right::digits) {
-                               this->expr_result_ = static_cast<LeftType>(left & static_cast<LeftType>(right));
-                           } else {
-                               this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) & right);
-                           }
-                       } else {
-                           throw TypeError(fmt::format("cannot apply BIT_AND operator to {} and {}", typeid(LeftType),
-                                                       typeid(RightType)),
-                                           location);
-                       }
-                   },
-                   _1, _2),
-               lhs, rhs);
+    auto op = [](auto l_val, auto r_val) -> ResultVariant {
+        using Left = std::remove_cvref_t<decltype(l_val)>;
+        using Right = std::remove_cvref_t<decltype(r_val)>;
+        if constexpr (std::is_integral_v<Left> && std::is_integral_v<Right>) {
+            return l_val & r_val;
+        }
+        throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
+    };
+
+    execute_binary_operation_(lhs, rhs, op, "ADD", location);
 }
 void Interpreter::apply_BOOL_OR_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
-    using namespace std::placeholders;
-    std::visit(std::bind(
-                   deref_and_apply_func_(),
-                   [this, &location](auto left, auto right) {
-                       using LeftType = std::remove_cvref_t<decltype(left)>;
-                       using RightType = std::remove_cvref_t<decltype(right)>;
-                       if constexpr (std::is_same_v<LeftType, bool> && std::is_same_v<RightType, bool>) {
-                           this->expr_result_ = left || right;
-                       } else {
-                           throw TypeError(fmt::format("cannot apply BOOL_OR operator to {} and {}", typeid(LeftType),
-                                                       typeid(RightType)),
-                                           location);
-                       }
-                   },
-                   _1, _2),
-               lhs, rhs);
+    auto op = [](auto l_val, auto r_val) -> ResultVariant {
+        using Left = std::remove_cvref_t<decltype(l_val)>;
+        using Right = std::remove_cvref_t<decltype(r_val)>;
+        if constexpr (std::is_same_v<Left, bool> && std::is_same_v<Right, bool>) {
+            return l_val || r_val;
+        }
+        throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
+    };
+
+    execute_binary_operation_(lhs, rhs, op, "ADD", location);
 }
 void Interpreter::apply_BIT_OR_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
-    using namespace std::placeholders;
-    std::visit(std::bind(
-                   deref_and_apply_func_(),
-                   [this, &location](auto left, auto right) {
-                       using LeftType = std::remove_cvref_t<decltype(left)>;
-                       using RightType = std::remove_cvref_t<decltype(right)>;
-                       using Left = std::numeric_limits<LeftType>;
-                       using Right = std::numeric_limits<RightType>;
-                       if constexpr (std::is_integral_v<LeftType> && std::is_integral_v<RightType>) {
-                           if constexpr (Left::digits > Right::digits) {
-                               this->expr_result_ = static_cast<LeftType>(left | static_cast<LeftType>(right));
-                           } else {
-                               this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) | right);
-                           }
-                       } else {
-                           throw TypeError(fmt::format("cannot apply BIT_OR operator to {} and {}", typeid(LeftType),
-                                                       typeid(RightType)),
-                                           location);
-                       }
-                   },
-                   _1, _2),
-               lhs, rhs);
+    auto op = [](auto l_val, auto r_val) -> ResultVariant {
+        using Left = std::remove_cvref_t<decltype(l_val)>;
+        using Right = std::remove_cvref_t<decltype(r_val)>;
+        if constexpr (std::is_integral_v<Left> && std::is_integral_v<Right>) {
+            return l_val | r_val;
+        }
+        throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
+    };
+
+    execute_binary_operation_(lhs, rhs, op, "ADD", location);
 }
 void Interpreter::apply_BIT_XOR_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
-    using namespace std::placeholders;
-    std::visit(std::bind(
-                   deref_and_apply_func_(),
-                   [this, &location](auto left, auto right) {
-                       using LeftType = std::remove_cvref_t<decltype(left)>;
-                       using RightType = std::remove_cvref_t<decltype(right)>;
-                       using Left = std::numeric_limits<LeftType>;
-                       using Right = std::numeric_limits<RightType>;
-                       if constexpr (std::is_integral_v<LeftType> && std::is_integral_v<RightType>) {
-                           if constexpr (Left::digits > Right::digits) {
-                               this->expr_result_ = static_cast<LeftType>(left ^ static_cast<LeftType>(right));
-                           } else {
-                               this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) ^ right);
-                           }
-                       } else {
-                           throw TypeError(fmt::format("cannot apply BIT_XOR operator to {} and {}", typeid(LeftType),
-                                                       typeid(RightType)),
-                                           location);
-                       }
-                   },
-                   _1, _2),
-               lhs, rhs);
+    auto op = [](auto l_val, auto r_val) -> ResultVariant {
+        using Left = std::remove_cvref_t<decltype(l_val)>;
+        using Right = std::remove_cvref_t<decltype(r_val)>;
+        if constexpr (std::is_integral_v<Left> && std::is_integral_v<Right>) {
+            return l_val ^ r_val;
+        }
+        throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
+    };
+
+    execute_binary_operation_(lhs, rhs, op, "ADD", location);
 }
 void Interpreter::apply_LEFT_SHIFT_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
-    using namespace std::placeholders;
-    std::visit(std::bind(
-                   deref_and_apply_func_(),
-                   [this, &location](auto left, auto right) {
-                       using LeftType = std::remove_cvref_t<decltype(left)>;
-                       using RightType = std::remove_cvref_t<decltype(right)>;
-                       if constexpr (std::is_integral_v<LeftType> && std::is_integral_v<RightType>) {
-                           this->expr_result_ = static_cast<LeftType>(left << right);
-                       } else {
-                           throw TypeError(fmt::format("cannot apply LEFT_SHIFT operator to {} and {}",
-                                                       typeid(LeftType), typeid(RightType)),
-                                           location);
-                       }
-                   },
-                   _1, _2),
-               lhs, rhs);
+    auto op = [](auto l_val, auto r_val) -> ResultVariant {
+        using Left = std::remove_cvref_t<decltype(l_val)>;
+        using Right = std::remove_cvref_t<decltype(r_val)>;
+        if constexpr (std::is_integral_v<Left> && std::is_integral_v<Right>) {
+            return l_val << r_val;
+        }
+        throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
+    };
+
+    execute_binary_operation_(lhs, rhs, op, "ADD", location);
 }
 void Interpreter::apply_RIGHT_SHIFT_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
-    using namespace std::placeholders;
-    std::visit(std::bind(
-                   deref_and_apply_func_(),
-                   [this, &location](auto left, auto right) {
-                       using LeftType = std::remove_cvref_t<decltype(left)>;
-                       using RightType = std::remove_cvref_t<decltype(right)>;
-                       if constexpr (std::is_integral_v<LeftType> && std::is_integral_v<RightType>) {
-                           this->expr_result_ = static_cast<LeftType>(left >> right);
-                       } else {
-                           throw TypeError(fmt::format("cannot apply RIGHT_SHIFT operator to {} and {}",
-                                                       typeid(LeftType), typeid(RightType)),
-                                           location);
-                       }
-                   },
-                   _1, _2),
-               lhs, rhs);
+    auto op = [](auto l_val, auto r_val) -> ResultVariant {
+        using Left = std::remove_cvref_t<decltype(l_val)>;
+        using Right = std::remove_cvref_t<decltype(r_val)>;
+        if constexpr (std::is_integral_v<Left> && std::is_integral_v<Right>) {
+            return l_val >> r_val;
+        }
+        throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
+    };
+
+    execute_binary_operation_(lhs, rhs, op, "ADD", location);
 }
 }  // namespace Garnet::interpreter
