@@ -813,8 +813,10 @@ void Interpreter::apply_MUL_(const Value& lhs, const Value& rhs, location::Sourc
         using Left = std::remove_cvref_t<decltype(l_val)>;
         using Right = std::remove_cvref_t<decltype(r_val)>;
         if constexpr (std::is_same_v<Left, std::string> && std::is_integral_v<Right>) {
-            if (r_val < 0) {
-                throw std::runtime_error("cannot multiply string by negative integer");
+            if constexpr (std::signed_integral<Right>) {
+                if (r_val < 0) {
+                    throw std::runtime_error("cannot multiply string by negative integer");
+                }
             }
             if (r_val == 0) {
                 return std::string();
@@ -826,8 +828,10 @@ void Interpreter::apply_MUL_(const Value& lhs, const Value& rhs, location::Sourc
             }
             return result;
         } else if constexpr (std::is_integral_v<Left> && std::is_same_v<Right, std::string>) {
-            if (l_val < 0) {
-                throw std::runtime_error("cannot multiply negative integer by string");
+            if constexpr (std::signed_integral<Left>) {
+                if (l_val < 0) {
+                    throw std::runtime_error("cannot multiply negative integer by string");
+                }
             }
             if (l_val == 0) {
                 return std::string();
@@ -909,7 +913,7 @@ void Interpreter::apply_LESS_(const Value& lhs, const Value& rhs, location::Sour
     auto op = [](auto l_val, auto r_val) -> ResultVariant {
         using Left = std::remove_cvref_t<decltype(l_val)>;
         using Right = std::remove_cvref_t<decltype(r_val)>;
-        if constexpr (std::is_arithmetic_v<Left> && std::is_arithmetic_v<Right>) {
+        if constexpr (StrictComparable<Left, Right> && LessComparable<Left, Right>) {
             return l_val < r_val;
         }
         throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
@@ -921,7 +925,7 @@ void Interpreter::apply_GREATER_(const Value& lhs, const Value& rhs, location::S
     auto op = [](auto l_val, auto r_val) -> ResultVariant {
         using Left = std::remove_cvref_t<decltype(l_val)>;
         using Right = std::remove_cvref_t<decltype(r_val)>;
-        if constexpr (std::is_arithmetic_v<Left> && std::is_arithmetic_v<Right>) {
+        if constexpr (StrictComparable<Left, Right> && GreaterComparable<Left, Right>) {
             return l_val > r_val;
         }
         throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
@@ -933,7 +937,7 @@ void Interpreter::apply_LESS_EQUAL_(const Value& lhs, const Value& rhs, location
     auto op = [](auto l_val, auto r_val) -> ResultVariant {
         using Left = std::remove_cvref_t<decltype(l_val)>;
         using Right = std::remove_cvref_t<decltype(r_val)>;
-        if constexpr (std::is_arithmetic_v<Left> && std::is_arithmetic_v<Right>) {
+        if constexpr (StrictComparable<Left, Right> && LessEqualComparable<Left, Right>) {
             return l_val <= r_val;
         }
         throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
@@ -945,7 +949,7 @@ void Interpreter::apply_GREATER_EQUAL_(const Value& lhs, const Value& rhs, locat
     auto op = [](auto l_val, auto r_val) -> ResultVariant {
         using Left = std::remove_cvref_t<decltype(l_val)>;
         using Right = std::remove_cvref_t<decltype(r_val)>;
-        if constexpr (std::is_arithmetic_v<Left> && std::is_arithmetic_v<Right>) {
+        if constexpr (StrictComparable<Left, Right> && GreaterEqualComparable<Left, Right>) {
             return l_val >= r_val;
         }
         throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
@@ -957,7 +961,7 @@ void Interpreter::apply_EQUAL_(const Value& lhs, const Value& rhs, location::Sou
     auto op = [](auto l_val, auto r_val) -> ResultVariant {
         using Left = std::remove_cvref_t<decltype(l_val)>;
         using Right = std::remove_cvref_t<decltype(r_val)>;
-        if constexpr (std::is_arithmetic_v<Left> && std::is_arithmetic_v<Right>) {
+        if constexpr (StrictComparable<Left, Right> && EqualComparable<Left, Right>) {
             return l_val == r_val;
         }
         throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
@@ -969,7 +973,7 @@ void Interpreter::apply_NOT_EQUAL_(const Value& lhs, const Value& rhs, location:
     auto op = [](auto l_val, auto r_val) -> ResultVariant {
         using Left = std::remove_cvref_t<decltype(l_val)>;
         using Right = std::remove_cvref_t<decltype(r_val)>;
-        if constexpr (std::is_arithmetic_v<Left> && std::is_arithmetic_v<Right>) {
+        if constexpr (StrictComparable<Left, Right> && NotEqualComparable<Left, Right>) {
             return l_val != r_val;
         }
         throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
