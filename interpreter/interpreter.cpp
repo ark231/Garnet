@@ -516,6 +516,7 @@ Interpreter::Scope::~Scope() {
     InstancePool<KeyMapType>::return_instance(keymap);
 }
 
+namespace {
 // 計算結果やOperandの値を保持するためのvariant
 using ResultVariant = std::variant<std::uint64_t, std::int64_t, double, std::string, bool>;
 
@@ -724,6 +725,7 @@ Interpreter::Value calculate_operands(const Operand& lhs, const Operand& rhs, Op
         },
         lhs.value, rhs.value);
 }
+}  // namespace
 
 // --- Interpreterクラスのメソッド実装 ---
 
