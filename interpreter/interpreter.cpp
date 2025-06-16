@@ -123,7 +123,9 @@ concept SignednessMatch =
 template <typename T, typename U>
 concept BothFloat = (std::is_floating_point_v<T> && std::is_floating_point_v<U>);
 template <typename T, typename U>
-concept StrictComparable = BothFloat<T, U> || SignednessMatch<T, U>;
+concept StrictComparable =
+    (std::is_arithmetic_v<T> && std::is_arithmetic_v<U> && (BothFloat<T, U> || SignednessMatch<T, U>)) ||
+    (not std::is_arithmetic_v<T> && not std::is_arithmetic_v<U>);
 }  // namespace
 void Interpreter::visit(const ast::BinaryOperator* node) {
     node->left()->accept(*this);
@@ -515,7 +517,7 @@ Interpreter::Scope::~Scope() {
 }
 
 // 計算結果やOperandの値を保持するためのvariant
-using ResultVariant = std::variant<std::uint64_t, std::int64_t, double, std::string>;
+using ResultVariant = std::variant<std::uint64_t, std::int64_t, double, std::string, bool>;
 
 // 元のValueの型情報をタグとして保持するenum
 enum class TypeTag { Nil, U8, I8, U16, I16, U32, I32, U64, I64, F32, F64, Bool, String, Other };
@@ -535,28 +537,35 @@ Operand to_operand(const Interpreter::Value& val) {
         [&op](auto v) {
             using T = std::remove_cvref_t<decltype(v)>;
             // 元の型タグを設定
-            if constexpr (std::is_same_v<T, std::uint8_t>)
+            if constexpr (std::is_same_v<T, std::uint8_t>) {
                 op.original_tag = TypeTag::U8;
-            else if constexpr (std::is_same_v<T, std::int8_t>)
+            } else if constexpr (std::is_same_v<T, std::int8_t>) {
                 op.original_tag = TypeTag::I8;
-            else if constexpr (std::is_same_v<T, std::uint16_t>)
+            } else if constexpr (std::is_same_v<T, std::uint16_t>) {
                 op.original_tag = TypeTag::U16;
-            else if constexpr (std::is_same_v<T, std::int16_t>)
+            } else if constexpr (std::is_same_v<T, std::int16_t>) {
                 op.original_tag = TypeTag::I16;
-            else if constexpr (std::is_same_v<T, std::uint32_t>)
+            } else if constexpr (std::is_same_v<T, std::uint32_t>) {
                 op.original_tag = TypeTag::U32;
-            else if constexpr (std::is_same_v<T, std::int32_t>)
+            } else if constexpr (std::is_same_v<T, std::int32_t>) {
                 op.original_tag = TypeTag::I32;
-            else if constexpr (std::is_same_v<T, std::uint64_t>)
+            } else if constexpr (std::is_same_v<T, std::uint64_t>) {
                 op.original_tag = TypeTag::U64;
-            else if constexpr (std::is_same_v<T, std::int64_t>)
+            } else if constexpr (std::is_same_v<T, std::int64_t>) {
                 op.original_tag = TypeTag::I64;
-            else if constexpr (std::is_same_v<T, float>)
+            } else if constexpr (std::is_same_v<T, float>) {
                 op.original_tag = TypeTag::F32;
-            else if constexpr (std::is_same_v<T, double>)
+            } else if constexpr (std::is_same_v<T, double>) {
                 op.original_tag = TypeTag::F64;
-            else if constexpr (std::is_same_v<T, std::string>)
+            } else if constexpr (std::is_same_v<T, std::string>) {
                 op.original_tag = TypeTag::String;
+            } else if constexpr (std::is_same_v<T, bool>) {
+                op.original_tag = TypeTag::Bool;
+            } else if constexpr (std::is_same_v<T, Interpreter::NilType>) {
+                op.original_tag = TypeTag::Nil;
+            } else {
+                op.original_tag = TypeTag::Other;  // 他の型は無視
+            }
 
             // カテゴリに合った型でvariantに値を格納
             if constexpr (std::is_unsigned_v<T> && std::is_integral_v<T>) {
@@ -567,6 +576,10 @@ Operand to_operand(const Interpreter::Value& val) {
                 op.value = static_cast<double>(v);
             } else if constexpr (std::is_same_v<T, std::string>) {
                 op.value = v;
+            } else if constexpr (std::is_same_v<T, bool>) {
+                op.value = v;
+            } else {
+                op.value = ResultVariant{};  // 他の型は無視
             }
         },
         val);
@@ -609,10 +622,21 @@ TypeTag get_preliminary_tag_from_result(const ResultVariant& result_val) {
     return std::visit(
         [](auto val) -> TypeTag {
             using T = std::remove_cvref_t<decltype(val)>;
-            if constexpr (std::is_same_v<T, std::uint64_t>) return TypeTag::U64;
-            if constexpr (std::is_same_v<T, std::int64_t>) return TypeTag::I64;
-            if constexpr (std::is_same_v<T, double>) return TypeTag::F64;
-            if constexpr (std::is_same_v<T, std::string>) return TypeTag::String;
+            if constexpr (std::is_same_v<T, std::uint64_t>) {
+                return TypeTag::U64;
+            }
+            if constexpr (std::is_same_v<T, std::int64_t>) {
+                return TypeTag::I64;
+            }
+            if constexpr (std::is_same_v<T, double>) {
+                return TypeTag::F64;
+            }
+            if constexpr (std::is_same_v<T, std::string>) {
+                return TypeTag::String;
+            }
+            if constexpr (std::is_same_v<T, bool>) {
+                return TypeTag::Bool;
+            }
             return TypeTag::Other;
         },
         result_val);
@@ -665,13 +689,14 @@ Interpreter::Value make_value_from_result(TypeTag final_tag, const ResultVariant
                 case TypeTag::F64:
                     return Value{static_cast<double>(numeric_val)};
                 case TypeTag::String:
-                    return Value{std::get<std::string>(result_val)};
+                    throw TypeError("cannot convert numeric type to string", location::SourceRegion{});
+                case TypeTag::Bool:
+                    return Value{static_cast<bool>(numeric_val)};
                 default:
                     return {};
             }
         }
     };
-    if (final_tag == TypeTag::String) return caster(0);
     return std::visit(caster, result_val);
 }
 
@@ -746,175 +771,114 @@ void Interpreter::execute_binary_operation_(const Value& lhs, const Value& rhs, 
 
 void Interpreter::apply_ADD_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
     // 足し算の計算ロジックをラムダとして定義
-    auto add_op = [](auto l_val, auto r_val) -> ResultVariant {
-        if constexpr (std::is_same_v<decltype(l_val), std::string> && std::is_same_v<decltype(r_val), std::string>) {
+    auto op = [](auto l_val, auto r_val) -> ResultVariant {
+        using Left = std::remove_cvref_t<decltype(l_val)>;
+        using Right = std::remove_cvref_t<decltype(r_val)>;
+        if constexpr (std::is_same_v<Left, std::string> && std::is_same_v<Right, std::string>) {
             return l_val + r_val;
-        } else if constexpr (std::is_arithmetic_v<decltype(l_val)> && std::is_arithmetic_v<decltype(r_val)>) {
-            if constexpr (std::is_same_v<decltype(l_val), double> || std::is_same_v<decltype(r_val), double>)
+        } else if constexpr (std::is_arithmetic_v<Left> && std::is_arithmetic_v<Right>) {
+            if constexpr (std::is_same_v<Left, double> || std::is_same_v<Right, double>)
                 return static_cast<double>(l_val) + static_cast<double>(r_val);
-            else if constexpr (std::is_same_v<decltype(l_val), std::uint64_t> &&
-                               std::is_same_v<decltype(r_val), std::uint64_t>)
+            else if constexpr (std::is_same_v<Left, std::uint64_t> && std::is_same_v<Right, std::uint64_t>)
                 return l_val + r_val;
             else
                 return static_cast<std::int64_t>(l_val) + static_cast<std::int64_t>(r_val);
         }
-        return {};
+        throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
     };
 
     // 新設した共通パイプラインに、足し算ロジックを渡して実行
-    execute_binary_operation_(lhs, rhs, add_op, "ADD", location);
+    execute_binary_operation_(lhs, rhs, op, "ADD", location);
 }
 
 void Interpreter::apply_SUB_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
-    using namespace std::placeholders;
-    std::visit(std::bind(
-                   deref_and_apply_func_(),
-                   [this, &location](auto left, auto right) {
-                       using LeftType = decltype(left);
-                       using RightType = decltype(right);
-                       using Left = std::numeric_limits<LeftType>;
-                       using Right = std::numeric_limits<RightType>;
-                       if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
-                                     std::is_convertible_v<RightType, VariableReference>) {
-                           throw TypeError(fmt::format("cannot apply SUB operator to {} and {}", typeid(LeftType),
-                                                       typeid(RightType)),
-                                           location);
-                       } else if constexpr (Left::is_specialized && Right::is_specialized) {
-                           if constexpr (Left::is_integer && (not Right::is_integer)) {
-                               this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) - right);
-                           } else if constexpr ((not Left::is_integer) && Right::is_integer) {
-                               this->expr_result_ = static_cast<LeftType>(left - static_cast<LeftType>(right));
-                           } else {
-                               if constexpr (Left::digits >= Right::digits) {
-                                   this->expr_result_ = static_cast<LeftType>(left - static_cast<LeftType>(right));
-                               } else {
-                                   this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) - right);
-                               }
-                           }
-                       } else {
-                           throw TypeError(fmt::format("cannot apply SUB operator to {} and {}", typeid(LeftType),
-                                                       typeid(RightType)),
-                                           location);
-                       }
-                   },
-                   _1, _2),
-               lhs, rhs);
+    auto op = [](auto l_val, auto r_val) -> ResultVariant {
+        using Left = std::remove_cvref_t<decltype(l_val)>;
+        using Right = std::remove_cvref_t<decltype(r_val)>;
+        if constexpr (std::is_arithmetic_v<Left> && std::is_arithmetic_v<Right>) {
+            if constexpr (std::is_same_v<Left, double> || std::is_same_v<Right, double>)
+                return static_cast<double>(l_val) - static_cast<double>(r_val);
+            else if constexpr (std::is_same_v<Left, std::uint64_t> && std::is_same_v<Right, std::uint64_t>)
+                return l_val - r_val;
+            else
+                return static_cast<std::int64_t>(l_val) - static_cast<std::int64_t>(r_val);
+        }
+        throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
+    };
+
+    execute_binary_operation_(lhs, rhs, op, "SUB", location);
 }
 void Interpreter::apply_MUL_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
-    using namespace std::placeholders;
-    std::visit(std::bind(
-                   deref_and_apply_func_(),
-                   [this, &location](auto left, auto right) {
-                       using LeftType = decltype(left);
-                       using RightType = decltype(right);
-                       using Left = std::numeric_limits<LeftType>;
-                       using Right = std::numeric_limits<RightType>;
-                       if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
-                                     std::is_convertible_v<RightType, VariableReference>) {
-                           throw TypeError(fmt::format("cannot apply MUL operator to {} and {}", typeid(LeftType),
-                                                       typeid(RightType)),
-                                           location);
-                       } else if constexpr (Left::is_specialized && Right::is_specialized) {
-                           if constexpr (Left::is_integer && (not Right::is_integer)) {
-                               this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) * right);
-                           } else if constexpr ((not Left::is_integer) && Right::is_integer) {
-                               this->expr_result_ = static_cast<LeftType>(left * static_cast<LeftType>(right));
-                           } else {
-                               if constexpr (Left::digits >= Right::digits) {
-                                   this->expr_result_ = static_cast<LeftType>(left * static_cast<LeftType>(right));
-                               } else {
-                                   this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) * right);
-                               }
-                           }
-                       } else {
-                           throw TypeError(fmt::format("cannot apply MUL operator to {} and {}", typeid(LeftType),
-                                                       typeid(RightType)),
-                                           location);
-                       }
-                   },
-                   _1, _2),
-               lhs, rhs);
+    auto op = [](auto l_val, auto r_val) -> ResultVariant {
+        using Left = std::remove_cvref_t<decltype(l_val)>;
+        using Right = std::remove_cvref_t<decltype(r_val)>;
+        if constexpr (std::is_same_v<Left, std::string> && std::is_integral_v<Right>) {
+            if (r_val < 0) {
+                throw std::runtime_error("cannot multiply string by negative integer");
+            }
+            if (r_val == 0) {
+                return std::string();
+            }
+            std::string result;
+            result.reserve(l_val.size() * r_val);
+            for (size_t i = 0; i < static_cast<size_t>(r_val); ++i) {
+                result += l_val;
+            }
+            return result;
+        } else if constexpr (std::is_integral_v<Left> && std::is_same_v<Right, std::string>) {
+            if (l_val < 0) {
+                throw std::runtime_error("cannot multiply negative integer by string");
+            }
+            if (l_val == 0) {
+                return std::string();
+            }
+            std::string result;
+            result.reserve(r_val.size() * l_val);
+            for (size_t i = 0; i < static_cast<size_t>(l_val); ++i) {
+                result += r_val;
+            }
+            return result;
+        } else if constexpr (std::is_arithmetic_v<Left> && std::is_arithmetic_v<Right>) {
+            if constexpr (std::is_same_v<Left, double> || std::is_same_v<Right, double>)
+                return static_cast<double>(l_val) * static_cast<double>(r_val);
+            else if constexpr (std::is_same_v<Left, std::uint64_t> && std::is_same_v<Right, std::uint64_t>)
+                return l_val * r_val;
+            else
+                return static_cast<std::int64_t>(l_val) * static_cast<std::int64_t>(r_val);
+        }
+        throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
+    };
+
+    execute_binary_operation_(lhs, rhs, op, "MUL", location);
 }
 void Interpreter::apply_DIV_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
-    using namespace std::placeholders;
-    std::visit(std::bind(
-                   deref_and_apply_func_(),
-                   [this, &location](auto left, auto right) {
-                       using LeftType = decltype(left);
-                       using RightType = decltype(right);
-                       using Left = std::numeric_limits<LeftType>;
-                       using Right = std::numeric_limits<RightType>;
-                       if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
-                                     std::is_convertible_v<RightType, VariableReference>) {
-                           throw TypeError(fmt::format("cannot apply DIV operator to {} and {}", typeid(LeftType),
+    auto op = [](auto l_val, auto r_val) -> ResultVariant {
+        using Left = std::remove_cvref_t<decltype(l_val)>;
+        using Right = std::remove_cvref_t<decltype(r_val)>;
+        if constexpr (std::is_arithmetic_v<Left> && std::is_arithmetic_v<Right>) {
+            return static_cast<double>(l_val) / static_cast<double>(r_val);
+        }
+        throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
+    };
 
-                                                       typeid(RightType)),
-                                           location);
-                       } else if constexpr (Left::is_specialized && Right::is_specialized) {
-                           if constexpr (Left::is_integer && Right::is_integer) {
-                               this->expr_result_ =
-                                   static_cast<double>(static_cast<double>(left) / static_cast<double>(right));
-                           } else if constexpr (Left::is_integer && (not Right::is_integer)) {
-                               this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) / right);
-                           } else if constexpr ((not Left::is_integer) && Right::is_integer) {
-                               this->expr_result_ = static_cast<LeftType>(left / static_cast<LeftType>(right));
-                           } else {
-                               if constexpr (Left::digits >= Right::digits) {
-                                   this->expr_result_ = static_cast<LeftType>(left / static_cast<LeftType>(right));
-                               } else {
-                                   this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) / right);
-                               }
-                           }
-                       } else {
-                           throw TypeError(fmt::format("cannot apply DIV operator to {} and {}", typeid(LeftType),
-                                                       typeid(RightType)),
-                                           location);
-                       }
-                   },
-                   _1, _2),
-               lhs, rhs);
+    execute_binary_operation_(lhs, rhs, op, "DIV", location);
 }
 void Interpreter::apply_MOD_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
-    using namespace std::placeholders;
-    std::visit(
-        std::bind(
-            deref_and_apply_func_(),
-            [this, &location](auto left, auto right) {
-                using LeftType = decltype(left);
-                using RightType = decltype(right);
-                using Left = std::numeric_limits<LeftType>;
-                using Right = std::numeric_limits<RightType>;
-                if constexpr (std::is_convertible_v<LeftType, VariableReference> ||
-                              std::is_convertible_v<RightType, VariableReference>) {
-                    throw TypeError(
-                        fmt::format("cannot apply MOD operator to {} and {}", typeid(LeftType), typeid(RightType)),
-                        location);
-                } else if constexpr (Left::is_specialized && Right::is_specialized) {
-                    if constexpr (Left::is_integer && (not Right::is_integer)) {
-                        this->expr_result_ = static_cast<RightType>(std::fmod(static_cast<RightType>(left), right));
-                    } else if constexpr ((not Left::is_integer) && Right::is_integer) {
-                        this->expr_result_ = static_cast<LeftType>(std::fmod(left, static_cast<LeftType>(right)));
-                    } else if constexpr (Left::is_integer && Right::is_integer) {
-                        if constexpr (Left::digits >= Right::digits) {
-                            this->expr_result_ = static_cast<LeftType>(left % static_cast<LeftType>(right));
-                        } else {
-                            this->expr_result_ = static_cast<RightType>(static_cast<RightType>(left) % right);
-                        }
-                    } else {
-                        if constexpr (Left::digits >= Right::digits) {
-                            this->expr_result_ = static_cast<LeftType>(std::fmod(left, static_cast<LeftType>(right)));
-                        } else {
-                            this->expr_result_ = static_cast<RightType>(std::fmod(static_cast<RightType>(left), right));
-                        }
-                    }
-                } else {
-                    throw TypeError(
-                        fmt::format("cannot apply MOD operator to {} and {}", typeid(LeftType), typeid(RightType)),
-                        location);
-                }
-            },
-            _1, _2),
-        lhs, rhs);
+    auto op = [](auto l_val, auto r_val) -> ResultVariant {
+        using Left = std::remove_cvref_t<decltype(l_val)>;
+        using Right = std::remove_cvref_t<decltype(r_val)>;
+        if constexpr (std::is_arithmetic_v<Left> && std::is_arithmetic_v<Right>) {
+            if constexpr (std::is_same_v<Left, double> || std::is_same_v<Right, double>)
+                return std::fmod(static_cast<double>(l_val), static_cast<double>(r_val));
+            else if constexpr (std::is_same_v<Left, std::uint64_t> && std::is_same_v<Right, std::uint64_t>)
+                return l_val % r_val;
+            else
+                return static_cast<std::int64_t>(l_val) % static_cast<std::int64_t>(r_val);
+        }
+        throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
+    };
+
+    execute_binary_operation_(lhs, rhs, op, "MOD", location);
 }
 void Interpreter::apply_ASSIGN_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
     using namespace std::placeholders;
@@ -942,117 +906,76 @@ void Interpreter::apply_ASSIGN_(const Value& lhs, const Value& rhs, location::So
         left.value, right);
 }
 void Interpreter::apply_LESS_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
-    using namespace std::placeholders;
-    std::visit(std::bind(
-                   deref_and_apply_func_(),
-                   [this, &location](auto left, auto right) {
-                       using LeftType = decltype(left);
-                       using RightType = decltype(right);
-                       if constexpr (LessComparable<LeftType, RightType> && StrictComparable<LeftType, RightType>) {
-                           this->expr_result_ = left < right;
-                       } else {
-                           throw TypeError(fmt::format("cannot apply LESS operator to {} and {}", typeid(LeftType),
-                                                       typeid(RightType)),
-                                           location);
-                       }
-                   },
-                   _1, _2),
-               lhs, rhs);
+    auto op = [](auto l_val, auto r_val) -> ResultVariant {
+        using Left = std::remove_cvref_t<decltype(l_val)>;
+        using Right = std::remove_cvref_t<decltype(r_val)>;
+        if constexpr (std::is_arithmetic_v<Left> && std::is_arithmetic_v<Right>) {
+            return l_val < r_val;
+        }
+        throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
+    };
+
+    execute_binary_operation_(lhs, rhs, op, "LESS", location);
 }
 void Interpreter::apply_GREATER_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
-    using namespace std::placeholders;
-    std::visit(std::bind(
-                   deref_and_apply_func_(),
-                   [this, &location](auto left, auto right) {
-                       using LeftType = decltype(left);
-                       using RightType = decltype(right);
-                       if constexpr (GreaterComparable<LeftType, RightType> && StrictComparable<LeftType, RightType>) {
-                           this->expr_result_ = left > right;
-                       } else {
-                           throw TypeError(fmt::format("cannot apply GREATER operator to {} and {}", typeid(LeftType),
-                                                       typeid(RightType)),
-                                           location);
-                       }
-                   },
-                   _1, _2),
-               lhs, rhs);
+    auto op = [](auto l_val, auto r_val) -> ResultVariant {
+        using Left = std::remove_cvref_t<decltype(l_val)>;
+        using Right = std::remove_cvref_t<decltype(r_val)>;
+        if constexpr (std::is_arithmetic_v<Left> && std::is_arithmetic_v<Right>) {
+            return l_val > r_val;
+        }
+        throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
+    };
+
+    execute_binary_operation_(lhs, rhs, op, "GREATER", location);
 }
 void Interpreter::apply_LESS_EQUAL_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
-    using namespace std::placeholders;
-    std::visit(
-        std::bind(
-            deref_and_apply_func_(),
-            [this, &location](auto left, auto right) {
-                using LeftType = decltype(left);
-                using RightType = decltype(right);
-                if constexpr (LessEqualComparable<LeftType, RightType> && StrictComparable<LeftType, RightType>) {
-                    this->expr_result_ = left <= right;
-                } else {
-                    throw TypeError(fmt::format("cannot apply LESS_EQUAL operator to {} and {}", typeid(LeftType),
-                                                typeid(RightType)),
-                                    location);
-                }
-            },
-            _1, _2),
-        lhs, rhs);
+    auto op = [](auto l_val, auto r_val) -> ResultVariant {
+        using Left = std::remove_cvref_t<decltype(l_val)>;
+        using Right = std::remove_cvref_t<decltype(r_val)>;
+        if constexpr (std::is_arithmetic_v<Left> && std::is_arithmetic_v<Right>) {
+            return l_val <= r_val;
+        }
+        throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
+    };
+
+    execute_binary_operation_(lhs, rhs, op, "LESS_EQUAL", location);
 }
 void Interpreter::apply_GREATER_EQUAL_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
-    using namespace std::placeholders;
-    std::visit(
-        std::bind(
-            deref_and_apply_func_(),
-            [this, &location](auto left, auto right) {
-                using LeftType = decltype(left);
-                using RightType = decltype(right);
-                if constexpr (GreaterEqualComparable<LeftType, RightType> && StrictComparable<LeftType, RightType>) {
-                    this->expr_result_ = left >= right;
-                } else {
-                    throw TypeError(fmt::format("cannot apply GREATER_EQUAL operator to {} and {}", typeid(LeftType),
-                                                typeid(RightType)),
-                                    location);
-                }
-            },
-            _1, _2),
-        lhs, rhs);
+    auto op = [](auto l_val, auto r_val) -> ResultVariant {
+        using Left = std::remove_cvref_t<decltype(l_val)>;
+        using Right = std::remove_cvref_t<decltype(r_val)>;
+        if constexpr (std::is_arithmetic_v<Left> && std::is_arithmetic_v<Right>) {
+            return l_val >= r_val;
+        }
+        throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
+    };
+
+    execute_binary_operation_(lhs, rhs, op, "GREATER_EQUAL", location);
 }
 void Interpreter::apply_EQUAL_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
-    using namespace std::placeholders;
-    std::visit(std::bind(
-                   deref_and_apply_func_(),
-                   [this, &location](auto left, auto right) {
-                       using LeftType = decltype(left);
-                       using RightType = decltype(right);
-                       if constexpr (EqualComparable<LeftType, RightType> && StrictComparable<LeftType, RightType>) {
-                           this->expr_result_ = left == right;
-                       } else {
-                           throw TypeError(fmt::format("cannot apply EQUAL operator to {} and {}", typeid(LeftType),
-                                                       typeid(RightType)),
-                                           location);
-                       }
-                   },
-                   _1, _2),
-               lhs, rhs);
+    auto op = [](auto l_val, auto r_val) -> ResultVariant {
+        using Left = std::remove_cvref_t<decltype(l_val)>;
+        using Right = std::remove_cvref_t<decltype(r_val)>;
+        if constexpr (std::is_arithmetic_v<Left> && std::is_arithmetic_v<Right>) {
+            return l_val == r_val;
+        }
+        throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
+    };
+
+    execute_binary_operation_(lhs, rhs, op, "EQUAL", location);
 }
 void Interpreter::apply_NOT_EQUAL_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
-    using namespace std::placeholders;
-    std::visit(
-        std::bind(
-            deref_and_apply_func_(),
-            [this, &location](auto left, auto right) {
-                using LeftType = decltype(left);
-                using RightType = decltype(right);
-                if constexpr (NotEqualComparable<LeftType, RightType> && StrictComparable<LeftType, RightType>) {
-                    this->expr_result_ = left != right;
-                } else if constexpr (EqualComparable<LeftType, RightType> && StrictComparable<LeftType, RightType>) {
-                    this->expr_result_ = not(left == right);
-                } else {
-                    throw TypeError(fmt::format("cannot apply NOT_EQUAL operator to {} and {}", typeid(LeftType),
-                                                typeid(RightType)),
-                                    location);
-                }
-            },
-            _1, _2),
-        lhs, rhs);
+    auto op = [](auto l_val, auto r_val) -> ResultVariant {
+        using Left = std::remove_cvref_t<decltype(l_val)>;
+        using Right = std::remove_cvref_t<decltype(r_val)>;
+        if constexpr (std::is_arithmetic_v<Left> && std::is_arithmetic_v<Right>) {
+            return l_val != r_val;
+        }
+        throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
+    };
+
+    execute_binary_operation_(lhs, rhs, op, "NOT_EQUAL", location);
 }
 void Interpreter::apply_BOOL_AND_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
     using namespace std::placeholders;
