@@ -569,15 +569,15 @@ Operand to_operand(const Interpreter::Value& val) {
             }
 
             // カテゴリに合った型でvariantに値を格納
-            if constexpr (std::is_unsigned_v<T> && std::is_integral_v<T>) {
+            if constexpr (std::is_same_v<T, bool>) {
+                op.value = v;
+            } else if constexpr (std::is_unsigned_v<T> && std::is_integral_v<T>) {
                 op.value = static_cast<std::uint64_t>(v);
             } else if constexpr (std::is_signed_v<T> && std::is_integral_v<T>) {
                 op.value = static_cast<std::int64_t>(v);
             } else if constexpr (std::is_floating_point_v<T>) {
                 op.value = static_cast<double>(v);
             } else if constexpr (std::is_same_v<T, std::string>) {
-                op.value = v;
-            } else if constexpr (std::is_same_v<T, bool>) {
                 op.value = v;
             } else {
                 op.value = ResultVariant{};  // 他の型は無視
@@ -993,7 +993,7 @@ void Interpreter::apply_BOOL_AND_(const Value& lhs, const Value& rhs, location::
         throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
     };
 
-    execute_binary_operation_(lhs, rhs, op, "ADD", location);
+    execute_binary_operation_(lhs, rhs, op, "BOOL_AND", location);
 }
 void Interpreter::apply_BIT_AND_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
     auto op = [](auto l_val, auto r_val) -> ResultVariant {
@@ -1005,7 +1005,7 @@ void Interpreter::apply_BIT_AND_(const Value& lhs, const Value& rhs, location::S
         throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
     };
 
-    execute_binary_operation_(lhs, rhs, op, "ADD", location);
+    execute_binary_operation_(lhs, rhs, op, "BIT_AND", location);
 }
 void Interpreter::apply_BOOL_OR_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
     auto op = [](auto l_val, auto r_val) -> ResultVariant {
@@ -1017,7 +1017,7 @@ void Interpreter::apply_BOOL_OR_(const Value& lhs, const Value& rhs, location::S
         throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
     };
 
-    execute_binary_operation_(lhs, rhs, op, "ADD", location);
+    execute_binary_operation_(lhs, rhs, op, "BOOL_OR", location);
 }
 void Interpreter::apply_BIT_OR_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
     auto op = [](auto l_val, auto r_val) -> ResultVariant {
@@ -1029,7 +1029,7 @@ void Interpreter::apply_BIT_OR_(const Value& lhs, const Value& rhs, location::So
         throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
     };
 
-    execute_binary_operation_(lhs, rhs, op, "ADD", location);
+    execute_binary_operation_(lhs, rhs, op, "BIT_OR", location);
 }
 void Interpreter::apply_BIT_XOR_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
     auto op = [](auto l_val, auto r_val) -> ResultVariant {
@@ -1041,7 +1041,7 @@ void Interpreter::apply_BIT_XOR_(const Value& lhs, const Value& rhs, location::S
         throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
     };
 
-    execute_binary_operation_(lhs, rhs, op, "ADD", location);
+    execute_binary_operation_(lhs, rhs, op, "BIT_XOR", location);
 }
 void Interpreter::apply_LEFT_SHIFT_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
     auto op = [](auto l_val, auto r_val) -> ResultVariant {
@@ -1053,7 +1053,7 @@ void Interpreter::apply_LEFT_SHIFT_(const Value& lhs, const Value& rhs, location
         throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
     };
 
-    execute_binary_operation_(lhs, rhs, op, "ADD", location);
+    execute_binary_operation_(lhs, rhs, op, "LEFT_SHIFT", location);
 }
 void Interpreter::apply_RIGHT_SHIFT_(const Value& lhs, const Value& rhs, location::SourceRegion& location) {
     auto op = [](auto l_val, auto r_val) -> ResultVariant {
@@ -1065,6 +1065,6 @@ void Interpreter::apply_RIGHT_SHIFT_(const Value& lhs, const Value& rhs, locatio
         throw std::runtime_error(fmt::format("invalid operand types of {} and {}", typeid(l_val), typeid(r_val)));
     };
 
-    execute_binary_operation_(lhs, rhs, op, "ADD", location);
+    execute_binary_operation_(lhs, rhs, op, "RIGHT_SHIFT", location);
 }
 }  // namespace Garnet::interpreter
